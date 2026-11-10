@@ -1,0 +1,18 @@
+﻿game-icons.net icons used by this game
+======================================
+
+License: Creative Commons Attribution 3.0 (CC BY 3.0)
+https://creativecommons.org/licenses/by/3.0/
+Source:  https://game-icons.net
+
+Icons (white foreground, transparent background):
+  fire        by sbed
+  drop        by lorc
+  air-zigzag  by lorc
+  rock        by lorc
+  wizard-staff by lorc
+  rune-stone  by lorc
+  cauldron    by lorc
+
+The original SVG files are kept in this folder for provenance. The PNGs used
+by the game live in assets/art/icons/ and are tinted at runtime.

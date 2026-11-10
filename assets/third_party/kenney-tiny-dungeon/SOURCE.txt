@@ -1,0 +1,8 @@
+pack:    Tiny Dungeon (1.0)
+author:  Kenney (www.kenney.nl)
+url:     https://kenney.nl/assets/tiny-dungeon
+file:    https://kenney.nl/download-link/6173736574732f74696e792d64756e67656f6e (signed redirect, expires)
+license: CC0 1.0 (Creative Commons Zero) — read on the pack page and in LICENSE.txt on 2026-11-10
+sha256:  C109438AB06F65FD80F9B2686A4CF9C7C11DC64444B47333EC71D602F8BB5FC7
+used:    player sprite (tile_0084), floor/wall/pillar/torch tiles (tile_0036, 0038, 0040, 0014, 0039, 0029)
+notes:   original zip kept outside the project; individual 16x16 tiles are already transparent.

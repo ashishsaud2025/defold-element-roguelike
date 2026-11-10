@@ -1,0 +1,486 @@
+-- /main/hud.gui_script
+-- M4 UI. Drawing + hit testing only: all game state lives in game.script and
+-- arrives as a "ui" message every frame. Clicks are forwarded back as
+-- "ui_action" messages so the game script owns the state machine.
+--
+-- Coordinate space: 960x640, origin at the screen centre, +y up.
+-- GUI scripts have no go.* namespace (README 5.4 / 6).
+local data = require "src.core.data"
+local art_mod = require "src.core.art"
+
+local ELEM_ORDER = { "fire", "water", "wind", "earth" }
+local ELEM_LABEL = { fire = "FIRE", water = "WATER", wind = "WIND", earth = "EARTH" }
+
+-- ---- layout constants (centred authoring space, keep in sync with main/hud.gui) ----
+-- GUI scene origin is the BOTTOM-LEFT of the screen, so a one-time offset in
+-- init() moves every authored (centred) coordinate into screen space.
+local OX, OY = 480, 320
+local HP_LEFT, HP_W, HP_Y = -480, 300, 288
+local S1_LEFT, S2_LEFT, SLOT_W, SLOT_Y = -480, 180, 300, -268
+
+local C = {
+    panel       = vmath.vector4(0.04, 0.05, 0.09, 0.94),
+    panel_soft  = vmath.vector4(0.04, 0.05, 0.09, 0.72),
+    box         = vmath.vector4(0.16, 0.18, 0.26, 1.0),
+    box_ready   = vmath.vector4(0.22, 0.55, 0.35, 1.0),
+    box_dim     = vmath.vector4(0.10, 0.11, 0.16, 1.0),
+    slot_bg     = vmath.vector4(0.09, 0.10, 0.16, 1.0),
+    cd          = vmath.vector4(0.0, 0.0, 0.0, 0.62),
+    white       = vmath.vector4(1.0, 1.0, 1.0, 1.0),
+    dim         = vmath.vector4(0.55, 0.60, 0.72, 1.0),
+    hp          = vmath.vector4(0.85, 0.25, 0.32, 1.0),
+    hp_bg       = vmath.vector4(0.16, 0.10, 0.14, 1.0),
+    dead        = vmath.vector4(0.90, 0.25, 0.25, 1.0),
+    win         = vmath.vector4(0.35, 0.85, 0.45, 1.0),
+    pick_off    = vmath.vector4(0.18, 0.20, 0.28, 1.0),
+}
+
+local ALL_NODES = {
+    "panel", "title_text", "subtitle_text", "start_box", "start_text",
+    "credits_box", "credits_text_btn", "credits_title", "credits_body",
+    "back_box", "back_text", "pick_title", "pick_hint",
+    "e1_box", "e1_text", "e2_box", "e2_text", "e3_box", "e3_text",
+    "e4_box", "e4_text", "pick_status", "enter_box", "enter_text",
+    "hp_bg", "hp_fill", "hp_text",
+    "flash_box",
+    "s1_bg", "s1_cd", "s1_name", "s1_quirk", "s1_dot1", "s1_dot2",
+    "s2_bg", "s2_cd", "s2_name", "s2_quirk", "s2_dot1", "s2_dot2",
+    "help_text", "overlay_title", "overlay_hint",
+    "room_text", "inv_text",
+    "reward_title", "card1_box", "card1_text", "card2_box", "card2_text",
+    "card3_box", "card3_text",
+    "cauldron_title", "cauldron_icon", "inv_text2", "sel_ea_box", "sel_ea_text",
+    "sel_eb_box", "sel_eb_text", "sel_shape_box", "sel_shape_text",
+    "preview_name", "preview_quirk", "preview_power",
+    "craft1_box", "craft1_text", "craft2_box", "craft2_text",
+    "done_box", "done_text",
+}
+
+local function n(id)
+    return gui.get_node(id)
+end
+
+local function show(id, on)
+    local node = n(id)
+    if node then gui.set_enabled(node, on) end
+end
+
+local function text(id, s)
+    local node = n(id)
+    if node then gui.set_text(node, s) end
+end
+
+local function color(id, c)
+    local node = n(id)
+    if node then gui.set_color(node, c) end
+end
+
+-- Left-anchored bar: default pivot is the node centre, so shifting x by
+-- half the scaled width keeps the left edge fixed.
+local function bar(id, left, width, y, frac)
+    local node = n(id)
+    if not node then return end
+    frac = math.max(0, math.min(1, frac))
+    gui.set_scale(node, vmath.vector3(math.max(frac, 0.001), 1, 1))
+    gui.set_position(node, vmath.vector3(OX + left + width * frac * 0.5, OY + y, 0))
+end
+
+local function elem_color(name)
+    local e = data.ELEMENTS[name]
+    if not e then return C.dim end
+    return vmath.vector4(e.r, e.g, e.b, 1.0)
+end
+
+-- Element icons are white art in the shared atlas, so tinting with the
+-- element color is all that is needed. Play the matching flipbook.
+local function set_icon(id, elem)
+    local node = n(id)
+    if node and elem then
+        gui.play_flipbook(node, hash(art_mod.ELEMENT_ICONS[elem] or ("icon_" .. elem)))
+    end
+end
+
+local function render(self)
+    local st = self.state
+    local menu = (st == "TITLE" or st == "CREDITS" or st == "PICK_START")
+    local over = (st == "DEAD" or st == "WIN")
+    local hud = (st == "ROOM" or over)
+    local reward = (st == "REWARD")
+    local cauldron = (st == "CAULDRON")
+
+    -- Panel
+    show("panel", menu or over or reward or cauldron)
+    color("panel", over and C.panel_soft or C.panel)
+
+    -- Title group
+    show("title_text", st == "TITLE")
+    show("subtitle_text", st == "TITLE")
+    show("start_box", st == "TITLE")
+    show("start_text", st == "TITLE")
+    show("credits_box", st == "TITLE")
+    show("credits_text_btn", st == "TITLE")
+
+    -- Credits group
+    show("credits_title", st == "CREDITS")
+    show("credits_body", st == "CREDITS")
+    show("back_box", st == "CREDITS")
+    show("back_text", st == "CREDITS")
+
+    -- Pick group
+    show("pick_title", st == "PICK_START")
+    show("pick_hint", st == "PICK_START")
+    show("pick_status", st == "PICK_START")
+    show("enter_box", st == "PICK_START")
+    show("enter_text", st == "PICK_START")
+    for i = 1, 4 do
+        show("e" .. i .. "_box", st == "PICK_START")
+        show("e" .. i .. "_text", st == "PICK_START")
+    end
+
+    -- HUD group
+    for _, id in ipairs({ "hp_bg", "hp_fill", "hp_text",
+                          "s1_bg", "s1_cd", "s1_name", "s1_quirk", "s1_dot1", "s1_dot2",
+                          "s2_bg", "s2_cd", "s2_name", "s2_quirk", "s2_dot1", "s2_dot2",
+                          "help_text" }) do
+        show(id, hud)
+    end
+    show("room_text", st == "ROOM")
+    show("inv_text", st == "ROOM" or reward or cauldron)
+
+    -- Reward group
+    show("reward_title", reward)
+    for i = 1, 3 do
+        show("card" .. i .. "_box", reward)
+        show("card" .. i .. "_text", reward)
+    end
+
+    -- Cauldron group
+    show("cauldron_title", cauldron)
+    show("cauldron_icon", cauldron)
+    show("inv_text2", cauldron)
+    for _, id in ipairs({ "sel_ea_box", "sel_ea_text", "sel_eb_box", "sel_eb_text",
+                          "sel_shape_box", "sel_shape_text", "preview_name",
+                          "preview_quirk", "preview_power", "craft1_box", "craft1_text",
+                          "craft2_box", "craft2_text", "done_box", "done_text" }) do
+        show(id, cauldron)
+    end
+
+    -- Screen flash on damage
+    local fa = math.min(0.8, (self.flash or 0) * 1.6)
+    if fa > 0 then
+        show("flash_box", true)
+        color("flash_box", vmath.vector4(1.0, 0.25, 0.2, fa))
+    else
+        show("flash_box", false)
+    end
+
+    if hud then
+        local frac = 0
+        if self.max_hp > 0 then frac = self.hp / self.max_hp end
+        color("hp_bg", C.hp_bg)
+        color("hp_fill", C.hp)
+        bar("hp_fill", HP_LEFT, HP_W, HP_Y, frac)
+        text("hp_text", math.floor(self.hp + 0.5) .. " / " .. self.max_hp)
+
+        local slots = { { self.s1, S1_LEFT, "s1" }, { self.s2, S2_LEFT, "s2" } }
+        for _, s in ipairs(slots) do
+            local d, left, prefix = s[1], s[2], s[3]
+            color(prefix .. "_bg", C.slot_bg)
+            color(prefix .. "_cd", C.cd)
+            if d then
+                text(prefix .. "_name", d.name)
+                text(prefix .. "_quirk", d.quirk)
+                local maxcd = d.cd_max or 0
+                local f = 0
+                if maxcd > 0 then f = d.cd / maxcd end
+                bar(prefix .. "_cd", left, SLOT_W, SLOT_Y, f)
+                color(prefix .. "_dot1", elem_color(d.ea))
+                color(prefix .. "_dot2", elem_color(d.eb))
+                set_icon(prefix .. "_dot1", d.ea)
+                set_icon(prefix .. "_dot2", d.eb)
+                if d.cd > 0 then
+                    color(prefix .. "_name", C.dim)
+                else
+                    color(prefix .. "_name", C.white)
+                end
+            end
+        end
+        text("room_text", self.boss and ("Boss: " .. math.floor(self.boss_hp + 0.5) .. " / " .. self.boss_max_hp) or ("Room " .. (self.room or 0)))
+    end
+
+    -- inventory text (shared)
+    local inv = self.inventory
+    local inv_str = ""
+    if inv then
+        local parts = {}
+        for _, el in ipairs(ELEM_ORDER) do
+            local c = inv.elements and inv.elements[el] or 0
+            if c > 0 then parts[#parts + 1] = ELEM_LABEL[el] .. " x" .. c end
+        end
+        inv_str = "Elements: " .. table.concat(parts, "  ")
+        local sparts = {}
+        for _, sh in ipairs({ "projectile", "puddle", "orbit", "cone", "burst" }) do
+            local c = inv.shapes and inv.shapes[sh] or 0
+            if c > 0 then sparts[#sparts + 1] = sh .. " x" .. c end
+        end
+        inv_str = inv_str .. "    |    Shapes: " .. table.concat(sparts, "  ")
+    end
+    if st == "ROOM" or reward or cauldron then
+        text("inv_text", inv_str)
+    end
+
+    if st == "PICK_START" then
+        local picked = {}
+        for _, el in ipairs(self.picks) do picked[el] = (picked[el] or 0) + 1 end
+        for i, el in ipairs(ELEM_ORDER) do
+            local count = picked[el] or 0
+            text("e" .. i .. "_text", ELEM_LABEL[el] .. (count > 0 and ("  x" .. count) or ""))
+            if count > 0 then
+                color("e" .. i .. "_box", elem_color(el))
+                color("e" .. i .. "_text", C.white)
+            else
+                color("e" .. i .. "_box", C.pick_off)
+                color("e" .. i .. "_text", C.dim)
+            end
+        end
+        local parts = {}
+        for _, el in ipairs(self.picks) do parts[#parts + 1] = ELEM_LABEL[el] end
+        while #parts < 2 do parts[#parts + 1] = "?" end
+        text("pick_status", "Picked: " .. parts[1] .. " + " .. parts[2])
+        local ready = (#self.picks >= 2)
+        color("enter_box", ready and C.box_ready or C.box_dim)
+        color("enter_text", ready and C.white or C.dim)
+        gui.set_enabled(n("enter_box"), ready)
+    end
+
+    if reward then
+        text("reward_title", "CHOOSE A REWARD")
+        local opts = self.reward_options or {}
+        for i = 1, 3 do
+            local opt = opts[i]
+            local label = ""
+            if opt then
+                if opt.kind == "element" then
+                    label = ELEM_LABEL[opt.id] .. " (element)"
+                else
+                    label = string.upper(opt.id) .. " (shape)"
+                end
+            end
+            text("card" .. i .. "_text", label)
+            color("card" .. i .. "_box", C.box)
+        end
+    end
+
+    if cauldron then
+        text("cauldron_title", "CAULDRON")
+        color("cauldron_icon", C.white)
+        text("inv_text2", inv_str)
+        local c = self.cauldron or {}
+        text("sel_ea_text", "Elem A: " .. (c.ea or "-") .. "\\n(click)")
+        text("sel_eb_text", "Elem B: " .. (c.eb or "-") .. "\\n(click)")
+        text("sel_shape_text", "Shape: " .. (c.shape or "-") .. "\\n(click)")
+        local p = self.preview
+        if p then
+            text("preview_name", p.name)
+            text("preview_quirk", p.quirk)
+            text("preview_power", "power " .. p.power)
+        else
+            text("preview_name", "no ingredients")
+            text("preview_quirk", "")
+            text("preview_power", "")
+        end
+        color("sel_ea_box", C.box)
+        color("sel_eb_box", C.box)
+        color("sel_shape_box", C.box)
+        color("craft1_box", C.box_ready)
+        color("craft2_box", C.box_ready)
+        color("done_box", C.box)
+    end
+
+    if over then
+        if st == "DEAD" then
+            text("overlay_title", "YOU DIED")
+            color("overlay_title", C.dead)
+        else
+            text("overlay_title", "YOU WIN")
+            color("overlay_title", C.win)
+        end
+        show("overlay_title", true)
+        show("overlay_hint", true)
+    else
+        show("overlay_title", false)
+        show("overlay_hint", false)
+        text("overlay_title", "")
+        text("overlay_hint", "")
+    end
+end
+
+-- ---- button hit test (x, y are design-space pixels 0..960 / 0..640, origin bottom-left) ----
+-- Done by hand instead of gui.pick_node: node positions are design-space values, so this stays correct
+-- at any window size (the world and GUI are letterboxed, see main/letterbox.render_script).
+local function hit(id, x, y)
+    local node = n(id)
+    if not node then return false end
+    local p = gui.get_position(node)
+    local sz = gui.get_size(node)
+    local sc = gui.get_scale(node)
+    local hw, hh = sz.x * sc.x * 0.5, sz.y * sc.y * 0.5
+    return x >= p.x - hw and x <= p.x + hw and y >= p.y - hh and y <= p.y + hh
+end
+
+local function send(action, extra)
+    local msg_table = { action = action }
+    if extra then
+        for k, v in pairs(extra) do msg_table[k] = v end
+    end
+    msg.post("/game#script", "ui_action", msg_table)
+end
+
+local function on_click(self, x, y)
+    local st = self.state
+    if st == "TITLE" then
+        if hit("start_box", x, y) then
+            send("start")
+        elseif hit("credits_box", x, y) then
+            send("credits")
+        end
+    elseif st == "CREDITS" then
+        if hit("back_box", x, y) then send("back") end
+    elseif st == "PICK_START" then
+        for i, el in ipairs(ELEM_ORDER) do
+            if hit("e" .. i .. "_box", x, y) then
+                send("pick", { element = el })
+                return
+            end
+        end
+        if #self.picks >= 2 and hit("enter_box", x, y) then
+            send("enter")
+        end
+    elseif st == "REWARD" then
+        for i = 1, 3 do
+            if hit("card" .. i .. "_box", x, y) then
+                send("reward_pick", { index = i })
+                return
+            end
+        end
+    elseif st == "CAULDRON" then
+        if hit("sel_ea_box", x, y) then send("cauldron_cycle", { field = "ea" }) end
+        if hit("sel_eb_box", x, y) then send("cauldron_cycle", { field = "eb" }) end
+        if hit("sel_shape_box", x, y) then send("cauldron_cycle", { field = "shape" }) end
+        if hit("craft1_box", x, y) then send("craft", { slot = 1 }) end
+        if hit("craft2_box", x, y) then send("craft", { slot = 2 }) end
+        if hit("done_box", x, y) then send("done") end
+    elseif st == "DEAD" or st == "WIN" then
+        send("continue")
+    end
+end
+
+function init(self)
+    self.state = "TITLE"
+    self.picks = {}
+    self.hp = 100
+    self.max_hp = 100
+    self.s1 = nil
+    self.s2 = nil
+    self.room = 0
+    self.inventory = nil
+    self.reward_options = nil
+    self.cauldron = nil
+    self.preview = nil
+    self.boss = nil
+    self.boss_hp = 0
+    self.boss_max_hp = 0
+    self.flash = 0
+    self.started = false
+
+    for _, id in ipairs(ALL_NODES) do
+        if gui.get_node(id) == nil then
+            print("HUD: missing node '" .. id .. "' in main/hud.gui")
+        end
+    end
+
+    -- GUI origin is bottom-left: move everything from centred authoring space
+    -- into screen space once (bar() adds the same offset when it repositions).
+    for _, id in ipairs(ALL_NODES) do
+        local node = gui.get_node(id)
+        if node then
+            local p = gui.get_position(node)
+            gui.set_position(node, vmath.vector3(p.x + OX, p.y + OY, p.z))
+        end
+    end
+
+    -- Text sizes (the builtin font is small).
+    gui.set_scale(n("title_text"), vmath.vector3(3.0, 3.0, 1))
+    gui.set_scale(n("credits_title"), vmath.vector3(2.0, 2.0, 1))
+    gui.set_scale(n("pick_title"), vmath.vector3(1.6, 1.6, 1))
+    gui.set_scale(n("overlay_title"), vmath.vector3(2.4, 2.4, 1))
+    gui.set_scale(n("hp_text"), vmath.vector3(0.8, 0.8, 1))
+    gui.set_scale(n("s1_name"), vmath.vector3(0.85, 0.85, 1))
+    gui.set_scale(n("s2_name"), vmath.vector3(0.85, 0.85, 1))
+    gui.set_scale(n("s1_quirk"), vmath.vector3(0.75, 0.75, 1))
+    gui.set_scale(n("s2_quirk"), vmath.vector3(0.75, 0.75, 1))
+    gui.set_scale(n("help_text"), vmath.vector3(0.7, 0.7, 1))
+    gui.set_scale(n("pick_hint"), vmath.vector3(0.8, 0.8, 1))
+    gui.set_scale(n("pick_status"), vmath.vector3(1.1, 1.1, 1))
+    gui.set_scale(n("subtitle_text"), vmath.vector3(0.9, 0.9, 1))
+    gui.set_scale(n("credits_body"), vmath.vector3(0.9, 0.9, 1))
+    gui.set_scale(n("overlay_hint"), vmath.vector3(0.9, 0.9, 1))
+    gui.set_scale(n("start_text"), vmath.vector3(1.1, 1.1, 1))
+    gui.set_scale(n("credits_text_btn"), vmath.vector3(1.1, 1.1, 1))
+    gui.set_scale(n("back_text"), vmath.vector3(1.1, 1.1, 1))
+    gui.set_scale(n("enter_text"), vmath.vector3(1.1, 1.1, 1))
+
+    color("start_box", C.box)
+    color("credits_box", C.box)
+    color("back_box", C.box)
+    color("enter_box", C.box_dim)
+    color("credits_title", C.white)
+    color("credits_body", C.white)
+    color("title_text", C.white)
+    color("subtitle_text", C.dim)
+    color("pick_title", C.white)
+    color("pick_hint", C.dim)
+    color("pick_status", C.white)
+    color("help_text", C.dim)
+    color("overlay_hint", C.dim)
+    color("hp_bg", C.hp_bg)
+    color("hp_fill", C.hp)
+    color("s1_bg", C.slot_bg)
+    color("s2_bg", C.slot_bg)
+    color("s1_cd", C.cd)
+    color("s2_cd", C.cd)
+
+    render(self)
+end
+
+function on_message(self, message_id, message, sender)
+    if message_id == hash("ui") then
+        self.state = message.state or self.state
+        self.picks = message.picks or {}
+        self.hp = message.hp or self.hp
+        self.max_hp = message.max_hp or self.max_hp
+        self.s1 = message.s1
+        self.s2 = message.s2
+        self.room = message.room or self.room
+        self.inventory = message.inventory or self.inventory
+        self.reward_options = message.reward_options
+        self.cauldron = message.cauldron or self.cauldron
+        self.preview = message.preview
+        self.boss = message.boss
+        self.boss_hp = message.boss_hp or 0
+        self.boss_max_hp = message.boss_max_hp or 0
+        self.flash = message.flash or self.flash
+        if message.credits then
+            local parts = {}
+            for _, line in ipairs(message.credits) do parts[#parts + 1] = line end
+            text("credits_body", table.concat(parts, "\n"))
+        end
+        if not self.started then
+            self.started = true
+            print("HUD ready")
+        end
+        render(self)
+    elseif message_id == hash("click") then
+        on_click(self, message.x or 0, message.y or 0)
+    end
+end

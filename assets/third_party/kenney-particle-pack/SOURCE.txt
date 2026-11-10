@@ -1,0 +1,9 @@
+pack:    Particle Pack (1.1)
+author:  Kenney (www.kenney.nl)
+url:     https://kenney.nl/assets/particle-pack
+file:    https://kenney.nl/download-link/6173736574732f7061727469636c652d7061636b (signed redirect, expires)
+license: CC0 1.0 (Creative Commons Zero) — read on the pack page and in LICENSE.txt on 2026-11-10
+sha256:  B631D4B07F7002549FDCF155F01141AD482F79F3440E4E301EED49CE5F1D8958
+used:    a whitened subset copied to assets/art/particles/ (first pass) and
+         assets/art/fx/ (per-element spell effects, see tools/whiten_sprite.py)
+notes:   original 15 MB zip kept outside the project; only the chosen sprites are copied in.

@@ -1,0 +1,3 @@
+prototype: "/main/fx.go"
+load_dynamically: false
+dynamic_prototype: false

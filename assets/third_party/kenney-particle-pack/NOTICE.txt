@@ -1,0 +1,10 @@
+﻿Kenney Particle Pack
+====================
+
+License: CC0 1.0 Universal (Public Domain)
+Source:  https://kenney.nl/assets/particle-pack
+Author:  Kenney (kenney.nl)
+
+Selected sprites (resized to 64x64) are bundled in assets/art/particles/
+and registered in assets/art/shapes.atlas. Used for projectile heads, hit
+flashes and short-lived particles, tinted at runtime.

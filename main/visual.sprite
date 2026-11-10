@@ -1,0 +1,4 @@
+tile_set: "/assets/art/shapes.atlas"
+default_animation: "square"
+material: "/builtins/materials/sprite.material"
+blend_mode: BLEND_MODE_ALPHA

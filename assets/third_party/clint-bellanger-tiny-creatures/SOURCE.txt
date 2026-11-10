@@ -1,0 +1,11 @@
+pack:    Tiny Creatures (1.0)
+author:  Clint Bellanger (clintbellanger.net)
+url:     https://opengameart.org/content/tiny-creatures
+file:    https://opengameart.org/sites/default/files/tiny-creatures.zip
+license: CC0 1.0 (Creative Commons Zero) — read on the OpenGameArt page and in LICENSE.txt on 2026-11-10
+sha256:  B397566A1A0F9189DBEB1119A797E35D5985B587596B02F6631D1EACEC40252D
+used:    wisp (cell 43), slinger (67), charger (20), brute (127), splitter (46), boss (31)
+notes:   the per-tile PNGs in Tiles/ carry an opaque frame/backdrop; the sprites were cut
+         from Tilemap/tilemap_packed.png (same RGB, real alpha) and trimmed with
+         tools/cutout_sprite.py. The pack is an expansion of Kenney's Tiny Dungeon/Tiny Town
+         (see LICENSE.txt); only the six creature sprites are used.
