@@ -54,15 +54,33 @@ M.QUIRK_DATA = {
     health_cost   = { hp_frac = 0.05, min_hp = 1, power_mul = 1.5 },
 }
 
+-- 4.6b Combos reference (Phase C): the single source for the COMBOS panel and every
+-- interaction banner name. Names are upper case so the existing banner lines
+-- (FIRE CYCLONE, BURNING MUD, DENSE CLOUD) match byte for byte.
+M.COMBO_DATA = {
+    { id = "fire_cyclone", name = "FIRE CYCLONE",
+      description = "Wind over a fire pool makes it grow into a cyclone. It shrinks back when the wind ends." },
+    { id = "burning_mud",  name = "BURNING MUD",
+      description = "Fire over a Mud pool: it burns for 3 s, then reverts to mud." },
+    { id = "dense_cloud",  name = "DENSE CLOUD",
+      description = "Steam meeting Dust makes a cloud that blinds and confuses." },
+    { id = "pool_infusion", name = "POOL INFUSION",
+      description = "Bolt, Orbit, Spray and Nova can absorb an active Pool. The spell keeps its own effects and also applies the Pool's." },
+}
+M.COMBO_BY_ID = {}
+for _, c in ipairs(M.COMBO_DATA) do M.COMBO_BY_ID[c.id] = c end
+
 -- 4.7 Environmental spell interactions (Phase 3)
 M.INTERACT = {
     BURNING_MUD_TIME = 3.0,      -- how long a Mud pool stays Burning Mud
     BURNING_MUD_BURN = 2.0,      -- burn refresh applied to enemies in Burning Mud
-    SPREAD_FRAC = 0.60,          -- wind-spread fire keeps 60% duration and strength
-    SPREAD_RADIUS_FRAC = 0.80,   -- ... in a slightly smaller pool
     DENSE_CLOUD_TIME = 2.0,      -- Steam + Dust cloud lifetime
     DENSE_CLOUD_RADIUS = 80,
     DENSE_CLOUD_TICK = 0.5,
+    CYCLONE_GROW = 26,           -- px/s while wind time is live
+    CYCLONE_MAX_RADIUS = 110,    -- absolute cap
+    CYCLONE_DECAY = 45,          -- px/s back to the pre-cyclone radius
+    CYCLONE_BOLT_WIND_TIME = 1.0, -- seconds of wind a flying wind bolt provides per overlap tick
     INTERACTION_TICK = 0.15,     -- controlled update interval (never per frame)
     MAX_SPELL_AREAS = 40,
     MAX_CLOUDS = 6,

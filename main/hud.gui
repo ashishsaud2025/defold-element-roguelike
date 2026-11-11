@@ -65,13 +65,33 @@ nodes {
   size { x: 260.0 y: 56.0 }
   type: TYPE_BOX
   texture: "ui/square"
-  id: "credits_box"
+  id: "combos_box"
   layer: "graphics"
   inherit_alpha: true
 }
 
 nodes {
   position { x: 0.0 y: -70.0 }
+  type: TYPE_TEXT
+  text: "COMBOS"
+  font: "text"
+  id: "combos_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: -150.0 }
+  size { x: 260.0 y: 56.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "credits_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: -150.0 }
   type: TYPE_TEXT
   text: "CREDITS"
   font: "text"

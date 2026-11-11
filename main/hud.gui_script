@@ -7,6 +7,7 @@
 -- GUI scripts have no go.* namespace (README 5.4 / 6).
 local data = require "src.core.data"
 local art_mod = require "src.core.art"
+local combos = require "src.core.combos"
 
 local ELEM_ORDER = { "fire", "water", "wind", "earth" }
 local ELEM_LABEL = { fire = "FIRE", water = "WATER", wind = "WIND", earth = "EARTH" }
@@ -38,6 +39,7 @@ local C = {
 
 local ALL_NODES = {
     "panel", "title_text", "subtitle_text", "start_box", "start_text",
+    "combos_box", "combos_text",
     "credits_box", "credits_text_btn", "credits_title", "credits_body",
     "back_box", "back_text", "pick_title", "pick_hint",
     "e1_box", "e1_text", "e2_box", "e2_text", "e3_box", "e3_text",
@@ -103,7 +105,7 @@ end
 
 local function render(self)
     local st = self.state
-    local menu = (st == "TITLE" or st == "CREDITS" or st == "PICK_START")
+    local menu = (st == "TITLE" or st == "CREDITS" or st == "PICK_START" or st == "COMBOS")
     local over = (st == "DEAD" or st == "WIN")
     local hud = (st == "ROOM" or over)
     local reward = (st == "REWARD")
@@ -118,14 +120,22 @@ local function render(self)
     show("subtitle_text", st == "TITLE")
     show("start_box", st == "TITLE")
     show("start_text", st == "TITLE")
+    show("combos_box", st == "TITLE")
+    show("combos_text", st == "TITLE")
     show("credits_box", st == "TITLE")
     show("credits_text_btn", st == "TITLE")
 
-    -- Credits group
-    show("credits_title", st == "CREDITS")
-    show("credits_body", st == "CREDITS")
-    show("back_box", st == "CREDITS")
-    show("back_text", st == "CREDITS")
+    -- Credits group (also reused for the COMBOS panel)
+    show("credits_title", st == "CREDITS" or st == "COMBOS")
+    show("credits_body", st == "CREDITS" or st == "COMBOS")
+    show("back_box", st == "CREDITS" or st == "COMBOS")
+    show("back_text", st == "CREDITS" or st == "COMBOS")
+    if st == "COMBOS" then
+        text("credits_title", "COMBOS")
+        text("credits_body", combos.panel_text())
+    elseif st == "CREDITS" then
+        text("credits_title", "CREDITS")
+    end
 
     -- Pick group
     show("pick_title", st == "PICK_START")
@@ -367,9 +377,13 @@ local function on_click(self, x, y)
     if st == "TITLE" then
         if hit("start_box", x, y) then
             send("start")
+        elseif hit("combos_box", x, y) then
+            send("combos")
         elseif hit("credits_box", x, y) then
             send("credits")
         end
+    elseif st == "COMBOS" then
+        if hit("back_box", x, y) then send("back") end
     elseif st == "CREDITS" then
         if hit("back_box", x, y) then send("back") end
     elseif st == "PICK_START" then
@@ -458,15 +472,18 @@ function init(self)
     gui.set_scale(n("overlay_hint"), vmath.vector3(0.9, 0.9, 1))
     gui.set_scale(n("start_text"), vmath.vector3(1.1, 1.1, 1))
     gui.set_scale(n("credits_text_btn"), vmath.vector3(1.1, 1.1, 1))
+    gui.set_scale(n("combos_text"), vmath.vector3(1.1, 1.1, 1))
     gui.set_scale(n("back_text"), vmath.vector3(1.1, 1.1, 1))
     gui.set_scale(n("enter_text"), vmath.vector3(1.1, 1.1, 1))
 
     color("start_box", C.box)
     color("credits_box", C.box)
+    color("combos_box", C.box)
     color("back_box", C.box)
     color("enter_box", C.box_dim)
     color("credits_title", C.white)
     color("credits_body", C.white)
+    color("combos_text", C.white)
     color("title_text", C.white)
     color("subtitle_text", C.dim)
     color("pick_title", C.white)

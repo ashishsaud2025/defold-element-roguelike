@@ -59,6 +59,7 @@ go = {
       err(string.format("non-positive scale (%s, %s, %s) - use sprite.set_hflip to mirror",
         tostring(s.x), tostring(s.y), tostring(s.z)))
     end
+    live[id].scale = { x = s.x, y = s.y, z = s.z }
   end,
   set_rotation = function(q, id) chk(id,"set_rotation") end,
   animate = function(id) chk(id,"animate") end,
@@ -313,7 +314,9 @@ local function trail_count()
 end
 
 -- A fresh run, room 1, no quirks/relics. Returns true when a ROOM is live.
-local function begin_room()
+-- Optional `seed` re-enters the identical room (used by the RNG-purity passes only).
+local function begin_room(seed)
+  if seed then math.randomseed(seed) end
   self.state = "DEAD"                        -- force reset_run from any prior state
   ui({ action = "continue" })
   ui({ action = "start" })
@@ -802,28 +805,8 @@ if begin_room() then
     sf(mud.burning_mud == false, "burning mud: re-ignited forever while the fire area lived")
   end
 end
--- B. Wind over a lingering fire pool -> one spread, 60% duration.
-if begin_room() then
-  equip(mk("puddle", nil, "fire", "fire")); cast1()
-  local fire = self.puddles[1]
-  local fire_dur = fire and fire.duration
-  equip(mk("puddle", nil, "wind", "wind")); cast1()
-  frames(15)
-  sf(fire ~= nil and fire.spread_done == true, "fire spread: original pool did not spread")
-  sf(self.toast_text == "FIRE SPREAD" and (self.toast_t or 0) > 0,
-     "fire spread: no readable banner")
-  local spread = nil
-  for _, p in ipairs(self.puddles) do
-    if p ~= fire and p.compound ~= "Gale" then spread = p end
-  end
-  sf(spread ~= nil, "fire spread: no new pool")
-  if spread and fire_dur then
-    sf(spread.spread_done == true, "fire spread: new pool is not marked as a spread")
-    sf(near(spread.duration, fire_dur * 0.6, 0.25), "fire spread: duration=" .. spread.duration)
-  end
-  frames(120)
-  sf(#self.puddles == 3, "fire spread: spread again, pools=" .. #self.puddles)
-end
+-- B. Fire Cyclone coverage lives in the dedicated suite at the end of the file.
+-- The old "spread_fire_area" cloning path is gone (third addendum §5/§6).
 -- C. Steam + Dust -> one Dense Cloud that blinds and confuses, then cleans up.
 if begin_room() then
   equip(mk("puddle", nil, "fire", "water")); cast1()
@@ -1085,6 +1068,7 @@ if begin_room() then
        "infusion catalyst: burn expiry " .. tostring(hit_burn))
   end
 end
+
 if begin_room() then
   -- 7. Ember pool + Inferno Bolt: e1 burns and spreads; e2 (within 60 px) is ignited.
   local e1 = self.enemies[1]
@@ -2087,6 +2071,659 @@ if begin_room() then
   sf(#errors == errs_before, "cleanup: pending timer errored after reset: " .. tostring(errors[errs_before + 1]))
 end
 self.state = "DEAD"; ui({ action = "continue" })
+
+-- ===== Phase B: Fire Cyclone - wind growing a lingering fire pool =========
+-- The wind pool is a normal pool in self.puddles; the fire pool must never be cloned.
+local CYCLONE_CYC = require "src.core.data"
+local function calm_enemy(e)
+  e.alive, e.active, e.telegraph, e.immortal = true, true, 0, false
+  e.hp, e.speed, e.vx, e.vy = 999, 0, 0, 0
+  e.statuses = {}
+end
+
+-- Kill the wind: drop Gale areas' remaining to 0 (they vanish and stop extending), set
+-- every Gale pool's duration near-zero so its own tick passes, and collapse every live
+-- cyclone's until_time so decay begins immediately.
+local function force_wind_gone(self)
+  for _, a in ipairs(self.spell_areas) do
+    if a.compound == "Gale" then a.remaining = 0 end
+  end
+  for _, p in ipairs(self.puddles) do
+    if p.compound == "Gale" then p.duration = math.min(p.duration or 0, 0.05) end
+    if p.cyclone then p.cyclone.until_time = 0 end
+  end
+end
+
+local function settle_pools(self) -- reduce all enemies to next to nothing; no target needed
+  for _, en in ipairs(self.enemies) do en.active = false end
+end
+
+local function wait_cyclone_clear(self, base, frames_budget)
+  -- after the wind is gone, wait until the pool reports it has decayed back to base or the budget runs out
+  local n = frames_budget or 120
+  for i = 1, n do
+    if #self.puddles == 0 then return true end
+    local p = self.puddles[1]
+    if p and (p.cyclone == nil or near(p.radius, base, 0.001)) then return true end
+    frame()
+  end
+  return false
+end
+
+if begin_room() then
+  -- 1. Wind over a fire pool: grows to the cap and stops there; never a second fire pool.
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "earth", "fire")); cast1()      -- Magma pool at (60,0)
+  local pool = self.puddles[1]
+  local base_r = pool and pool.radius
+  equip(mk("puddle", nil, "wind", "wind")); cast1()      -- Gale pool on the same spot
+  frames(130)                                             -- ~2.2 s: enough to hit the cap
+  sf(pool and pool.radius == data.INTERACT.CYCLONE_MAX_RADIUS,
+     "cyclone: did not reach the cap (" .. tostring(pool and pool.radius) .. ")")
+  local fire_pools = 0
+  for _, p in ipairs(self.puddles) do if p.compound == "Magma" then fire_pools = fire_pools + 1 end end
+  sf(fire_pools == 1, "cyclone: wind created a second fire pool (" .. fire_pools .. ")")
+  sf(pool and pool.cyclone ~= nil, "cyclone: record missing at the cap")
+  force_wind_gone(self)
+  frames(90)                                              -- until passes; decay into base
+  if pool then sf(pool.cyclone == nil, "cyclone: record not cleared back at base (" .. tostring(pool.radius) .. ")") end
+  sf(pool and near(pool.radius, base_r, 0.001),
+     "cyclone: radius did not return to base (" .. tostring(pool and pool.radius) .. " vs " .. tostring(base_r) .. ")")
+end
+
+if begin_room() then
+  -- 2. Re-casting wind extends the wind time (until grows, radius keeps growing).
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "earth", "fire")); cast1()
+  local pool = self.puddles[1]
+  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  frames(15)
+  local until1 = pool.cyclone and pool.cyclone.until_time
+  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  frames(15)
+  local until2 = pool.cyclone and pool.cyclone.until_time
+  sf(until1 and until2 and until2 > until1,
+     "cyclone: re-cast wind did not extend (" .. tostring(until1) .. " -> " .. tostring(until2) .. ")")
+  sf(pool.cyclone ~= nil, "cyclone: record lost on extend")
+end
+
+if begin_room() then
+  -- 3. Wind ends: back to the exact pre-cyclone radius, record cleared, pool expires normally.
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "earth", "fire")); cast1()
+  local pool = self.puddles[1]
+  local base_r = pool and pool.radius
+  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  frames(30)                                              -- cyclone started, some growth done
+  force_wind_gone(self)
+  frames(90)                                              -- decay into base
+  sf(pool and pool.cyclone == nil, "cyclone: record not cleared (base=" .. tostring(pool and pool.cyclone and pool.cyclone.base) .. ")")
+  sf(pool and near(pool.radius, base_r, 0.001),
+     "cyclone: radius did not return to base (" .. tostring(pool and pool.radius) .. " vs " .. tostring(base_r) .. ")")
+  pool.duration = 0.05
+  local n_before = #self.puddles
+  frames(10)
+  sf(#self.puddles == n_before - 1, "cyclone: pool did not expire normally after the cyclone")
+end
+
+if begin_room() then
+  -- 4. Pool expires mid-growth: no error, no leaked visual.
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "earth", "fire")); cast1()
+  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  frames(10)
+  local pool = self.puddles[1]
+  local errs_before = #errors
+  if pool then pool.duration = 0.01 end
+  frames(3)
+  local still = false
+  for _, p in ipairs(self.puddles) do if p == pool then still = true end end
+  sf(not still, "cyclone: pool did not expire mid-growth")
+  sf(pool and live[pool.vis] == nil, "cyclone: pool visual leaked after expiry")
+  sf(#errors == errs_before, "cyclone: error during mid-growth expiry")
+end
+
+if begin_room() then
+  -- 5a. Ember Pool alone starts no cyclone on itself.
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "fire", "wind")); cast1()      -- Ember pool (fire + wind)
+  local ember = self.puddles[1]
+  local ember0 = ember and ember.radius
+  frames(30)
+  sf(ember and ember.radius == ember0, "cyclone: Ember Pool started a cyclone on itself")
+  sf((self.toast_t or 0) == 0, "cyclone: Ember Pool showed a banner on itself")
+end
+
+if begin_room() then
+  -- 5b. Ember Pool over a separate fire pool: the fire pool cyclones, the Ember Pool does not.
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "earth", "fire")); cast1()      -- Magma
+  local magma = self.puddles[1]
+  equip(mk("puddle", nil, "fire", "wind")); cast1()      -- Ember pool on the same spot
+  local ember = self.puddles[2]
+  local ember0 = ember and ember.radius
+  frames(20)
+  sf(magma and magma.radius > 60, "cyclone: Ember Pool did not start a cyclone on the fire pool")
+  sf(ember and ember.radius == ember0, "cyclone: the Ember Pool started one on itself too")
+end
+
+if begin_room() then
+  -- 6. A trail patch never counts as fire: wind over it starts no cyclone.
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("projectile", "leaves_trail", "wind", "wind")); cast1()  -- decals: wind trail bolt, drops patches
+  frames(80)
+  local tc = 0
+  for _, pp in ipairs(self.puddles) do if pp.is_trail then tc = tc + 1 end end
+  sf(tc >= 1, "trail: leaves_trail bolt produced no patches")
+  local first = nil
+  for _, pp in ipairs(self.puddles) do if pp.is_trail then first = pp break end end
+  if first then
+    local base_r = first.radius
+    equip(mk("puddle", nil, "wind", "wind")); cast1()                   -- Gale wind over the trail patches
+    frames(60)
+    sf(first.cyclone == nil, "cyclone: trail patch started a cyclone")
+    sf(near(first.radius, base_r, 0.001), "cyclone: trail patch grew a cyclone (" .. tostring(first.radius) .. ")")
+  end
+end
+
+if begin_room() then
+  -- 7. A wind Bolt over a fire pool starts and extends via CYCLONE_BOLT_WIND_TIME.
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "earth", "fire")); cast1()      -- pool at (60,0)
+  local pool = self.puddles[1]
+  local base_r = pool.radius
+  equip(mk("projectile", nil, "wind", "wind")); cast1()   -- Gale bolt along the same line
+  frames(80)                                              -- bolt reaches (~450+ px/s): at 60px it passes quickly
+  sf(pool.cyclone ~= nil, "cyclone: wind bolt did not start a cyclone")
+  if pool.cyclone then
+    sf(pool.cyclone.until_time - self.clock <= data.INTERACT.CYCLONE_BOLT_WIND_TIME + 1,
+       "cyclone: bolt wind time is over CYCLONE_BOLT_WIND_TIME (diff=" .. tostring(pool.cyclone.until_time - self.clock) .. ")")
+  end
+  sf(pool.radius > base_r, "cyclone: wind bolt did not grow the pool")
+end
+
+if begin_room() then
+  -- 7b. Burning Mud counts as fire for the bolt path too (and after the fire pool dies).
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "earth", "water")); cast1()      -- Mud pool
+  equip(mk("puddle", nil, "fire", "fire")); cast1()        -- Inferno pool over it
+  frames(15)
+  local mud = self.puddles[1]
+  sf(mud and mud.burning_mud == true, "burning mud: not ignited")
+  for _, p in ipairs(self.puddles) do if p ~= mud then p.duration = 0.05 end end
+  frames(3)
+  local base_r = mud.radius
+  equip(mk("projectile", nil, "wind", "wind")); cast1()    -- Gale bolt across the mud
+  frames(80)
+  sf(mud and mud.cyclone ~= nil, "cyclone: wind bolt did not treat Burning Mud as fire")
+  sf(mud and mud.radius > base_r, "cyclone: Burning Mud pool did not grow (" .. tostring(mud and mud.radius) .. ")")
+end
+
+if begin_room() then
+  -- 8. A pool at/above the cap: no cyclone, no banner.
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "earth", "fire")); cast1()
+  local pool = self.puddles[1]
+  pool.radius = data.INTERACT.CYCLONE_MAX_RADIUS            -- the cap
+  self.toast_text = nil
+  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  frames(20)
+  sf(pool.cyclone == nil, "cyclone: cap-sized pool started a cyclone")
+  sf((self.toast_t or 0) == 0, "cyclone: cap-sized pool showed a banner")
+  sf(pool.radius == data.INTERACT.CYCLONE_MAX_RADIUS, "cyclone: cap-sized pool was rescaled to " .. pool.radius)
+end
+
+if begin_room() then
+  -- 9. Bigger-but-slower fire pool: grows from 78, decays back to 78.
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", "bigger_slower", "earth", "fire")); cast1()
+  local pool = self.puddles[1]
+  sf(near(pool.radius, 78, 0.01), "cyclone: bigger_slower pool is not 78 (" .. tostring(pool.radius) .. ")")
+  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  force_wind_gone(self)
+  frames(90)
+  sf(pool.cyclone == nil, "cyclone: grew but never returned to 78")
+  sf(near(pool.radius, 78, 0.001), "cyclone: bigger_slower pool did not decay back to 78 (" .. tostring(pool.radius) .. ")")
+end
+
+if begin_room() then
+  -- 10. Banner on start; no banner while only extending.
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "earth", "fire")); cast1()
+  local pool = self.puddles[1]
+  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  frames(15)
+  sf(self.toast_text == "FIRE CYCLONE" and (self.toast_t or 0) > 0,
+     "cyclone: no readable banner on start")
+  local until1 = pool.cyclone and pool.cyclone.until_time
+  self.toast_text, self.toast_t = nil, 0
+  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  frames(15)
+  sf(pool.cyclone and pool.cyclone.until_time > until1, "cyclone: second wind did not extend")
+  sf((self.toast_t or 0) == 0, "cyclone: second wind re-showed the banner")
+end
+
+if begin_room() then
+  -- 11. vis and ring scale track the radius while cyclonic and return to base exactly.
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "earth", "fire")); cast1()
+  local pool = self.puddles[1]
+  local base_r = pool.radius
+  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  frames(5)
+  local sc = pool.radius / 64 * 2
+  sf(live[pool.vis] and live[pool.vis].scale and near(live[pool.vis].scale.x, sc * 0.85, 0.001),
+     "cyclone: vis scale does not track the radius (" .. tostring(live[pool.vis] and live[pool.vis].scale and live[pool.vis].scale.x) .. ")")
+  sf(live[pool.ring] and live[pool.ring].scale and near(live[pool.ring].scale.x, sc, 0.001),
+     "cyclone: ring scale does not track the radius (" .. tostring(live[pool.ring] and live[pool.ring].scale and live[pool.ring].scale.x) .. ")")
+  force_wind_gone(self)
+  frames(90)
+  local sbc = base_r / 64 * 2
+  local lvm = live[pool.vis]
+  local lrg = live[pool.ring]
+  sf(lvm ~= nil and lrg ~= nil,
+     "cyclone: pool visual(s) missing after decay (vis=" .. tostring(pool.vis) .. " ring=" .. tostring(pool.ring) .. ")")
+  sf(lvm and lvm.scale and near(lvm.scale.x, sbc * 0.85, 0.001),
+     "cyclone: vis scale did not return to base (" .. tostring(lvm and lvm.scale and lvm.scale.x) .. ")")
+  sf(lrg and lrg.scale and near(lrg.scale.x, sbc, 0.001),
+     "cyclone: ring scale did not return to base (" .. tostring(lrg and lrg.scale and lrg.scale.x) .. ")")
+end
+
+if begin_room() then
+  -- 12a. A bolt that misses at base radius is not infused through any growth.
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y + 80                -- pool 80 px off the bolt flight line
+  equip(mk("puddle", nil, "earth", "fire")); cast1()
+  local pool = self.puddles[1]
+  sf(pool ~= nil and pool.radius == 60, "cyclone: magma pool misplaced")
+  local e = self.enemies[1]
+  if e then
+    calm_enemy(e)
+    place_target(e, 150)                                    -- bolt flies east, 80 px shy of the pool
+    self.aim.x, self.aim.y = p.x + 150, p.y
+    equip(mk("projectile", nil, "fire", "fire")); cast1()
+    frames(80)
+    sf(not (e.statuses and e.statuses.slow), "cyclone: bolt infused at base radius (should stay uninfused)")
+  end
+end
+
+if begin_room() then
+  -- 12b. The grown cyclone infuses the same bolt that missed at base.
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y + 80
+  equip(mk("puddle", nil, "earth", "fire")); cast1()          -- Magma pool at (60, 80)
+  sf(self.puddles[1] ~= nil, "cyclone: magma pool not placed")
+  equip(mk("puddle", nil, "wind", "wind")); cast1()          -- Gale over it
+  frames(120)                                                -- grow toward the cap
+  local e = self.enemies[1]
+  if e then
+    calm_enemy(e)
+    place_target(e, 150)                                    -- same bolt line as 12a
+    self.aim.x, self.aim.y = p.x + 150, p.y
+    equip(mk("projectile", nil, "fire", "fire")); cast1()
+    frames(80)
+    sf(e.statuses and e.statuses.slow ~= nil,
+       "cyclone: bolt through the grown cyclone was not infused")
+  end
+  local hint = self.puddles[1]
+  force_wind_gone(self)
+  frames(90)
+  sf(hint == nil or hint.cyclone == nil, "cyclone: grew but did not decay back to nil record")
+end
+
+if begin_room() then
+  -- 12c. A bolt that is not infused after the cyclone has decayed.
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y + 80
+  equip(mk("puddle", nil, "earth", "fire")); cast1()          -- Magma pool
+  equip(mk("puddle", nil, "wind", "wind")); cast1()          -- Gale over it
+  frames(120)                                                -- grown
+  force_wind_gone(self)
+  frames(90)                                                 -- decay back
+  local e = self.enemies[1]
+  if e then
+    calm_enemy(e)
+    place_target(e, 150)
+    self.aim.x, self.aim.y = p.x + 150, p.y
+    equip(mk("projectile", nil, "fire", "fire")); cast1()
+    frames(80)
+    sf(not (e.statuses and e.statuses.slow), "cyclone: bolt infused after the cyclone decayed")
+  end
+end
+
+if begin_room() then
+  -- 13. New wind during decay resumes the vortex; no second banner.
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "earth", "fire")); cast1()
+  local pool = self.puddles[1]
+  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  frames(130)                                                -- grow to (cap)
+  force_wind_gone(self)
+  frames(30)                                                 -- decay begins
+  local mid = pool.radius
+  sf(mid < data.INTERACT.CYCLONE_MAX_RADIUS and mid > 60, "decay resume: pool not mid-decay (" .. tostring(mid) .. ")")
+  sf((self.toast_t or 0) == 0, "decay resume: banner lingered into decay")
+  equip(mk("puddle", nil, "wind", "wind")); cast1()            -- fresh wind mid-decay
+  frames(10)
+  sf(pool.radius > mid, "decay resume: fresh wind did not resume growth (" .. tostring(pool.radius) .. " vs " .. tostring(mid) .. ")")
+  sf((self.toast_t or 0) == 0, "decay resume: re-extended, banner re-shown")
+end
+
+if begin_room() then
+  -- 16. No pool is spawned while a cyclone grows: absolute count stays constant.
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "earth", "fire")); cast1()      -- Magma
+  equip(mk("puddle", nil, "wind", "wind")); cast1()       -- Gale over it
+  local n_before = #self.puddles
+  frames(130)                                             -- cap it out, checking no extra pools
+  sf(#self.puddles == n_before, "cyclone: pool count changed during growth (" .. #self.puddles .. " vs " .. n_before .. ")")
+end
+
+if begin_room() then
+  -- 17. Burning Mud counts as fire for the ticker path as well as the bolt path.
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "earth", "water")); cast1()      -- Mud pool
+  equip(mk("puddle", nil, "fire", "fire")); cast1()        -- Inferno pool over it
+  frames(15)
+  local mud = self.puddles[1]
+  sf(mud and mud.burning_mud == true, "ticker: mud was never ignited")
+  for _, pd in ipairs(self.puddles) do if pd ~= mud then pd.duration = 0.05 end end   -- let the fire pool die (bolt path only tests the bolt)
+  frames(3)
+  equip(mk("puddle", nil, "wind", "wind")); cast1()        -- Gale pool over the burning mud (ticker route)
+  frames(60)                                              -- several interaction ticks
+  sf(mud and mud.cyclone ~= nil, "ticker: Burning Mud did not cyclone via the ticker path")
+  sf(mud and mud.radius > 60, "ticker: Burning Mud pool did not grow via the ticker path (" .. tostring(mud and mud.radius) .. ")")
+end
+
+if begin_room() then
+  -- 18. reset: no cyclone records survive, and live objects return to exactly the pristine baseline.
+  local function clean_reset()
+    self.state = "DEAD"; ui({ action = "continue" })
+    frames(30)
+    return count()
+  end
+  local pristine = clean_reset()                            -- like-for-like: reset without casting
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "earth", "fire")); cast1()
+  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  frames(5)
+  local after = clean_reset()
+  sf(#self.puddles == 0, "cyclone reset: pools survived a room reset")
+  sf(#self.puddles == 0 and #self.spell_areas == 0, "cyclone reset: spell areas survived a room reset")
+  sf(after == pristine, "cyclone reset: live objects drifted (" .. after .. " vs " .. pristine .. ")")
+end
+
+if begin_room() then
+  -- 14. Room reset and run reset leave no cyclone behind; the count returns to baseline.
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "earth", "fire")); cast1()
+  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  frames(5)
+  local errs_before = #errors
+  self.state = "DEAD"; ui({ action = "continue" })
+  sf(#self.puddles == 0, "cyclone reset: pools survived a room reset")
+  frames(30)
+  sf(#errors == errs_before, "cyclone reset: error after the reset")
+end
+
+-- 15. Fixed-seed comparison: the cyclone path consumes no gameplay RNG.
+do
+  local PURITY_SEED = 0xC0FFEE
+  local real_random = math.random
+  local seq_a = {}
+  local function record()
+    math.random = function(...)
+      local v = real_random(...)
+      seq_a[#seq_a + 1] = v
+      return v
+    end
+  end
+  local function seq_str(t)
+    local parts = {}
+    for _, v in ipairs(t) do parts[#parts + 1] = string.format("%.10g", v) end
+    return table.concat(parts, ",")
+  end
+  local got_a, got_b
+  record()
+  if begin_room(PURITY_SEED) then
+    for _, en in ipairs(self.enemies) do en.active = false end
+    self.motes = {}                                 -- mask mote recycle RNG (cosmetic-only, unrelated)
+    local p = self.player_pos
+    self.aim.x, self.aim.y = p.x + 60, p.y
+    equip(mk("puddle", nil, "earth", "fire")); cast1()
+    local pool = self.puddles[1]
+    if pool then pool.color = nil end
+    frames(40)
+  end
+  got_a = seq_a
+  seq_a = {}
+  record()
+  if begin_room(PURITY_SEED) then
+    for _, en in ipairs(self.enemies) do en.active = false end
+    self.motes = {}                                 -- mask mote recycle RNG (cosmetic-only, unrelated)
+    local p = self.player_pos
+    self.aim.x, self.aim.y = p.x + 60, p.y
+    equip(mk("puddle", nil, "earth", "fire")); cast1()
+    local pool = self.puddles[1]
+    if pool then pool.color = nil end
+    equip(mk("puddle", nil, "wind", "wind")); cast1()
+    for _, pp in ipairs(self.puddles) do pp.color = nil end
+    frames(40)
+  end
+  got_b = seq_a
+  math.random = real_random
+  sf(#got_a > 0, "rng: room consumed no RNG at all (comparison is vacuous)")
+  sf(seq_str(got_a) == seq_str(got_b), "rng: the cyclone path consumed gameplay RNG")
+end
+
+-- C. Steam + Dust -> one Dense Cloud that blinds and confuses, then cleans up.
+-- C. Steam + Dust -> one Dense Cloud that blinds and confuses, then cleans up.
+if begin_room() then
+  equip(mk("puddle", nil, "fire", "water")); cast1()
+  equip(mk("puddle", nil, "earth", "wind")); cast1()
+  frames(15)
+  sf(#self.clouds == 1, "dense cloud: clouds=" .. #self.clouds)
+  sf(self.toast_text == "DENSE CLOUD" and (self.toast_t or 0) > 0,
+     "dense cloud: no readable banner")
+  local cloud = self.clouds[1]
+  if cloud then
+    local vis = cloud.vis
+    local e = self.enemies[1]
+    sf(e ~= nil, "dense cloud: no enemy to test on")
+    if e then
+      e.x, e.y = cloud.x, cloud.y
+      e.alive, e.active = true, true
+      e.hp, e.immortal = 999, true
+      e.statuses = {}
+      frames(35)
+      sf(status_mod.has(e, "blind"), "dense cloud: no blind")
+      sf(status_mod.has(e, "confuse"), "dense cloud: no confuse")
+    end
+    frames(150)
+    sf(#self.clouds == 0, "dense cloud: not cleaned up after its lifetime")
+    sf(vis == nil or live[vis] == nil, "dense cloud: visual leaked")
+  end
+end
+-- Interactions near a wall must never place a pool inside it.
+if begin_room() then
+  local fx, fy, wx, wy
+  local dirs = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }
+  for r = 1, level_mod.ROWS do
+    for c = 1, level_mod.COLS do
+      if not level_mod.SOLID[self.level.grid[r][c]] then
+        for _, d in ipairs(dirs) do
+          local nc, nr = c + d[1], r + d[2]
+          if nc >= 1 and nc <= level_mod.COLS and nr >= 1 and nr <= level_mod.ROWS
+             and level_mod.SOLID[self.level.grid[nr][nc]] then
+            fx, fy = level_mod.cell_center(c, r)
+            wx, wy = level_mod.cell_center(nc, nr)
+            break
+          end
+        end
+      end
+      if fx then break end
+    end
+    if fx then break end
+  end
+  sf(fx ~= nil, "boundary: no wall-adjacent floor cell")
+  if fx then
+    self.player_pos.x, self.player_pos.y = fx, fy
+    self.aim.x, self.aim.y = wx, wy
+    equip(mk("puddle", nil, "earth", "water")); cast1()
+    equip(mk("puddle", nil, "fire", "fire")); cast1()
+    equip(mk("puddle", nil, "wind", "wind")); cast1()
+    frames(20)
+    local inside = 0
+    for _, p in ipairs(self.puddles) do
+      if level_mod.is_solid(self.level, p.x, p.y) then inside = inside + 1 end
+    end
+    sf(inside == 0, "boundary: " .. inside .. " pool(s) placed inside a wall")
+    sf(#self.spell_areas <= data.INTERACT.MAX_SPELL_AREAS, "boundary: too many spell areas")
+    sf(#self.clouds <= data.INTERACT.MAX_CLOUDS, "boundary: too many clouds")
+  end
+end
+-- Unbounded creation: 60 casts and many interaction pairs stay capped.
+if begin_room() then
+  local sk = mk("puddle", nil)
+  for _ = 1, 60 do equip(sk); cast1() end
+  sf(#self.spell_areas <= data.INTERACT.MAX_SPELL_AREAS,
+     "area cap: " .. #self.spell_areas .. " > " .. data.INTERACT.MAX_SPELL_AREAS)
+  for _ = 1, 10 do
+    equip(mk("puddle", nil, "fire", "water")); cast1()
+    equip(mk("puddle", nil, "earth", "wind")); cast1()
+  end
+  frames(20)
+  sf(#self.clouds <= data.INTERACT.MAX_CLOUDS,
+     "cloud cap: " .. #self.clouds .. " > " .. data.INTERACT.MAX_CLOUDS)
+end
+
+-- ===== Phase C: COMBO_DATA and the Combos screen ===========================
+local combos_mod = require "src.core.combos"
+
+if begin_room() then
+  -- C1. COMBO_DATA: exactly four entries; names unique and upper-case.
+  sf(#data.COMBO_DATA == 4, "combos: expected 4 COMBO_DATA entries (got " .. #data.COMBO_DATA .. ")")
+  local seen = {}
+  for _, c in ipairs(data.COMBO_DATA) do
+    sf(type(c.name) == "string" and c.name == string.upper(c.name),
+       "combos: name not upper-case (" .. tostring(c.name) .. ")")
+    sf(not seen[c.name], "combos: duplicate name " .. c.name)
+    seen[c.name] = true
+    sf(type(c.description) == "string" and #c.description > 0,
+       "combos: empty description for " .. c.name)
+  end
+end
+if begin_room() then
+  -- C2. The panel body marks every combo name (from the shared builder the HUD uses).
+  local body = combos_mod.panel_text()
+  for _, c in ipairs(data.COMBO_DATA) do
+    sf(body:find(c.name, 1, true) ~= nil, "combos: panel missing " .. c.name)
+  end
+end
+if begin_room() then
+  -- C3. FIRE CYCLONE banner reads from COMBO_DATA.
+  for _, en in ipairs(self.enemies) do en.active = false end
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "earth", "fire")); cast1()
+  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  frames(15)
+  sf(self.toast_text == data.COMBO_DATA[1].name, "combos: fire cyclone banner=" .. tostring(self.toast_text))
+end
+if begin_room() then
+  -- C4. BURNING MUD banner reads from COMBO_DATA.
+  equip(mk("puddle", nil, "earth", "water")); cast1()
+  equip(mk("puddle", nil, "fire", "fire")); cast1()
+  frames(25)
+  sf(self.toast_text == data.COMBO_DATA[2].name, "combos: burning mud banner=" .. tostring(self.toast_text))
+end
+if begin_room() then
+  -- C5. DENSE CLOUD banner reads from COMBO_DATA.
+  for _, en in ipairs(self.enemies) do en.active = false end
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "fire", "water")); cast1()
+  equip(mk("puddle", nil, "earth", "wind")); cast1()
+  frames(15)
+  sf(self.toast_text == data.COMBO_DATA[3].name, "combos: dense cloud banner=" .. tostring(self.toast_text))
+end
+if begin_room() then
+  -- C6. combos from TITLE enters COMBOS.
+  self.state = "TITLE"
+  ui({ action = "combos" })
+  sf(self.state == "COMBOS", "combos: action from TITLE did not enter COMBOS (state=" .. tostring(self.state) .. ")")
+end
+if begin_room() then
+  -- C7. back returns to TITLE.
+  self.state = "TITLE"
+  ui({ action = "combos" })
+  ui({ action = "back" })
+  sf(self.state == "TITLE", "combos: back did not return to TITLE (state=" .. tostring(self.state) .. ")")
+end
+if begin_room() then
+  -- C8a. combos ignored in ROOM.
+  equip(mk("puddle", nil, "fire", "fire")); cast1()
+  self.state = "ROOM"
+  ui({ action = "combos" })
+  sf(self.state == "ROOM", "combos: action leaked into ROOM (state=" .. tostring(self.state) .. ")")
+end
+if begin_room() then
+  -- C8b. combos ignored in DEAD.
+  self.state = "DEAD"
+  ui({ action = "combos" })
+  sf(self.state == "DEAD", "combos: action leaked into DEAD (state=" .. tostring(self.state) .. ")")
+end
+if begin_room() then
+  -- C8c. combos ignored in WIN.
+  self.state = "WIN"
+  ui({ action = "combos" })
+  sf(self.state == "WIN", "combos: action leaked into WIN (state=" .. tostring(self.state) .. ")")
+end
+if begin_room() then
+  -- C9. CREDITS still opens from TITLE and back returns to TITLE.
+  self.state = "TITLE"
+  ui({ action = "credits" })
+  sf(self.state == "CREDITS", "credits: action from TITLE did not open CREDITS (state=" .. tostring(self.state) .. ")")
+  ui({ action = "back" })
+  sf(self.state == "TITLE", "credits: back did not return to TITLE (state=" .. tostring(self.state) .. ")")
+end
 
 for i=1,300 do frame() end
 -- flush leftover timers

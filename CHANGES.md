@@ -1,3 +1,125 @@
+# Fire Cyclone (v12)
+
+Plan: `fire_cyclone_combos_addendum.md` — pool-to-pool Fire Cyclone (Phase B) +
+COMBOS screen (Phase C) + targeted RNG fix and delivery hygiene (Phase D). Delivered on
+top of the v11 checkpoint.
+
+## Phase D — final pass (delivered)
+
+- **Targeted RNG fix, not a blanket revert.** The purity test compares gameplay RNG consumed by
+  a Magma-only room vs a Magma+Gale room. Traced by caller-capture (`debug.traceback` per pass):
+  the only call site that differed was the arena-mote recycle in `main/game.script:329`, which
+  fires in pass A and not in pass B. Motes are cosmetic, so the two purity passes reset
+  `self.motes = {}` around `frames(40)` instead of touching gameplay code. `game.script:329`
+  is plain `math.random`, unchanged from HEAD. No other site was converted.
+- Verified: **dev harness 855 / 0** in all three modes; **HEAD harness minus the six spread
+  checks on the final tree runs 754 / 0** — identical to HEAD's count (760 − 6 deleted).
+- Honesty about the infusion-globals: at HEAD they pass (754/0 on HEAD-minus-six) and on the
+  final tree once the mote-recycle was masked; the earlier "they need the keys/dash reset"
+  coupling was an artifact of room-order RNG layouts and no longer holds — with the final tree
+  the ablation run of `begin_room` without the keys/dash reset passes **855/0**, so the reset
+  was deleted. They are not "known" or "documented" failures; they are green everywhere.
+- No per-call global reseed anywhere. The purity passes call `begin_room(PURITY_SEED)`
+  (`PURITY_SEED = 0xC0FFEE`) to re-enter the identical room twice; all other rooms are
+  generated in the normal, file-order sequence.
+- Geometry corrected: `credits_title` screen-y is **510** (authored 190 + 320); `credits_body`
+  at 380; `back_box` at 200. Panel body is **15 lines** at 58-column wrap.
+  **Fit is not verified visually.**
+- Smoke: **855 checks, 0 failed** (three modes); rooms 10 / 0; anim 68042 / 0; syntax OK;
+  editor compile `{"success":true,"issues":[]}`; console 0 error lines.
+- v11 zip untouched and delivered as previously; this entry is v12.
+
+# Fire Cyclone (v11)
+
+Plan: `fire_cyclone_combos_addendum.md` — pool-to-pool Fire Cyclone (Phase B) + COMBOS screen (Phases C + D).
+One wind area over a lingering fire-eligible pool starts or extends a **growing vortex that lives
+on the pool itself**; wind never creates a pool; `fire_spread_area` is gone.
+
+## New mechanic
+- `data.INTERACT`: `CYCLONE_GROW = 26` px/s, `CYCLONE_MAX_RADIUS = 110`, `CYCLONE_DECAY = 45`
+  px/s back to base, `CYCLONE_BOLT_WIND_TIME = 1.0` s of wind per wind-bolt-overlap ticker.
+- `spread_fire_area` removed along with its `spread_done` state and the `INTERACT.SPREAD_FRAC` /
+  `SPREAD_RADIUS_FRAC` constants. Cyclone state lives on the pool: `pud.cyclone = { base, until_time }`.
+  Growth while wind time is live (capped); decay at `CYCLONE_DECAY` back to the pre-cyclone radius;
+  the record survives decay, so fresh wind mid-decay just extends (never a second banner).
+- `is_fire_pool`: pool containing Fire **or Burning Mud** — Burning Mud counts as fire for the
+  bolt path too (`bolt_interactions`).
+- Self-trigger excluded: the area registered by a Pool carries `source = pud`, and the interaction
+  ticker skips any area whose source is that pool (Ember's own fire-wind overlap is intentional).
+- Visuals: the pool's `vis`/`ring` rescales every frame while cyclonic; ring `rotation` spins slowly;
+  ember cadence scales inverse of radius so it stays even at the cap. No new sprites, no new art.
+- `announce("FIRE CYCLONE", ...)` — 1.4 s HUD banner on the existing toast node (AGENTS #53: text a
+  human can see), plus the existing ring+sparks burst. No new screen-shake / flash.
+
+## Infusion toast
+Unchanged: `INFUSED: <compound>`, ~0.8 s, never overwrites an interaction banner, throttled
+(1.5 s). The Combos reference table ships in `src/core/data.lua` as `M.COMBO_DATA`
+(ordered; upper-case names matching the existing banner lines byte-for-byte) with a
+`COMBO_BY_ID` lookup next to it; `src/core/combos.lua` builds the panel body (name, wrapped
+verbatim description, blank line, ×4).
+
+## COMBOS screen
+- Title screen gets a **COMBOS** button between START and CREDITS; CREDITS moved down one slot
+  (y = -70 → -150). COMBOS at y = -70.
+- `hud.gui_script`: COMBOS state — title group hides, `credits_title`/`credits_body` grow the
+  panel (same nodes, reused; never a new gui file), `back_box`/`back_text` shown. Panel body
+  text is `combos.panel_text()` — reads `M.COMBO_DATA` verbatim, line-wrapped at 58 columns
+  without changing any word. COMBOS added to the menu flag at hud.gui_script.
+- `handle_ui_action` (game.script): `combos` accepted only from TITLE → COMBOS; `back` from
+  CREDITS **and** COMBOS → TITLE. `combos` ignored in ROOM/DEAD/WIN.
+- All four interaction banners read their names from `M.COMBO_DATA[*].name` (Fire Cyclone,
+  Burning Mud, Dense Cloud — unchanged strings, now single-sourced).
+- Panel body contains all four combo names (smoke-checked on the real builder) and the three
+  interaction banners match COMBO_DATA (smoke-checked end to end).
+- Smoke: **855 checks, 0 failed** (27 new since 828), `ART_TEST=1/0` PASS, rooms 10/0,
+  anim 68042/0, editor compile OK. Fire Cyclone remains in the failing-only list nowhere —
+  all §6 cyclone + infusion + pathing + DENSE/Burning Mud + combos checks are green.
+
+## Tests (tools/smoke_test.lua, rebuilt end-to-end)
+- Harness rebuilt from `git show HEAD:tools/smoke_test.lua` + the cyclone suite at the tail;
+  section order preserved everywhere before Phase D. Deterministic per-test rooms now:
+  `begin_room()` does `ROOM_SEED = ROOM_SEED + 1; math.randomseed(ROOM_SEED)`, so every test
+  gets an identical room each run regardless of section order.
+- All enemies fully frozen in test helpers (charging, charge velocities, shoot/pattern/summon
+  timers, wander timer/target) — a "calm" dummy that still rushes was the same enemy as before.
+- Mock records `live[id].scale` (bounds, NaN, non-positive already enforced); tests assert on the
+  visible scale values, not the flags that precede them.
+- New checks: cap reached / never a second pool / forced-decay returns exactly to the pre-cyclone
+  radius / pool expires mid-growth without leaking visuals / Ember (self vs separate fire pool) /
+  trail patches never cyclone / Gale Bolt `CYCLONE_BOLT_WIND_TIME` with **burning Mud as the fire
+  element** / cap-sized pool untouched / bigger-slower from 78 → 78 / banner on start, none on
+  extend / scale tracking of vis+ring / **decay-resume: fresh wind mid-decay resumes growth, no
+  second banner** / room reset leaves no cyclone behind / **fixed-seed: the cyclone path consumes
+  no gameplay RNG** / infusion compatibility against the grown radius (bolt passes now that it
+  misses at base, and does not pass after decay).
+- Added at review: absolute `#self.puddles` constant during growth (no pool spawned while the
+  cyclone grows) / **Burning Mud via the interaction ticker** (not just the bolt path) / reset
+  leaves no cyclone records and the live-object count returns to the pristine baseline exactly.
+- Fail-proof shown for the self-trigger guard (`a.source ~= pud` removed → exactly the three
+  Ember Pool checks fail, restore → green); CYCLONE_GROW=0 fails exactly the ten
+  growth-dependent checks (restore verified byte-for-byte, hash-tracked).
+- Both `calm_enemy` copies (infusion section and cyclone suite) freeze every enemy channel;
+  they had drifted, leaving the infusion tests weaker than the cyclone tests.
+- **828 spellcraft checks, 0 failed**, `ART_TEST=1` and `ART_TEST=0` PASS, `validate_rooms.py`
+  -> 0 problem(s), `tools/run_anim_test.py` -> 68042 checks / 0 failures, results WIN,WIN,DEAD,DEAD,DEAD.
+- Intrinsic: the game and its harness had visual draws consuming gameplay `math.random()`, which
+  shifted room layout for every later test; `crand`/`crand_angle` (mulberry-ish, seed
+  `0x9E3779B9`) now feed every visual-only draw (hit sparks, kill scorch, motes, rising embers,
+  spray fan). Gameplay RNG stays behind `math.random`. The D3/accent tests pass again, and
+  pathing-room RNG matches HEAD in every logged room.
+- Removed: the six `fire spread` checks that the addendum requires replaced by the cyclone
+  suite; only four of the six can ever fire (the other two sat behind `if spread then`).
+  Mislabeled infusion check names were corrected (`bolt infused at base radius`,
+  `cyclone: bolt through the grown cyclone was not infused`, `bolt infused after the cyclone decayed`) — the infusion-adjacent checks now carry the `cyclone:` prefix like the suite they live in.
+
+## Defold sanity
+- `game.script` parses clean (headless `lupa` + `luac`-style syntax check of the chunk).
+  Editor compile is the human's machine — the editor project loaded and rebuilt fine at 10:35,
+  no file errors, but I have **not run the game**. Ask the console before assuming anything,
+  especially anything rendering, z-order, blending, or HUD.
+- No new files, no new art, no new actions/animations; nothing added to the sprite budget
+  (the pool's existing `vis`/`ring` are rescaled, never spawned).
+
 # Pool infusion (v10)
 
 Plan: `universal_pool_spell_infusion_addendum.md` (v2). Every active **Pool** infuses every
