@@ -922,15 +922,17 @@ if begin_room() then
     self.aim.x, self.aim.y = mx, my
     equip(mk("puddle", nil, "earth", "water")); cast1()     -- Mud: root
     self.aim.x, self.aim.y = e.x, e.y
-    equip(mk("projectile", nil, "fire", "fire")); cast1()    -- Inferno Bolt: burn
+    local sk1 = mk("projectile", nil, "fire", "fire")
+    equip(sk1); cast1()                                     -- Inferno Bolt: burn
     local hp0 = 999
+    local exp1 = sk1 and sk1.power * 1.25 or 14
     frames(30)
     sf(e.statuses and e.statuses.burn ~= nil, "infusion mud: native burn missing")
     sf(e.statuses and e.statuses.root ~= nil, "infusion mud: pool root missing")
     local keys = 0 for _ in pairs(e.statuses or {}) do keys = keys + 1 end
     sf(keys == 2, "infusion mud: status keys=" .. keys .. " (expected 2)")
-    sf(near(hp0 - e.hp, 14 * 1.25, 0.001),
-       "infusion mud: damage " .. (hp0 - e.hp) .. " (expected 17.5)")
+    sf(near(hp0 - e.hp, exp1, 0.001),
+       "infusion mud: damage " .. (hp0 - e.hp) .. " (expected " .. tostring(exp1) .. ")")
   end
 end
 if begin_room() then
@@ -944,12 +946,14 @@ if begin_room() then
     e.statuses = {}
     place_target(e, 200)
     self.aim.x, self.aim.y = e.x, e.y
-    equip(mk("projectile", nil, "fire", "fire")); cast1()
+    local sk2 = mk("projectile", nil, "fire", "fire")
+    equip(sk2); cast1()
     local hp0 = 999
+    local exp2 = sk2.power
     frames(30)
     local keys = 0 for _ in pairs(e.statuses or {}) do keys = keys + 1 end
     sf(keys == 1 and e.statuses.burn ~= nil, "infusion control: unexpected statuses")
-    sf(near(hp0 - e.hp, 14, 0.001), "infusion control: damage " .. (hp0 - e.hp) .. " (expected 14)")
+    sf(near(hp0 - e.hp, exp2, 0.001), "infusion control: damage " .. (hp0 - e.hp) .. " (expected " .. tostring(exp2) .. ")")
   end
 end
 if begin_room() then
@@ -964,12 +968,14 @@ if begin_room() then
                               self.player_pos.y + (e.y - self.player_pos.y) * 0.5
     equip(mk("puddle", nil, "fire", "fire")); cast1()        -- Inferno Pool
     self.aim.x, self.aim.y = e.x, e.y
-    equip(mk("projectile", nil, "fire", "fire")); cast1()
+    local sk3 = mk("projectile", nil, "fire", "fire")
+    equip(sk3); cast1()
     local hp0 = 999
+    local exp3 = sk3.power * 1.25
     frames(30)
     local keys = 0 for _ in pairs(e.statuses or {}) do keys = keys + 1 end
     sf(keys == 1, "infusion same-compound: keys=" .. keys .. " (burn should not double)")
-    sf(near(hp0 - e.hp, 17.5, 0.001), "infusion same-compound: damage " .. (hp0 - e.hp))
+    sf(near(hp0 - e.hp, exp3, 0.001), "infusion same-compound: damage " .. (hp0 - e.hp) .. " (expected " .. tostring(exp3) .. ")")
   end
 end
 if begin_room() then
@@ -986,15 +992,17 @@ if begin_room() then
     equip(mk("puddle", nil, "wind", "wind")); cast1()        -- Gale: push
     equip(mk("puddle", nil, "fire", "wind")); cast1()        -- Ember: burn+spread
     self.aim.x, self.aim.y = e.x, e.y
-    equip(mk("projectile", nil, "fire", "fire")); cast1()
+    local sk4 = mk("projectile", nil, "fire", "fire")
+    equip(sk4); cast1()
     local hp0 = 999
+    local exp4 = sk4.power * 1.25
     frames(30)
     for _, want in ipairs({ "burn", "root", "push", "spread" }) do
       sf(e.statuses and e.statuses[want] ~= nil, "infusion 3 pools: missing " .. want)
     end
     local keys = 0 for _ in pairs(e.statuses or {}) do keys = keys + 1 end
     sf(keys == 4, "infusion 3 pools: keys=" .. keys .. " (duplicates must merge)")
-    sf(near(hp0 - e.hp, 14 * 1.25, 0.001),
+    sf(near(hp0 - e.hp, exp4, 0.001),
        "infusion 3 pools: damage " .. (hp0 - e.hp) .. " (multiplier must not stack)")
   end
 end
@@ -1115,12 +1123,14 @@ if begin_room() then
     e.statuses = {}
     place_target(e, 150)
     self.aim.x, self.aim.y = e.x, e.y
-    equip(mk("projectile", "leaves_trail", "fire", "fire")); cast1()
+    local sk5 = mk("projectile", "leaves_trail", "fire", "fire")
+    equip(sk5); cast1()
     local hp0 = 999
+    local exp5 = sk5.power
     frames(30)
     local tc = 0 for _, p2 in ipairs(self.puddles) do if p2.is_trail then tc = tc + 1 end end
     sf(tc >= 1, "infusion trail: quirk produced no trail patches")
-    sf(near(hp0 - e.hp, 14, 0.001), "infusion trail: damage " .. (hp0 - e.hp) .. " (own trail must not infuse)")
+    sf(near(hp0 - e.hp, exp5, 0.001), "infusion trail: damage " .. (hp0 - e.hp) .. " (own trail must not infuse)")
   end
 end
 -- ===== Phase B follow-up: real-path grace, mid-grace pool death, single accent ==
@@ -1136,11 +1146,13 @@ if begin_room() then
                               self.player_pos.y + (e.y - self.player_pos.y) * 0.3
     equip(mk("puddle", nil, "earth", "water")); cast1()
     self.aim.x, self.aim.y = e.x, e.y
-    equip(mk("projectile", nil, "fire", "fire")); cast1()
+    local sk6 = mk("projectile", nil, "fire", "fire")
+    equip(sk6); cast1()
     local hp0 = 999
+    local exp6 = sk6.power * 1.25
     frames(30)
     sf(e.statuses and e.statuses.root ~= nil, "grace boundary in: infused hit lost the pool's root")
-    sf(near(hp0 - e.hp, 17.5, 0.001), "grace boundary in: damage " .. (hp0 - e.hp) .. " (expected 17.5)")
+    sf(near(hp0 - e.hp, exp6, 0.001), "grace boundary in: damage " .. (hp0 - e.hp) .. " (expected " .. tostring(exp6) .. ")")
   end
 end
 -- 1b. After the grace: same setup, bolt slowed down right as it exits the pool, so the
@@ -1184,8 +1196,10 @@ if begin_room() then
       if e.hp < 999 then applied = e.hp break end
     end
     sf(applied ~= nil, "grace boundary out: bolt never hit the enemy after slowing")
-    sf(applied and near(999 - applied, 14, 0.001),
-       "grace boundary out: hit after the grace was infused (damage " .. (applied and (999 - applied) or "nil") .. ", expected 14)")
+    local sk7 = self.slot1
+    local exp7 = sk7.power
+    sf(applied and near(999 - applied, exp7, 0.001),
+       "grace boundary out: hit after the grace was infused (damage " .. (applied and (999 - applied) or "nil") .. ", expected " .. tostring(exp7) .. ")")
     sf(e.statuses ~= nil and e.statuses.root == nil,
        "grace boundary out: hit after the grace carried the pool's root")
     sf(e.statuses and e.statuses.burn ~= nil, "grace boundary out: native burn missing")
@@ -1235,12 +1249,13 @@ if begin_room() then
         end
         e.active = true
         local hp0 = e.hp
+        local exp8 = self.slot1.power * 1.25
         frames(12)
         sf(e.statuses and e.statuses.root ~= nil,
            "pool death: snapshot root missing (pool was already gone)")
         sf(e.statuses and e.statuses.burn ~= nil, "pool death: native burn missing")
-        sf(near(hp0 - e.hp, 17.5, 0.001),
-           "pool death: damage " .. (hp0 - e.hp) .. " (expected 17.5 from the snapshot)")
+        sf(near(hp0 - e.hp, exp8, 0.001),
+           "pool death: damage " .. (hp0 - e.hp) .. " (expected " .. tostring(exp8) .. " from the snapshot)")
       end
     end
     sf(#errors == errs_before, "pool death: error on the post-mortem hit")
@@ -1299,6 +1314,207 @@ if begin_room() then
     else
       sf(false, "infusion accent: bolt despawned before the grace test finished")
     end
+  end
+end
+-- ===== Phase C: universal Pool infusion — Spray (cone) and Nova (burst) =====
+local function place_at(e, angle_deg, dist)
+  local a = math.rad(angle_deg)
+  e.x = self.player_pos.x + math.cos(a) * dist
+  e.y = self.player_pos.y + math.sin(a) * dist
+  return e.x, e.y
+end
+local function calm_enemy(e)
+  e.alive, e.active, e.telegraph, e.immortal = true, true, 0, false
+  e.hp, e.speed, e.vx, e.vy = 999, 0, 0, 0
+  e.statuses = {}
+end
+if begin_room() then
+  -- S1: Pool overlapping the cone, caster OUTSIDE the pool -> infused.
+  local e = self.enemies[1]
+  if e then
+    calm_enemy(e)
+    place_at(e, 0, 70)
+    self.aim.x, self.aim.y = self.player_pos.x + 130, self.player_pos.y
+    equip(mk("puddle", nil, "earth", "water")); cast1()      -- Mud at 130 east
+    local pool = self.puddles[#self.puddles]
+    if pool then pool.radius = 40 end                        -- shrink: spans 90..170, ticks stop at 52 px
+    self.aim.x, self.aim.y = self.player_pos.x + 300, self.player_pos.y
+    local skc = mk("cone", nil, "fire", "fire")
+    equip(skc); cast1()
+    frames(30)
+    sf(e.statuses and e.statuses.root ~= nil, "spray s1: pool root missing (outside-pool overlap)")
+    sf(near(999 - e.hp, skc.power * 1.25, 0.001),
+       "spray s1: damage " .. (999 - e.hp) .. " (expected " .. tostring(skc.power * 1.25) .. ")")
+    sf(#self.cones == 0, "spray s1: cone did not clean up after resolution")
+  end
+end
+if begin_room() then
+  -- S2: Pool BEHIND the caster -> must NOT infuse.
+  local e = self.enemies[1]
+  if e then
+    calm_enemy(e)
+    place_at(e, 0, 70)
+    self.aim.x, self.aim.y = self.player_pos.x - 100, self.player_pos.y   -- pool WEST of the player
+    equip(mk("puddle", nil, "earth", "water")); cast1()
+    self.aim.x, self.aim.y = self.player_pos.x + 300, self.player_pos.y
+    local skc2 = mk("cone", nil, "fire", "fire")
+    equip(skc2); cast1()
+    frames(5)
+    sf(not (e.statuses and e.statuses.root), "spray s2: a pool behind the caster infused the cone")
+    sf(near(999 - e.hp, skc2.power, 0.001), "spray s2: damage " .. (999 - e.hp) .. " (expected " .. tostring(skc2.power) .. ")")
+  end
+end
+if begin_room() then
+  -- S3: Pool touching the caster (apex inside) -> infused.
+  local e = self.enemies[1]
+  if e then
+    calm_enemy(e)
+    place_at(e, 0, 80)
+    self.aim.x, self.aim.y = self.player_pos.x + 15, self.player_pos.y    -- pool at 15px; apex inside (d <= r)
+    equip(mk("puddle", nil, "earth", "water")); cast1()
+    local pool = self.puddles[#self.puddles]
+    if pool then pool.radius = 40 end                        -- e at 80: dist to pool 65 > 52 (no ticks); apex d=15 <= 40 still inside
+    self.aim.x, self.aim.y = self.player_pos.x + 300, self.player_pos.y
+    local skc3 = mk("cone", nil, "fire", "fire")
+    equip(skc3); cast1()
+    frames(5)
+    sf(e.statuses and e.statuses.root ~= nil, "spray s3: apex-inside pool did not infuse")
+    sf(near(999 - e.hp, skc3.power * 1.25, 0.001),
+       "spray s3: damage " .. (999 - e.hp) .. " (expected " .. tostring(skc3.power * 1.25) .. ")")
+  end
+end
+if begin_room() then
+  -- S4: split cast, two cones evaluated independently. Aim NORTH (open rows).
+  local e1 = self.enemies[1]                    -- +130 deg ray: only cone 2 (110 deg) covers it
+  local e2 = self.enemies[2]                    -- +50 deg ray: only cone 1 (70 deg) covers it
+  local e3 = self.enemies[3]                    -- dead centre: both cones cover it
+  local ok = true
+  for _, en in ipairs({ e1, e2, e3 }) do
+    if not en then ok = false break end
+    calm_enemy(en)
+  end
+  if ok then
+    place_at(e1, 130, 50)
+    place_at(e2, 50, 60)
+    place_at(e3, 90, 40)
+    for _, en in ipairs({ e1, e2, e3 }) do
+      if level_mod.blocked(self.level, en.x, en.y, en.radius) then
+        sf(false, "spray s4: enemy blocked at its angle"); ok = false break
+      end
+    end
+  end
+  if ok then
+    self.aim.x, self.aim.y = self.player_pos.x + math.cos(math.rad(130)) * 110,
+                               self.player_pos.y + math.sin(math.rad(130)) * 110
+    equip(mk("puddle", nil, "earth", "water")); cast1()      -- Mud at 130 deg, d=110
+    local pool = self.puddles[#self.puddles]
+    if pool then pool.radius = 30 end                        -- allow(cone1) = 35 + asin(30/110) = 50.8 < 60
+    self.aim.x, self.aim.y = self.player_pos.x, self.player_pos.y + 400   -- aim straight north
+    local skc4 = mk("cone", "split_in_two", "fire", "fire")
+    equip(skc4); cast1()
+    frames(5)
+    local cp = skc4.power * 0.6                              -- per-cone power after split
+    -- cone1 (70): diff to pool = 60 > 50.8 -> NOT infused; cone2 (110): diff = 20 -> infused
+    sf(e2.statuses and e2.statuses.root == nil,
+       "spray s4: cone1 absorbed a pool outside its sector (e_neg)")
+    sf(near(999 - e2.hp, cp, 0.001), "spray s4: e_neg damage " .. (999 - e2.hp) .. " (expected " .. tostring(cp) .. ")")
+    sf(e1.statuses and e1.statuses.root ~= nil, "spray s4: cone2 did not infuse its own sector (e_pos)")
+    sf(near(999 - e1.hp, cp * 1.25, 0.001), "spray s4: e_pos damage " .. (999 - e1.hp) .. " (expected " .. tostring(cp * 1.25) .. ")")
+    sf(e3.statuses and e3.statuses.root ~= nil, "spray s4: e_mid lost the pool root")
+    sf(near(999 - e3.hp, cp + cp * 1.25, 0.001),
+       "spray s4: e_mid damage " .. (999 - e3.hp) .. " (expected " .. tostring(cp + cp * 1.25) .. ")")
+  end
+end
+-- ===== Phase C: universal Pool infusion — Nova (burst) ===========================
+if begin_room() then
+  -- N1a: rim touching (dist == R + r) -> infused.
+  local e = self.enemies[1]
+  if e then
+    calm_enemy(e)
+    place_at(e, 180, 30)                                    -- WEST of the player; inside the burst
+    self.aim.x, self.aim.y = self.player_pos.x + 130, self.player_pos.y
+    equip(mk("puddle", nil, "earth", "water")); cast1()      -- d = 130 = 70 + 60 (boundary)
+    local skb1 = mk("burst", nil, "fire", "fire")
+    equip(skb1); cast1()
+    frames(30)
+    sf(e.statuses and e.statuses.root ~= nil, "nova n1a: rim-touching pool did not infuse")
+    sf(near(999 - e.hp, skb1.power * 1.25, 0.001),
+       "nova n1a: damage " .. (999 - e.hp) .. " (expected " .. tostring(skb1.power * 1.25) .. ")")
+    sf(#self.bursts == 0, "nova n1a: burst did not clean up after resolution")
+  end
+end
+if begin_room() then
+  -- N1b: one pixel of a gap (dist == R + r + 1) -> NOT infused.
+  local e = self.enemies[1]
+  if e then
+    calm_enemy(e)
+    place_at(e, 180, 30)
+    self.aim.x, self.aim.y = self.player_pos.x + 131, self.player_pos.y
+    equip(mk("puddle", nil, "earth", "water")); cast1()      -- d = 131
+    local skb2 = mk("burst", nil, "fire", "fire")
+    equip(skb2); cast1()
+    frames(5)
+    sf(not (e.statuses and e.statuses.root), "nova n1b: a 1 px gap infused the burst")
+    sf(near(999 - e.hp, skb2.power, 0.001), "nova n1b: damage " .. (999 - e.hp) .. " (expected " .. tostring(skb2.power) .. ")")
+  end
+end
+if begin_room() then
+  -- N2: split Nova, pool alive: main burst (R=70) infuses, delayed b2 (R=50.4) does not.
+  local e = self.enemies[1]
+  if e then
+    calm_enemy(e)
+    place_at(e, 180, 30)
+    self.aim.x, self.aim.y = self.player_pos.x + 120, self.player_pos.y   -- d = 120
+    equip(mk("puddle", nil, "earth", "water")); cast1()
+    local skb3 = mk("burst", "split_in_two", "fire", "fire")
+    equip(skb3); cast1()
+    frames(40)                                                             -- main resolves at cast, b2 at +0.3 s
+    local bp = skb3.power
+    sf(e.statuses and e.statuses.root ~= nil, "nova n2: snapshot root missing")
+    sf(near(999 - e.hp, bp * 1.25 + bp * 0.6, 0.001),
+       "nova n2: damage " .. (999 - e.hp) .. " (expected " .. tostring(bp * 1.25 + bp * 0.6) .. " = infused main (full power) + native split (0.6x))")
+    sf(#self.bursts == 0, "nova n2: split burst did not clean up")
+  end
+end
+if begin_room() then
+  -- N3: split Nova, pool at d=60: BOTH bursts infuse (R=70 and R=50.4 cover it).
+  local e = self.enemies[1]
+  if e then
+    calm_enemy(e)
+    place_at(e, 180, 30)
+    self.aim.x, self.aim.y = self.player_pos.x + 60, self.player_pos.y
+    equip(mk("puddle", nil, "earth", "water")); cast1()
+    local skb4 = mk("burst", "split_in_two", "fire", "fire")
+    equip(skb4); cast1()
+    frames(40)
+    local bp3 = skb4.power
+    sf(near(999 - e.hp, bp3 * 1.25 + bp3 * 0.6 * 1.25, 0.001),
+       "nova n3: damage " .. (999 - e.hp) .. " (expected " .. tostring(bp3 * 1.25 + bp3 * 0.6 * 1.25) .. " = both bursts infused)")
+    sf(e.statuses and e.statuses.root ~= nil, "nova n3: root missing")
+  end
+end
+if begin_room() then
+  -- N4: split Nova, pool killed before the delayed resolves: b1 infused, b2 is NOT.
+  local e = self.enemies[1]
+  if e then
+    calm_enemy(e)
+    place_at(e, 180, 30)
+    self.aim.x, self.aim.y = self.player_pos.x + 60, self.player_pos.y
+    equip(mk("puddle", nil, "earth", "water")); cast1()
+    local pool = self.puddles[#self.puddles]
+    local errs_before = #errors
+    local skb5 = mk("burst", "split_in_two", "fire", "fire")
+    equip(skb5); cast1()
+    local bp4 = skb5.power
+    if pool then pool.duration = 0.05 end        -- expires well before the +0.3 s split resolves
+    frames(40)
+    local pool_alive = false
+    for _, p2 in ipairs(self.puddles) do if p2 == pool then pool_alive = true end end
+    sf(not pool_alive, "nova n4: pool did not expire before the split resolved")
+    sf(near(999 - e.hp, bp4 * 1.25 + bp4 * 0.6, 0.001),
+       "nova n4: damage " .. (999 - e.hp) .. " (expected " .. tostring(bp4 * 1.25 + bp4 * 0.6) .. "; split must re-test live pools)")
+    sf(e.statuses and e.statuses.root ~= nil, "nova n4: main burst snapshot root missing")
+    sf(#errors == errs_before, "nova n4: an error occurred during the delayed split")
   end
 end
 -- Grace lifecycle (module contract, deterministic): entry stays live for exactly

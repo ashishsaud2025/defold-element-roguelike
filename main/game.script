@@ -1403,21 +1403,40 @@ local function bolt_interactions(self, p)
     end
 end
 
+-- Shared infusion accent: a small deterministic fan of glow sparks in the Pool colour.
+-- One burst, never per frame; deterministic geometry only (AGENTS #38, #52); existing art.
+local function infusion_accent(self, x, y, color)
+    local c = color or { r = 1, g = 1, b = 1 }
+    for k = 1, 6 do
+        local a = (k / 6) * math.pi * 2
+        spawn_particle(self, x, y, c.r, c.g, c.b, 0.9, 0.4, 0.35,
+            math.cos(a) * 55, math.sin(a) * 55, FX.glow, 0.05)
+    end
+end
+
+-- Resolve circle-vs-Pool infusion at one burst's own resolution moment (Nova).
+-- Reads the Pools as they are right now; the delayed split burst gets its own call.
+local function burst_infusion_at(self, x, y, burst_radius)
+    local record = nil
+    for _, pud in ipairs(self.puddles) do
+        if infusion_mod.eligible(pud)
+            and infusion_mod.circle_hits_pool(x, y, burst_radius, pud) then
+            record = infusion_mod.touch(record, pud, self.clock)
+        end
+    end
+    return infusion_mod.active(record, self.clock)
+end
+
 -- Infused-bolt visuals: while any live infusion entries exist, tint the head sprite and
 -- the glow toward the most recent live entry's Pool colour. Restore the base tint when
 -- no live entries remain. One accent ring burst when infusion STARTS (never per frame).
--- Deterministic geometry only (AGENTS #38, #52); no new art.
 local function bolt_infusion_visual(self, p, live)
     local newest = live and live[#live] or nil
     if newest then
         local c = newest.color or { r = 1, g = 1, b = 1 }
         if not p.infused_visual then
             p.infused_visual = true
-            for k = 1, 6 do
-                local a = (k / 6) * math.pi * 2
-                spawn_particle(self, p.x, p.y, c.r, c.g, c.b, 0.9, 0.4, 0.35,
-                    math.cos(a) * 55, math.sin(a) * 55, FX.glow, 0.05)
-            end
+            infusion_accent(self, p.x, p.y, c)
         end
         local base = p.base_tint or { r = 1, g = 1, b = 1 }
         go.set(msg.url(nil, p.id, "sprite"), "tint",
@@ -2474,9 +2493,23 @@ do_cast = function(self, slot_num, is_repeat, ctx)
         for _, cn in ipairs(cones) do
             local c = combat_mod.new_cone(sx, sy, cn.angle, range, 70, cn.power, statuses)
             c.duration = 0.3 / speed_mul       -- "slower": the activation lingers longer
+            -- Pool infusion, resolved once at cast (each cone of a split cast evaluated
+            -- independently): sector vs Pool circle. A Pool behind the caster never infuses.
+            local record = nil
+            for _, pud in ipairs(self.puddles) do
+                if infusion_mod.eligible(pud)
+                    and infusion_mod.sector_hits_pool(sx, sy, cn.angle,
+                        math.rad(c.arc_degrees / 2), range, pud) then
+                    record = infusion_mod.touch(record, pud, self.clock)
+                end
+            end
+            local infuse_live = infusion_mod.active(record, self.clock)
+            if infuse_live and #infuse_live > 0 then
+                infusion_accent(self, sx, sy, infuse_live[#infuse_live].color)
+            end
             local hits = combat_mod.cone_hits(c, self.enemies)
             for _, h in ipairs(hits) do
-                local died = apply_hit(self, h.enemy, h.damage, h.statuses, sx, sy)
+                local died = apply_hit(self, h.enemy, h.damage, h.statuses, sx, sy, infuse_live)
                 fx_hit(self, h.enemy.x, h.enemy.y, sc, nil, skill)
                 if died then h.enemy.alive = false; print("Enemy died")
                 else print("Enemy HP: " .. h.enemy.hp) end
@@ -2517,9 +2550,14 @@ do_cast = function(self, slot_num, is_repeat, ctx)
 
     elseif shape_key == "burst" then
         local b = combat_mod.new_burst(sx, sy, radius, power, statuses)
+        -- Pool infusion at this burst's own resolution moment: circle vs circle.
+        local infuse_live = burst_infusion_at(self, sx, sy, b.radius)
+        if infuse_live and #infuse_live > 0 then
+            infusion_accent(self, sx, sy, infuse_live[#infuse_live].color)
+        end
         local hits = combat_mod.burst_hits(b, self.enemies)
         for _, h in ipairs(hits) do
-            local died = apply_hit(self, h.enemy, h.damage, h.statuses, sx, sy)
+            local died = apply_hit(self, h.enemy, h.damage, h.statuses, sx, sy, infuse_live)
             fx_hit(self, h.enemy.x, h.enemy.y, sc, nil, skill)
             if died then h.enemy.alive = false; print("Enemy died")
             else print("Enemy HP: " .. h.enemy.hp) end
@@ -2561,9 +2599,14 @@ do_cast = function(self, slot_num, is_repeat, ctx)
             timer.delay(0.3, false, function()
                 if self.state ~= "ROOM" or self.world_id ~= wid then return end
                 local b2 = combat_mod.new_burst(sx, sy, radius * (qd.pool_scale or 0.72), power * (qd.strength or 0.6), statuses)
+                -- The delayed split burst re-evaluates the Pools as they are NOW, with its own radius.
+                local infuse_live2 = burst_infusion_at(self, sx, sy, b2.radius)
+                if infuse_live2 and #infuse_live2 > 0 then
+                    infusion_accent(self, sx, sy, infuse_live2[#infuse_live2].color)
+                end
                 local hits2 = combat_mod.burst_hits(b2, self.enemies)
                 for _, h in ipairs(hits2) do
-                    local died = apply_hit(self, h.enemy, h.damage, h.statuses, sx, sy)
+                    local died = apply_hit(self, h.enemy, h.damage, h.statuses, sx, sy, infuse_live2)
                     fx_hit(self, h.enemy.x, h.enemy.y, sc, nil, skill)
                     if died then h.enemy.alive = false; print("Enemy died")
                     else print("Enemy HP: " .. h.enemy.hp) end
