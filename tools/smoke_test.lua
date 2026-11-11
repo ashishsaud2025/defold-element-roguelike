@@ -1123,6 +1123,184 @@ if begin_room() then
     sf(near(hp0 - e.hp, 14, 0.001), "infusion trail: damage " .. (hp0 - e.hp) .. " (own trail must not infuse)")
   end
 end
+-- ===== Phase B follow-up: real-path grace, mid-grace pool death, single accent ==
+-- 1a. Within a grace: hit lands ~0.16 s after the bolt leaves the pool -> infused.
+if begin_room() then
+  local e = self.enemies[1]
+  if e then
+    e.alive, e.active, e.telegraph, e.immortal = true, true, 0, false
+    e.hp, e.speed, e.vx, e.vy = 999, 0, 0, 0
+    e.statuses = {}
+    place_target(e, 200)
+    self.aim.x, self.aim.y = self.player_pos.x + (e.x - self.player_pos.x) * 0.3,
+                              self.player_pos.y + (e.y - self.player_pos.y) * 0.3
+    equip(mk("puddle", nil, "earth", "water")); cast1()
+    self.aim.x, self.aim.y = e.x, e.y
+    equip(mk("projectile", nil, "fire", "fire")); cast1()
+    local hp0 = 999
+    frames(30)
+    sf(e.statuses and e.statuses.root ~= nil, "grace boundary in: infused hit lost the pool's root")
+    sf(near(hp0 - e.hp, 17.5, 0.001), "grace boundary in: damage " .. (hp0 - e.hp) .. " (expected 17.5)")
+  end
+end
+-- 1b. After the grace: same setup, bolt slowed down right as it exits the pool, so the
+-- hit lands INFUSE_GRACE+ after leaving it -> NOT infused.
+if begin_room() then
+  local e = self.enemies[1]
+  if e then
+    e.alive, e.active, e.immortal = true, true, false
+    e.telegraph = 0
+    e.hp, e.speed, e.vx, e.vy = 999, 0, 0, 0
+    e.statuses = {}
+    place_target(e, 220)
+    self.aim.x, self.aim.y = self.player_pos.x + (e.x - self.player_pos.x) * 0.3,
+                              self.player_pos.y + (e.y - self.player_pos.y) * 0.3
+    equip(mk("puddle", nil, "earth", "water")); cast1()
+    local pool = self.puddles[#self.puddles]
+    self.aim.x, self.aim.y = e.x, e.y
+    equip(mk("projectile", nil, "fire", "fire")); cast1()
+    -- Slow the bolt the moment it leaves the pool; the remaining ~130 px at 50 px/s
+    -- outlasts INFUSE_GRACE (~2.6 s) without touching the pool.
+    local slowed = false
+    for _ = 1, 40 do
+      self.player.invuln = 5
+      frame()
+      if self.bolts[1] and pool and not slowed then
+        local b = self.bolts[1]
+        local dx, dy = b.x - pool.x, b.y - pool.y
+        if dx * dx + dy * dy > (pool.radius + b.radius) ^ 2 then
+          local d = math.sqrt(b.vx * b.vx + b.vy * b.vy)
+          if d > 0 then b.vx, b.vy = b.vx / d * 50, b.vy / d * 50 end
+          slowed = true
+        end
+      end
+    end
+    sf(slowed, "grace boundary out: bolt never left the pool")
+    -- Stop on the frame the bolt connects: damage is read before any burn tick can land.
+    local applied
+    for _ = 1, 160 do
+      self.player.invuln = 5
+      frame()
+      if e.hp < 999 then applied = e.hp break end
+    end
+    sf(applied ~= nil, "grace boundary out: bolt never hit the enemy after slowing")
+    sf(applied and near(999 - applied, 14, 0.001),
+       "grace boundary out: hit after the grace was infused (damage " .. (applied and (999 - applied) or "nil") .. ", expected 14)")
+    sf(e.statuses ~= nil and e.statuses.root == nil,
+       "grace boundary out: hit after the grace carried the pool's root")
+    sf(e.statuses and e.statuses.burn ~= nil, "grace boundary out: native burn missing")
+  end
+end
+-- 2. Pool dies mid-grace: no error, the stored snapshot still applies until grace ends.
+if begin_room() then
+  local e = self.enemies[1]
+  if e then
+    e.alive, e.active, e.telegraph, e.immortal = true, false, 0, false   -- bolts fly through; activate later
+    e.hp, e.speed, e.vx, e.vy = 999, 0, 0, 0
+    e.statuses = {}
+    place_target(e, 200)
+    self.aim.x, self.aim.y = self.player_pos.x + (e.x - self.player_pos.x) * 0.3,
+                              self.player_pos.y + (e.y - self.player_pos.y) * 0.3
+    equip(mk("puddle", nil, "earth", "water")); cast1()
+    local pool = self.puddles[#self.puddles]
+    self.aim.x, self.aim.y = e.x, e.y
+    equip(mk("projectile", nil, "fire", "fire")); cast1()
+    local errs_before = #errors
+    local exited = false
+    for _ = 1, 90 do
+      self.player.invuln = 5
+      frame()
+      if self.bolts[1] and pool then
+        local b = self.bolts[1]
+        local dx, dy = b.x - pool.x, b.y - pool.y
+        if dx * dx + dy * dy > (pool.radius + b.radius) ^ 2 then exited = true break end
+      end
+    end
+    sf(exited, "pool death: bolt never left the pool")
+    if pool then pool.duration = 0.02 end     -- let its own tick expire it
+    frames(3)
+    local pool_alive = false
+    for _, p2 in ipairs(self.puddles) do if p2 == pool then pool_alive = true end end
+    sf(not pool_alive, "pool death: pool did not expire on its own")
+    sf(#errors == errs_before, "pool death: an error occurred while the pool expired")
+    -- teleport the enemy just ahead of the bolt; the bolt is still inside its grace window
+    local b = self.bolts[1]
+    sf(b ~= nil, "pool death: bolt vanished before the post-mortem hit")
+    if b then
+      local d = math.sqrt(b.vx * b.vx + b.vy * b.vy)
+      if d > 0 then
+        e.x, e.y = b.x + b.vx / d * 24, b.y + b.vy / d * 24
+        if level_mod.blocked(self.level, e.x, e.y, e.radius) then
+          e.x, e.y = level_mod.free_point_near(self.level, e.x, e.y, e.radius)
+        end
+        e.active = true
+        local hp0 = e.hp
+        frames(12)
+        sf(e.statuses and e.statuses.root ~= nil,
+           "pool death: snapshot root missing (pool was already gone)")
+        sf(e.statuses and e.statuses.burn ~= nil, "pool death: native burn missing")
+        sf(near(hp0 - e.hp, 17.5, 0.001),
+           "pool death: damage " .. (hp0 - e.hp) .. " (expected 17.5 from the snapshot)")
+      end
+    end
+    sf(#errors == errs_before, "pool death: error on the post-mortem hit")
+  end
+end
+-- 3. Accent fires once per continuous infusion; re-entry during grace does not re-accent;
+-- a full expiry + re-entry does.
+if begin_room() then
+  for _, en in ipairs(self.enemies) do en.active = false end
+  local p = self.player_pos
+  local lane = nil
+  for L = 420, 340, -20 do
+    if level_mod.los(self.level, p.x, p.y, p.x + L, p.y, 4) then lane = L break end
+  end
+  if not lane then
+    sf(false, "infusion accent: east lane under 340 px in room 1")
+  else
+    local pool_a, pool_b = p.x + 80, p.x + 260
+    local accents, was_infused = 0, false
+    local function poll()
+      local b = self.bolts[1]
+      local inf = b and b.infused_visual or false
+      if inf and not was_infused then accents = accents + 1 end
+      was_infused = inf
+      return b
+    end
+    self.aim.x, self.aim.y = pool_a, p.y
+    equip(mk("puddle", nil, "earth", "water")); cast1()      -- pool A (spans ~20..140)
+    self.aim.x, self.aim.y = pool_b, p.y
+    equip(mk("puddle", nil, "earth", "water")); cast1()      -- pool B (spans ~200..320)
+    self.aim.x, self.aim.y = p.x + 600, p.y
+    equip(mk("projectile", nil, "fire", "fire")); cast1()
+    if self.bolts[1] then
+      self.bolts[1].x, self.bolts[1].y = p.x + 10, p.y      -- just before pool A
+      self.bolts[1].vx, self.bolts[1].vy = 450, 0
+    end
+    for _ = 1, 200 do                                        -- fly through A and B
+      self.player.invuln = 5
+      frame()
+      local b = poll()
+      if not b then break end
+      if b.x > pool_b + 65 then break end   -- right after B, well inside the probed lane
+    end
+    sf(accents == 1, "infusion accent: one continuous infusion accented " .. accents .. " time(s)")
+    if self.bolts[1] then
+      -- leaving both pools: hover in the clear gap until the grace fully elapses
+      self.bolts[1].x, self.bolts[1].y = (pool_a + 60 + pool_b - 60) * 0.5, p.y   -- gap centre
+      self.bolts[1].vx, self.bolts[1].vy = 0, 0
+      for _ = 1, 75 do self.player.invuln = 5; frame(); poll() end
+      sf(was_infused == false, "infusion accent: infusion never fully ended")
+      -- teleporting back THROUGH A and B while uninfused: a fresh infusion sequence
+      self.bolts[1].x, self.bolts[1].y = p.x + 10, p.y
+      self.bolts[1].vx, self.bolts[1].vy = 450, 0
+      for _ = 1, 40 do self.player.invuln = 5; frame(); poll() end
+      sf(accents == 2, "infusion accent: restarted infusion accented " .. accents .. " time(s) (expected 2)")
+    else
+      sf(false, "infusion accent: bolt despawned before the grace test finished")
+    end
+  end
+end
 -- Grace lifecycle (module contract, deterministic): entry stays live for exactly
 -- INFUSE_GRACE after the pool stops overlapping; re-entry refreshes; expired entries prune.
 do
