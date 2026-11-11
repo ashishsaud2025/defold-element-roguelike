@@ -331,6 +331,12 @@ Format: **what happened / why / rule for agents.** These are the assistant's own
 - **Fix:** `spawn_trail_puddle` deliberately creates patches without `pud.color`; they keep their glow ring but no embers. Cosmetic variation uses the deterministic phase from position/`pulse_n`.
 - **Rule:** cosmetic per-entity effects must not read gameplay RNG (B38) and must be capped per active skill, not per spawned object.
 
+### 53. I called an interaction "readable" when only the console said so
+- **What:** Phase 3 shipped the three environmental interactions with `print("Burning Mud")` and a few small particles. The user played a full run and asked "i cant tell if the spells are interacting?" — the log proved the logic ran (Burning Mud, Fire spread, Dense Cloud all fired), the screen did not. The plan's own completion check says "the three interactions are readable in combat using existing visual assets".
+- **Fix:** `announce()` in `game.script`: a 1.4 s HUD banner on the existing `help_text` node (`self.toast_text` / `self.toast_t`, sent with the HUD message), an expanding ring plus 5 sparks at the spot, a flame streak from a fire pool to its spread pool, and a brighter Dense Cloud. The smoke test asserts the banner text for all three.
+- **Rule:** "readable in combat" means a human sees it without the console. Ship on-screen feedback with the mechanic, and make the test check the visible state (banner text, tracked visual), not just the `print`.
+- **And:** while writing this very item I replaced the `## Definition of Done` heading with it — item 43, again, two hours later. The habit that works: anchor the edit on the text *after* the insertion point and put the heading first in `newString`.
+
 ---
 ## Definition of Done (run before telling the human a change is finished)
 1. Syntax-check every Lua file you touched (`loadstring` in LuaJIT or `luac -p` for 5.1). No `goto`, `//`, bit operators.

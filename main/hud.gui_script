@@ -33,6 +33,7 @@ local C = {
     dead        = vmath.vector4(0.90, 0.25, 0.25, 1.0),
     win         = vmath.vector4(0.35, 0.85, 0.45, 1.0),
     pick_off    = vmath.vector4(0.18, 0.20, 0.28, 1.0),
+    toast       = vmath.vector4(1.0, 0.88, 0.35, 1.0),
 }
 
 local ALL_NODES = {
@@ -206,6 +207,17 @@ local function render(self)
             end
         end
         text("room_text", self.boss and ("Boss: " .. math.floor(self.boss_hp + 0.5) .. " / " .. self.boss_max_hp) or ("Room " .. (self.room or 0)))
+
+        -- Interaction banner: reuses the control-hint node, restored when the banner ends.
+        -- Only touched when the text changes, so this is two native calls per interaction.
+        local toast = self.toast
+        if toast ~= self.toast_shown then
+            self.toast_shown = toast
+            text("help_text", toast or self.help_default or "")
+            color("help_text", toast and C.toast or C.dim)
+            local s = toast and 0.95 or 0.7
+            gui.set_scale(n("help_text"), vmath.vector3(s, s, 1))
+        end
     end
 
     -- inventory text (shared)
@@ -405,7 +417,12 @@ function init(self)
     self.boss_hp = 0
     self.boss_max_hp = 0
     self.flash = 0
+    self.toast = nil
     self.started = false
+
+    -- The authored control hint (keep in sync with main/hud.gui -> help_text).
+    -- Restored whenever no interaction banner is up.
+    self.help_default = "WASD move   Mouse aim   Hold LMB / RMB cast   SPACE dash"
 
     for _, id in ipairs(ALL_NODES) do
         if gui.get_node(id) == nil then

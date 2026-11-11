@@ -40,6 +40,10 @@ recipe still gets the same power and quirk (`SELFCHECK OK`).
   the card and a relic line in the inventory. Relics reset with the run and never affect generation.
 
 ## Bugs fixed on the way
+- Interactions were only readable in the console (`print`), which failed the plan's "readable in
+  combat" check. Added `announce()`: a 1.4 s HUD banner on the existing `help_text` node, an
+  expanding ring + sparks at the interaction point, a flame streak for fire spread, and a brighter
+  Dense Cloud. Smoke test now asserts the banner text for all three.
 - Burning Mud re-ignited itself while the fire area lived (loop) → `pud.mud_ignited`.
 - Splitter children / boss summons could spawn stuck inside walls → `free_point_near` in
   `spawn_wisp_at`.

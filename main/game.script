@@ -491,6 +491,10 @@ function init(self)
     self.cast_count = 0
     self.status_dur_mul = 1
 
+    -- Interaction banner: set by announce(), decayed in update, drawn by the HUD.
+    self.toast_text = nil
+    self.toast_t = 0
+
     -- M4: run start picks + full cooldown length (after quirk scaling) for the HUD bars
     self.picks = {}
     self.slot1_cd_max = self.slot1.cooldown
@@ -623,6 +627,7 @@ local function send_ui(self)
         boss_hp = (self.boss and self.boss.hp) or 0,
         boss_max_hp = (self.boss and self.boss.max_hp) or 0,
         flash = self.screen_flash or 0,
+        toast = ((self.toast_t or 0) > 0) and self.toast_text or nil,
         s1 = skill_view(self.slot1, self.slot1_cooldown, self.slot1_cd_max,
                         self.slot1_elem_a, self.slot1_elem_b),
         s2 = skill_view(self.slot2, self.slot2_cooldown, self.slot2_cd_max,
@@ -717,6 +722,8 @@ local function reset_run(self)
     self.relics = {}
     self.cast_count = 0
     self.status_dur_mul = 1
+    self.toast_text = nil
+    self.toast_t = 0
     self.state = "TITLE"
     print("State: TITLE")
 end
@@ -1196,6 +1203,22 @@ local function area_has_element(a, el)
     return has_element(a.elements, el)
 end
 
+-- Interaction feedback: a HUD banner (the same node as the control hint) + an expanding
+-- ring and ring of sparks at the spot. Plan 3.2 requires the three interactions to be
+-- readable in combat with existing art; the console lines are not enough.
+local function announce(self, text, x, y, c, radius)
+    self.toast_text = text
+    self.toast_t = 1.4
+    radius = radius or 60
+    local sc = radius / 64 * 2          -- ring grows from half to 1.5x the effect radius
+    spawn_particle(self, x, y, c.r, c.g, c.b, 0.95, sc * 0.45, 0.5, 0, 0, FX.circle, sc * 1.5)
+    for k = 1, 5 do
+        local a = (k / 5) * math.pi * 2
+        spawn_particle(self, x + math.cos(a) * radius * 0.6, y + math.sin(a) * radius * 0.6,
+            c.r, c.g, c.b, 0.9, 0.4, 0.45, math.cos(a) * 70, math.sin(a) * 70 + 45, FX.glow, 0.05)
+    end
+end
+
 -- Fire + Mud -> Burning Mud: keeps the pool's root behaviour, adds a temporary Burn.
 local function ignite_mud(self, pud)
     if pud.mud_ignited or pud.burning_mud then return false end
@@ -1207,6 +1230,7 @@ local function ignite_mud(self, pud)
         pud.added_burn = true
     end
     local c = { r = 1.0, g = 0.45, b = 0.12 }
+    announce(self, "BURNING MUD", pud.x, pud.y, c, pud.radius)
     for k = 1, 7 do
         local a = (k / 7) * math.pi * 2
         local r = pud.radius * 0.7
@@ -1238,6 +1262,15 @@ local function spread_fire_area(self, wind_area, pud)
         pud.elements, pud.color, { spread_done = true, compound = pud.compound, style = pud.style })
     new.color = pud.color
     pud.spread_done = true
+    -- Visible link from the burning pool to the new one, plus the banner.
+    local fc = new.color or { r = 1.0, g = 0.5, b = 0.15 }
+    for k = 1, 7 do
+        local t = k / 8
+        spawn_particle(self, pud.x + (nx - pud.x) * t, pud.y + (ny - pud.y) * t,
+            fc.r, fc.g, fc.b, 0.9, 0.5, 0.35, (nx - pud.x) * 0.4, (ny - pud.y) * 0.4,
+            element_fx({ "fire" }, 1, "rise"), 0.05)
+    end
+    announce(self, "FIRE SPREAD", nx, ny, fc, new.radius)
     print("Fire spread")
     return true
 end
@@ -1247,9 +1280,10 @@ local function make_dense_cloud(self, x, y, skill)
     if #self.clouds >= data.INTERACT.MAX_CLOUDS then return nil end
     local radius = data.INTERACT.DENSE_CLOUD_RADIUS
     local cloud = { x = x, y = y, radius = radius, remaining = data.INTERACT.DENSE_CLOUD_TIME, tick = 0 }
-    cloud.vis = fx_make(x, y, 0.06, FX.glow, 0.78, 0.78, 0.92, 0.45, radius / 64 * 2 * 0.9)
-    for k = 1, 6 do
-        local a = (k / 6) * math.pi * 2
+    cloud.vis = fx_make(x, y, 0.06, FX.glow, 0.78, 0.78, 0.92, 0.55, radius / 64 * 2 * 0.9)
+    announce(self, "DENSE CLOUD", x, y, { r = 0.80, g = 0.86, b = 1.0 }, radius)
+    for k = 1, 8 do
+        local a = (k / 8) * math.pi * 2
         smoke_puff(self, x + math.cos(a) * radius * 0.5, y + math.sin(a) * radius * 0.5,
             skill or { compound = "Dust" }, 70, 0, 0)
     end
@@ -1371,6 +1405,7 @@ function update(self, dt)
         level_mod.update_flow(self.level, self.player_pos.x, self.player_pos.y)
     end
     self.dash_cd = math.max(0, (self.dash_cd or 0) - dt)
+    self.toast_t = math.max(0, (self.toast_t or 0) - dt)
     update_environment(self, dt)
 
     -- Player movement (ROOM only: menus are click-driven, death freezes you)

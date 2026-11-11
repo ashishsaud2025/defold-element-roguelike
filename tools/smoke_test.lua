@@ -762,11 +762,14 @@ if begin_room() then
   equip(mk("puddle", nil, "fire", "fire")); cast1()
   frames(15)
   sf(mud ~= nil and mud.burning_mud == true, "burning mud: not ignited")
+  sf(self.toast_text == "BURNING MUD" and (self.toast_t or 0) > 0,
+     "burning mud: no readable banner")
   if mud then
     sf(list_has(mud.statuses, "burn"), "burning mud: no burn status")
     frames(200)
     sf(mud.burning_mud == false, "burning mud: did not revert")
     sf(not list_has(mud.statuses, "burn"), "burning mud: burn was not removed on revert")
+    sf((self.toast_t or 0) == 0, "burning mud: banner never expired")
     frames(30)
     sf(mud.burning_mud == false, "burning mud: re-ignited forever while the fire area lived")
   end
@@ -779,6 +782,8 @@ if begin_room() then
   equip(mk("puddle", nil, "wind", "wind")); cast1()
   frames(15)
   sf(fire ~= nil and fire.spread_done == true, "fire spread: original pool did not spread")
+  sf(self.toast_text == "FIRE SPREAD" and (self.toast_t or 0) > 0,
+     "fire spread: no readable banner")
   local spread = nil
   for _, p in ipairs(self.puddles) do
     if p ~= fire and p.compound ~= "Gale" then spread = p end
@@ -797,6 +802,8 @@ if begin_room() then
   equip(mk("puddle", nil, "earth", "wind")); cast1()
   frames(15)
   sf(#self.clouds == 1, "dense cloud: clouds=" .. #self.clouds)
+  sf(self.toast_text == "DENSE CLOUD" and (self.toast_t or 0) > 0,
+     "dense cloud: no readable banner")
   local cloud = self.clouds[1]
   if cloud then
     local vis = cloud.vis
