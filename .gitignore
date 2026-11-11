@@ -1,0 +1,20 @@
+# Defold build output and editor cache
+build/
+.internal/
+
+# Editor log
+log.txt
+
+# User-downloaded asset packs (not project source; originals live outside the project)
+downloads/
+
+# Versioned delivery zips (large binaries; keep them on disk, not in git)
+*.zip
+
+# Python bytecode cache
+__pycache__/
+*.pyc
+
+# OS junk
+.DS_Store
+Thumbs.db

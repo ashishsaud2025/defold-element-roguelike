@@ -1,0 +1,2936 @@
+images {
+  image: "/assets/art/square.png"
+}
+images {
+  image: "/assets/art/circle.png"
+}
+images {
+  image: "/assets/art/icons/icon_fire.png"
+}
+images {
+  image: "/assets/art/icons/icon_water.png"
+}
+images {
+  image: "/assets/art/icons/icon_wind.png"
+}
+images {
+  image: "/assets/art/icons/icon_earth.png"
+}
+images {
+  image: "/assets/art/particles/particle_spark.png"
+}
+images {
+  image: "/assets/art/particles/particle_star.png"
+}
+images {
+  image: "/assets/art/particles/particle_flare.png"
+}
+images {
+  image: "/assets/art/particles/particle_magic.png"
+}
+images {
+  image: "/assets/art/particles/particle_twirl.png"
+}
+images {
+  image: "/assets/art/particles/particle_smoke.png"
+}
+images {
+  image: "/assets/art/particles/particle_flame.png"
+}
+images {
+  image: "/assets/art/particles/particle_scorch.png"
+}
+images {
+  image: "/assets/art/particles/particle_circle.png"
+}
+images {
+  image: "/assets/art/particles/particle_trace.png"
+}
+images {
+  image: "/assets/art/icons/icon_player.png"
+}
+images {
+  image: "/assets/art/icons/icon_rune.png"
+}
+images {
+  image: "/assets/art/icons/icon_cauldron.png"
+}
+images {
+  image: "/assets/art/glow.png"
+}
+images {
+  image: "/assets/art/floor.png"
+}
+images {
+  image: "/assets/art/vignette.png"
+}
+images {
+  image: "/assets/art/tiles/tile_floor_a.png"
+}
+images {
+  image: "/assets/art/tiles/tile_floor_b.png"
+}
+images {
+  image: "/assets/art/tiles/tile_wall_face.png"
+}
+images {
+  image: "/assets/art/tiles/tile_wall_top.png"
+}
+images {
+  image: "/assets/art/tiles/tile_pillar.png"
+}
+images {
+  image: "/assets/art/tiles/tile_torch.png"
+}
+images {
+  image: "/assets/art/actors/tc_boss.png"
+}
+images {
+  image: "/assets/art/actors/tc_brute.png"
+}
+images {
+  image: "/assets/art/actors/tc_charger.png"
+}
+images {
+  image: "/assets/art/actors/tc_slinger.png"
+}
+images {
+  image: "/assets/art/actors/tc_splitter.png"
+}
+images {
+  image: "/assets/art/actors/tc_wisp.png"
+}
+images {
+  image: "/assets/art/actors/td_player.png"
+}
+images {
+  image: "/assets/art/env/td_floor_a.png"
+}
+images {
+  image: "/assets/art/env/td_floor_b.png"
+}
+images {
+  image: "/assets/art/env/td_pillar.png"
+}
+images {
+  image: "/assets/art/env/td_torch.png"
+}
+images {
+  image: "/assets/art/env/td_wall_face.png"
+}
+images {
+  image: "/assets/art/env/td_wall_top.png"
+}
+images {
+  image: "/assets/art/fx/fx_flame.png"
+}
+images {
+  image: "/assets/art/fx/fx_scorch.png"
+}
+images {
+  image: "/assets/art/fx/fx_spark.png"
+}
+images {
+  image: "/assets/art/fx/fx_drop.png"
+}
+images {
+  image: "/assets/art/fx/fx_splash.png"
+}
+images {
+  image: "/assets/art/fx/fx_bubble.png"
+}
+images {
+  image: "/assets/art/fx/fx_streak.png"
+}
+images {
+  image: "/assets/art/fx/fx_swirl.png"
+}
+images {
+  image: "/assets/art/fx/fx_debris.png"
+}
+images {
+  image: "/assets/art/actors/target_dummy.png"
+}
+animations {
+  id: "fxa_cast13_earth"
+  images {
+    image: "/assets/art/fxa/fxa_cast13_earth_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_earth_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_earth_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_earth_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_earth_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_earth_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_earth_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_earth_07.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 20
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_cast13_fire"
+  images {
+    image: "/assets/art/fxa/fxa_cast13_fire_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_fire_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_fire_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_fire_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_fire_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_fire_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_fire_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_fire_07.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 20
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_cast13_water"
+  images {
+    image: "/assets/art/fxa/fxa_cast13_water_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_water_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_water_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_water_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_water_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_water_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_water_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_water_07.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 20
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_cast13_wind"
+  images {
+    image: "/assets/art/fxa/fxa_cast13_wind_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_wind_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_wind_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_wind_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_wind_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_wind_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_wind_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_cast13_wind_07.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 20
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_headflame_earth"
+  images {
+    image: "/assets/art/fxa/fxa_headflame_earth_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_earth_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_earth_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_earth_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_earth_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_earth_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_earth_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_earth_07.png"
+  }
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 12
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_headflame_fire"
+  images {
+    image: "/assets/art/fxa/fxa_headflame_fire_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_fire_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_fire_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_fire_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_fire_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_fire_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_fire_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_fire_07.png"
+  }
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 12
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_headflame_water"
+  images {
+    image: "/assets/art/fxa/fxa_headflame_water_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_water_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_water_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_water_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_water_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_water_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_water_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_water_07.png"
+  }
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 12
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_headflame_wind"
+  images {
+    image: "/assets/art/fxa/fxa_headflame_wind_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_wind_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_wind_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_wind_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_wind_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_wind_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_wind_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_headflame_wind_07.png"
+  }
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 12
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_hit1031_earth"
+  images {
+    image: "/assets/art/fxa/fxa_hit1031_earth_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1031_earth_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1031_earth_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1031_earth_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1031_earth_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1031_earth_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1031_earth_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1031_earth_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1031_earth_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 24
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_hit1033_earth"
+  images {
+    image: "/assets/art/fxa/fxa_hit1033_earth_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1033_earth_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1033_earth_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1033_earth_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1033_earth_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1033_earth_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1033_earth_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1033_earth_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1033_earth_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 24
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_hit1033_fire"
+  images {
+    image: "/assets/art/fxa/fxa_hit1033_fire_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1033_fire_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1033_fire_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1033_fire_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1033_fire_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1033_fire_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1033_fire_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1033_fire_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit1033_fire_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 24
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_hit230_fire"
+  images {
+    image: "/assets/art/fxa/fxa_hit230_fire_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit230_fire_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit230_fire_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit230_fire_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit230_fire_04.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 13
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_hit232_water"
+  images {
+    image: "/assets/art/fxa/fxa_hit232_water_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit232_water_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit232_water_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit232_water_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit232_water_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit232_water_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit232_water_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit232_water_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit232_water_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 24
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_hit232_wind"
+  images {
+    image: "/assets/art/fxa/fxa_hit232_wind_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit232_wind_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit232_wind_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit232_wind_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit232_wind_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit232_wind_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit232_wind_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit232_wind_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit232_wind_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 24
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_hit273_water"
+  images {
+    image: "/assets/art/fxa/fxa_hit273_water_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit273_water_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit273_water_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit273_water_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit273_water_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit273_water_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit273_water_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit273_water_07.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 21
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_hit293_fire"
+  images {
+    image: "/assets/art/fxa/fxa_hit293_fire_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit293_fire_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit293_fire_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit293_fire_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit293_fire_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit293_fire_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit293_fire_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit293_fire_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit293_fire_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 24
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_hit293_water"
+  images {
+    image: "/assets/art/fxa/fxa_hit293_water_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit293_water_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit293_water_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit293_water_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit293_water_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit293_water_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit293_water_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit293_water_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit293_water_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 24
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_hit314_wind"
+  images {
+    image: "/assets/art/fxa/fxa_hit314_wind_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit314_wind_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit314_wind_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit314_wind_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit314_wind_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit314_wind_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit314_wind_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit314_wind_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit314_wind_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 24
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_hit324_earth"
+  images {
+    image: "/assets/art/fxa/fxa_hit324_earth_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit324_earth_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit324_earth_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit324_earth_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit324_earth_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit324_earth_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit324_earth_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit324_earth_07.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 21
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_hit324_wind"
+  images {
+    image: "/assets/art/fxa/fxa_hit324_wind_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit324_wind_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit324_wind_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit324_wind_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit324_wind_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit324_wind_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit324_wind_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit324_wind_07.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 21
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_hit63_fire"
+  images {
+    image: "/assets/art/fxa/fxa_hit63_fire_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit63_fire_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit63_fire_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit63_fire_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit63_fire_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit63_fire_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit63_fire_06.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 18
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_hit63_wind"
+  images {
+    image: "/assets/art/fxa/fxa_hit63_wind_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit63_wind_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit63_wind_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit63_wind_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit63_wind_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit63_wind_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit63_wind_06.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 18
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_hit702_earth"
+  images {
+    image: "/assets/art/fxa/fxa_hit702_earth_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit702_earth_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit702_earth_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit702_earth_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit702_earth_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit702_earth_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit702_earth_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit702_earth_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit702_earth_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 24
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_hit702_water"
+  images {
+    image: "/assets/art/fxa/fxa_hit702_water_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit702_water_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit702_water_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit702_water_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit702_water_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit702_water_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit702_water_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit702_water_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_hit702_water_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 24
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_nova1032_earth"
+  images {
+    image: "/assets/art/fxa/fxa_nova1032_earth_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova1032_earth_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova1032_earth_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova1032_earth_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova1032_earth_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova1032_earth_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova1032_earth_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova1032_earth_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova1032_earth_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova1032_earth_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 17
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_nova1114_water"
+  images {
+    image: "/assets/art/fxa/fxa_nova1114_water_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova1114_water_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova1114_water_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova1114_water_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova1114_water_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova1114_water_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova1114_water_06.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 12
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_nova115_earth"
+  images {
+    image: "/assets/art/fxa/fxa_nova115_earth_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova115_earth_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova115_earth_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova115_earth_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova115_earth_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova115_earth_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova115_earth_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova115_earth_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova115_earth_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova115_earth_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 17
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_nova115_wind"
+  images {
+    image: "/assets/art/fxa/fxa_nova115_wind_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova115_wind_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova115_wind_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova115_wind_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova115_wind_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova115_wind_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova115_wind_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova115_wind_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova115_wind_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova115_wind_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 17
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_nova125_fire"
+  images {
+    image: "/assets/art/fxa/fxa_nova125_fire_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova125_fire_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova125_fire_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova125_fire_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova125_fire_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova125_fire_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova125_fire_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova125_fire_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova125_fire_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova125_fire_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 17
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_nova125_wind"
+  images {
+    image: "/assets/art/fxa/fxa_nova125_wind_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova125_wind_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova125_wind_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova125_wind_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova125_wind_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova125_wind_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova125_wind_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova125_wind_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova125_wind_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova125_wind_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 17
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_nova135_earth"
+  images {
+    image: "/assets/art/fxa/fxa_nova135_earth_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova135_earth_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova135_earth_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova135_earth_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova135_earth_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova135_earth_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova135_earth_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova135_earth_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova135_earth_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova135_earth_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 17
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_nova135_fire"
+  images {
+    image: "/assets/art/fxa/fxa_nova135_fire_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova135_fire_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova135_fire_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova135_fire_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova135_fire_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova135_fire_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova135_fire_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova135_fire_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova135_fire_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova135_fire_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 17
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_nova3_wind"
+  images {
+    image: "/assets/art/fxa/fxa_nova3_wind_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova3_wind_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova3_wind_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova3_wind_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova3_wind_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova3_wind_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova3_wind_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova3_wind_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova3_wind_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova3_wind_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 17
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_nova71_earth"
+  images {
+    image: "/assets/art/fxa/fxa_nova71_earth_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova71_earth_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova71_earth_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova71_earth_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova71_earth_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova71_earth_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova71_earth_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova71_earth_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova71_earth_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova71_earth_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 17
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_nova71_water"
+  images {
+    image: "/assets/art/fxa/fxa_nova71_water_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova71_water_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova71_water_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova71_water_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova71_water_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova71_water_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova71_water_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova71_water_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova71_water_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova71_water_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 17
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_nova766_fire"
+  images {
+    image: "/assets/art/fxa/fxa_nova766_fire_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova766_fire_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova766_fire_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova766_fire_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova766_fire_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova766_fire_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova766_fire_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova766_fire_07.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 13
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_nova77_water"
+  images {
+    image: "/assets/art/fxa/fxa_nova77_water_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova77_water_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova77_water_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova77_water_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova77_water_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova77_water_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova77_water_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova77_water_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova77_water_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova77_water_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 17
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_nova77_wind"
+  images {
+    image: "/assets/art/fxa/fxa_nova77_wind_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova77_wind_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova77_wind_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova77_wind_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova77_wind_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova77_wind_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova77_wind_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova77_wind_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova77_wind_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova77_wind_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 17
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_nova835_fire"
+  images {
+    image: "/assets/art/fxa/fxa_nova835_fire_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova835_fire_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova835_fire_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova835_fire_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova835_fire_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova835_fire_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova835_fire_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova835_fire_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova835_fire_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova835_fire_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 17
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_nova835_water"
+  images {
+    image: "/assets/art/fxa/fxa_nova835_water_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova835_water_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova835_water_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova835_water_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova835_water_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova835_water_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova835_water_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova835_water_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova835_water_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_nova835_water_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 17
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_orbflame_earth"
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_earth_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_earth_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_earth_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_earth_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_earth_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_earth_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_earth_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_earth_07.png"
+  }
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 12
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_orbflame_fire"
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_fire_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_fire_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_fire_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_fire_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_fire_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_fire_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_fire_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_fire_07.png"
+  }
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 12
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_orbflame_water"
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_water_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_water_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_water_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_water_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_water_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_water_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_water_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_water_07.png"
+  }
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 12
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_orbflame_wind"
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_wind_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_wind_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_wind_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_wind_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_wind_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_wind_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_wind_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_orbflame_wind_07.png"
+  }
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 12
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_pool1054_earth"
+  images {
+    image: "/assets/art/fxa/fxa_pool1054_earth_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool1054_earth_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool1054_earth_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool1054_earth_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool1054_earth_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool1054_earth_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool1054_earth_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool1054_earth_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool1054_earth_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool1054_earth_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 11
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_pool1054_water"
+  images {
+    image: "/assets/art/fxa/fxa_pool1054_water_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool1054_water_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool1054_water_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool1054_water_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool1054_water_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool1054_water_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool1054_water_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool1054_water_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool1054_water_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool1054_water_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 11
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_pool16_fire"
+  images {
+    image: "/assets/art/fxa/fxa_pool16_fire_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool16_fire_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool16_fire_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool16_fire_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool16_fire_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool16_fire_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool16_fire_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool16_fire_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool16_fire_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool16_fire_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 11
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_pool16_wind"
+  images {
+    image: "/assets/art/fxa/fxa_pool16_wind_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool16_wind_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool16_wind_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool16_wind_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool16_wind_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool16_wind_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool16_wind_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool16_wind_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool16_wind_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool16_wind_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 11
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_pool176_wind"
+  images {
+    image: "/assets/art/fxa/fxa_pool176_wind_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool176_wind_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool176_wind_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool176_wind_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool176_wind_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool176_wind_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool176_wind_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool176_wind_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool176_wind_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool176_wind_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 11
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_pool185_fire"
+  images {
+    image: "/assets/art/fxa/fxa_pool185_fire_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool185_fire_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool185_fire_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool185_fire_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool185_fire_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool185_fire_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool185_fire_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool185_fire_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool185_fire_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool185_fire_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 11
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_pool185_water"
+  images {
+    image: "/assets/art/fxa/fxa_pool185_water_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool185_water_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool185_water_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool185_water_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool185_water_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool185_water_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool185_water_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool185_water_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool185_water_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool185_water_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 11
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_pool186_fire"
+  images {
+    image: "/assets/art/fxa/fxa_pool186_fire_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool186_fire_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool186_fire_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool186_fire_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool186_fire_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool186_fire_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool186_fire_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool186_fire_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool186_fire_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool186_fire_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 11
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_pool26_water"
+  images {
+    image: "/assets/art/fxa/fxa_pool26_water_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool26_water_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool26_water_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool26_water_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool26_water_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool26_water_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool26_water_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool26_water_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool26_water_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool26_water_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 11
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_pool26_wind"
+  images {
+    image: "/assets/art/fxa/fxa_pool26_wind_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool26_wind_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool26_wind_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool26_wind_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool26_wind_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool26_wind_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool26_wind_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool26_wind_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool26_wind_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool26_wind_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 11
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_pool3_earth"
+  images {
+    image: "/assets/art/fxa/fxa_pool3_earth_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool3_earth_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool3_earth_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool3_earth_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool3_earth_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool3_earth_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool3_earth_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool3_earth_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool3_earth_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool3_earth_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 11
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_pool3_wind"
+  images {
+    image: "/assets/art/fxa/fxa_pool3_wind_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool3_wind_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool3_wind_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool3_wind_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool3_wind_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool3_wind_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool3_wind_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool3_wind_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool3_wind_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool3_wind_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 11
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_pool674_earth"
+  images {
+    image: "/assets/art/fxa/fxa_pool674_earth_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool674_earth_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool674_earth_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool674_earth_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool674_earth_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool674_earth_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool674_earth_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool674_earth_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool674_earth_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool674_earth_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 11
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_pool674_fire"
+  images {
+    image: "/assets/art/fxa/fxa_pool674_fire_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool674_fire_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool674_fire_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool674_fire_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool674_fire_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool674_fire_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool674_fire_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool674_fire_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool674_fire_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool674_fire_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 11
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_pool703_earth"
+  images {
+    image: "/assets/art/fxa/fxa_pool703_earth_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool703_earth_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool703_earth_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool703_earth_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool703_earth_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool703_earth_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool703_earth_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool703_earth_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool703_earth_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool703_earth_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 11
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_pool712_water"
+  images {
+    image: "/assets/art/fxa/fxa_pool712_water_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool712_water_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool712_water_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool712_water_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool712_water_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool712_water_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool712_water_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool712_water_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool712_water_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_pool712_water_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 11
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_puff273_earth"
+  images {
+    image: "/assets/art/fxa/fxa_puff273_earth_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_earth_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_earth_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_earth_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_earth_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_earth_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_earth_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_earth_07.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 18
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_puff273_fire"
+  images {
+    image: "/assets/art/fxa/fxa_puff273_fire_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_fire_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_fire_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_fire_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_fire_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_fire_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_fire_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_fire_07.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 18
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_puff273_water"
+  images {
+    image: "/assets/art/fxa/fxa_puff273_water_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_water_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_water_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_water_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_water_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_water_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_water_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_water_07.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 18
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_puff273_wind"
+  images {
+    image: "/assets/art/fxa/fxa_puff273_wind_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_wind_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_wind_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_wind_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_wind_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_wind_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_wind_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_puff273_wind_07.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 18
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_smoke_a"
+  images {
+    image: "/assets/art/fxa/fxa_smoke_a_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_smoke_a_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_smoke_a_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_smoke_a_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_smoke_a_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_smoke_a_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_smoke_a_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_smoke_a_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_smoke_a_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_smoke_a_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 14
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_smoke_b"
+  images {
+    image: "/assets/art/fxa/fxa_smoke_b_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_smoke_b_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_smoke_b_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_smoke_b_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_smoke_b_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_smoke_b_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_smoke_b_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_smoke_b_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_smoke_b_08.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_smoke_b_09.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 14
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_spray1012_fire"
+  images {
+    image: "/assets/art/fxa/fxa_spray1012_fire_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1012_fire_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1012_fire_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1012_fire_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1012_fire_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1012_fire_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1012_fire_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1012_fire_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1012_fire_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 18
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_spray1013_wind"
+  images {
+    image: "/assets/art/fxa/fxa_spray1013_wind_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1013_wind_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1013_wind_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1013_wind_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1013_wind_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1013_wind_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1013_wind_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1013_wind_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1013_wind_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 18
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_spray1101_fire"
+  images {
+    image: "/assets/art/fxa/fxa_spray1101_fire_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1101_fire_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1101_fire_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1101_fire_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1101_fire_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1101_fire_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1101_fire_06.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 14
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_spray1101_water"
+  images {
+    image: "/assets/art/fxa/fxa_spray1101_water_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1101_water_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1101_water_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1101_water_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1101_water_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1101_water_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray1101_water_06.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 14
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_spray114_earth"
+  images {
+    image: "/assets/art/fxa/fxa_spray114_earth_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray114_earth_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray114_earth_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray114_earth_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray114_earth_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray114_earth_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray114_earth_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray114_earth_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray114_earth_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 18
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_spray114_water"
+  images {
+    image: "/assets/art/fxa/fxa_spray114_water_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray114_water_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray114_water_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray114_water_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray114_water_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray114_water_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray114_water_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray114_water_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray114_water_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 18
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_spray123_fire"
+  images {
+    image: "/assets/art/fxa/fxa_spray123_fire_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray123_fire_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray123_fire_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray123_fire_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray123_fire_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray123_fire_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray123_fire_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray123_fire_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray123_fire_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 18
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_spray123_wind"
+  images {
+    image: "/assets/art/fxa/fxa_spray123_wind_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray123_wind_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray123_wind_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray123_wind_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray123_wind_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray123_wind_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray123_wind_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray123_wind_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray123_wind_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 18
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_spray124_earth"
+  images {
+    image: "/assets/art/fxa/fxa_spray124_earth_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray124_earth_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray124_earth_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray124_earth_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray124_earth_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray124_earth_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray124_earth_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray124_earth_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray124_earth_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 18
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_spray126_earth"
+  images {
+    image: "/assets/art/fxa/fxa_spray126_earth_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray126_earth_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray126_earth_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray126_earth_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray126_earth_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray126_earth_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray126_earth_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray126_earth_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray126_earth_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 18
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_spray126_fire"
+  images {
+    image: "/assets/art/fxa/fxa_spray126_fire_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray126_fire_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray126_fire_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray126_fire_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray126_fire_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray126_fire_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray126_fire_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray126_fire_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray126_fire_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 18
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_spray233_water"
+  images {
+    image: "/assets/art/fxa/fxa_spray233_water_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray233_water_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray233_water_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray233_water_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray233_water_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray233_water_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray233_water_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray233_water_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray233_water_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 18
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_spray233_wind"
+  images {
+    image: "/assets/art/fxa/fxa_spray233_wind_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray233_wind_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray233_wind_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray233_wind_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray233_wind_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray233_wind_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray233_wind_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray233_wind_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray233_wind_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 18
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_spray6_water"
+  images {
+    image: "/assets/art/fxa/fxa_spray6_water_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray6_water_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray6_water_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray6_water_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray6_water_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray6_water_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray6_water_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray6_water_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray6_water_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 18
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_spray76_earth"
+  images {
+    image: "/assets/art/fxa/fxa_spray76_earth_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray76_earth_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray76_earth_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray76_earth_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray76_earth_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray76_earth_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray76_earth_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray76_earth_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray76_earth_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 18
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "fxa_spray76_wind"
+  images {
+    image: "/assets/art/fxa/fxa_spray76_wind_00.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray76_wind_01.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray76_wind_02.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray76_wind_03.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray76_wind_04.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray76_wind_05.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray76_wind_06.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray76_wind_07.png"
+  }
+  images {
+    image: "/assets/art/fxa/fxa_spray76_wind_08.png"
+  }
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 18
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+extrude_borders: 2

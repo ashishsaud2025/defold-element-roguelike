@@ -1,0 +1,33 @@
+[project]
+title = Element Roguelike
+version = 0.1
+write_log_file = 2
+
+[bootstrap]
+main_collection = /main/main.collectionc
+render = /main/letterbox.renderc
+
+[display]
+width = 960
+height = 640
+high_dpi = 1
+
+[input]
+game_binding = /input/game.input_bindingc
+
+[physics]
+gravity_y = 0.0
+scale = 0.01
+
+[script]
+shared_state = 1
+
+[graphics]
+default_texture_min_filter = nearest
+default_texture_mag_filter = nearest
+
+[sprite]
+max_count = 2048
+
+[collection]
+max_instances = 4096

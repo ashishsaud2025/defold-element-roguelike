@@ -1,0 +1,73 @@
+-- Letterboxed render script: same as Defold's default, except the game world is drawn into the
+-- largest 960x640 (game.project display size) rectangle that fits the window, centred, with black
+-- bars. No stretching at any window size or when maximised; pixel art stays square and crisp
+-- (textures use nearest filtering). The GUI keeps the default window-sized projection, whose "fit"
+-- adjust mode produces exactly the same centred rectangle.
+
+local COLOR = (graphics and graphics.BUFFER_TYPE_COLOR0_BIT) or render.BUFFER_COLOR_BIT
+local DEPTH = (graphics and graphics.BUFFER_TYPE_DEPTH_BIT) or render.BUFFER_DEPTH_BIT
+local STENCIL = (graphics and graphics.BUFFER_TYPE_STENCIL_BIT) or render.BUFFER_STENCIL_BIT
+-- Defold 1.14 moved these from render.* to graphics.*; accept either so the script works on both.
+local function const(gname, rname)
+    local v = graphics and graphics[gname]
+    if v == nil then v = render[rname] end
+    assert(v ~= nil, "render constant missing: " .. gname .. " / " .. rname)
+    return v
+end
+local STATE_DEPTH_TEST   = const("STATE_DEPTH_TEST", "STATE_DEPTH_TEST")
+local STATE_STENCIL_TEST = const("STATE_STENCIL_TEST", "STATE_STENCIL_TEST")
+local STATE_BLEND        = const("STATE_BLEND", "STATE_BLEND")
+local STATE_CULL_FACE    = const("STATE_CULL_FACE", "STATE_CULL_FACE")
+local BLEND_SRC_ALPHA    = const("BLEND_FACTOR_SRC_ALPHA", "BLEND_SRC_ALPHA")
+local BLEND_ONE_MINUS_SA = const("BLEND_FACTOR_ONE_MINUS_SRC_ALPHA", "BLEND_ONE_MINUS_SRC_ALPHA")
+
+function init(self)
+    self.tile_pred = render.predicate({ "tile" })
+    self.gui_pred = render.predicate({ "gui" })
+    self.text_pred = render.predicate({ "text" })
+    self.particle_pred = render.predicate({ "particle" })
+    self.clear_color = vmath.vector4(0, 0, 0, 0)
+    self.clear_color.x = sys.get_config_number("render.clear_color_red", 0)
+    self.clear_color.y = sys.get_config_number("render.clear_color_green", 0)
+    self.clear_color.z = sys.get_config_number("render.clear_color_blue", 0)
+    self.clear_color.w = sys.get_config_number("render.clear_color_alpha", 0)
+    self.view = vmath.matrix4()
+end
+
+function update(self)
+    local ww = render.get_window_width()
+    local wh = render.get_window_height()
+    if ww == 0 or wh == 0 then return end
+
+    render.set_depth_mask(true)
+    render.set_stencil_mask(0xff)
+    render.set_viewport(0, 0, ww, wh)               -- clear the whole window, bars included
+    render.clear({ [COLOR] = self.clear_color, [DEPTH] = 1, [STENCIL] = 0 })
+
+    -- World: aspect-preserving fit
+    local dw, dh = render.get_width(), render.get_height()
+    local scale = math.min(ww / dw, wh / dh)
+    local vw, vh = math.floor(dw * scale + 0.5), math.floor(dh * scale + 0.5)
+    render.set_viewport(math.floor((ww - vw) / 2), math.floor((wh - vh) / 2), vw, vh)
+    render.set_view(self.view)
+    render.set_projection(vmath.matrix4_orthographic(0, dw, 0, dh, -1, 1))
+
+    render.set_depth_mask(false)
+    render.disable_state(STATE_DEPTH_TEST)
+    render.disable_state(STATE_STENCIL_TEST)
+    render.enable_state(STATE_BLEND)
+    render.set_blend_func(BLEND_SRC_ALPHA, BLEND_ONE_MINUS_SA)
+    render.disable_state(STATE_CULL_FACE)
+    render.draw(self.tile_pred)
+    render.draw(self.particle_pred)
+    render.draw_debug3d()
+
+    -- GUI: full window; nodes use "fit" adjust so they land in the same rectangle
+    render.set_viewport(0, 0, ww, wh)
+    render.set_view(vmath.matrix4())
+    render.set_projection(vmath.matrix4_orthographic(0, ww, 0, wh, -1, 1))
+    render.enable_state(STATE_STENCIL_TEST)
+    render.draw(self.gui_pred)
+    render.draw(self.text_pred)
+    render.disable_state(STATE_STENCIL_TEST)
+end

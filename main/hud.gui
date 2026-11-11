@@ -1,0 +1,717 @@
+script: "/main/hud.gui_script"
+
+fonts {
+  name: "text"
+  font: "/builtins/fonts/default.font"
+}
+
+textures {
+  name: "ui"
+  texture: "/assets/art/shapes.atlas"
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 960.0 y: 640.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "panel"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 150.0 }
+  type: TYPE_TEXT
+  text: "ELEMENT ROGUE"
+  font: "text"
+  id: "title_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 96.0 }
+  type: TYPE_TEXT
+  text: "Mix two elements. Pick a shape. Survive."
+  font: "text"
+  id: "subtitle_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 10.0 }
+  size { x: 260.0 y: 56.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "start_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 10.0 }
+  type: TYPE_TEXT
+  text: "START"
+  font: "text"
+  id: "start_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: -70.0 }
+  size { x: 260.0 y: 56.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "credits_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: -70.0 }
+  type: TYPE_TEXT
+  text: "CREDITS"
+  font: "text"
+  id: "credits_text_btn"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 190.0 }
+  type: TYPE_TEXT
+  text: "CREDITS"
+  font: "text"
+  id: "credits_title"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 60.0 }
+  type: TYPE_TEXT
+  text: "Code and game design: Ash"
+  font: "text"
+  id: "credits_body"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: -120.0 }
+  size { x: 220.0 y: 52.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "back_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: -120.0 }
+  type: TYPE_TEXT
+  text: "BACK"
+  font: "text"
+  id: "back_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 230.0 }
+  type: TYPE_TEXT
+  text: "PICK TWO ELEMENTS"
+  font: "text"
+  id: "pick_title"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 190.0 }
+  type: TYPE_TEXT
+  text: "Click an element twice to double it."
+  font: "text"
+  id: "pick_hint"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: -270.0 y: 30.0 }
+  size { x: 150.0 y: 150.0 }
+  type: TYPE_BOX
+  texture: "ui/icon_fire"
+  id: "e1_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: -270.0 y: -62.0 }
+  type: TYPE_TEXT
+  text: "FIRE"
+  font: "text"
+  id: "e1_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: -90.0 y: 30.0 }
+  size { x: 150.0 y: 150.0 }
+  type: TYPE_BOX
+  texture: "ui/icon_water"
+  id: "e2_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: -90.0 y: -62.0 }
+  type: TYPE_TEXT
+  text: "WATER"
+  font: "text"
+  id: "e2_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 90.0 y: 30.0 }
+  size { x: 150.0 y: 150.0 }
+  type: TYPE_BOX
+  texture: "ui/icon_wind"
+  id: "e3_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 90.0 y: -62.0 }
+  type: TYPE_TEXT
+  text: "WIND"
+  font: "text"
+  id: "e3_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 270.0 y: 30.0 }
+  size { x: 150.0 y: 150.0 }
+  type: TYPE_BOX
+  texture: "ui/icon_earth"
+  id: "e4_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 270.0 y: -62.0 }
+  type: TYPE_TEXT
+  text: "EARTH"
+  font: "text"
+  id: "e4_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: -110.0 }
+  type: TYPE_TEXT
+  text: "Picked: -"
+  font: "text"
+  id: "pick_status"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: -200.0 }
+  size { x: 260.0 y: 56.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "enter_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: -200.0 }
+  type: TYPE_TEXT
+  text: "ENTER ROOM"
+  font: "text"
+  id: "enter_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: -330.0 y: 288.0 }
+  size { x: 300.0 y: 24.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "hp_bg"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: -330.0 y: 288.0 }
+  size { x: 300.0 y: 24.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "hp_fill"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: -330.0 y: 288.0 }
+  type: TYPE_TEXT
+  text: "100 / 100"
+  font: "text"
+  id: "hp_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: -330.0 y: -268.0 }
+  size { x: 300.0 y: 76.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "s1_bg"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: -330.0 y: -268.0 }
+  size { x: 300.0 y: 76.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "s1_cd"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: -330.0 y: -252.0 }
+  type: TYPE_TEXT
+  text: "Slot 1"
+  font: "text"
+  id: "s1_name"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: -330.0 y: -284.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "s1_quirk"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: -452.0 y: -268.0 }
+  size { x: 30.0 y: 30.0 }
+  type: TYPE_BOX
+  texture: "ui/circle"
+  id: "s1_dot1"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: -412.0 y: -268.0 }
+  size { x: 30.0 y: 30.0 }
+  type: TYPE_BOX
+  texture: "ui/circle"
+  id: "s1_dot2"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 330.0 y: -268.0 }
+  size { x: 300.0 y: 76.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "s2_bg"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 330.0 y: -268.0 }
+  size { x: 300.0 y: 76.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "s2_cd"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 330.0 y: -252.0 }
+  type: TYPE_TEXT
+  text: "Slot 2"
+  font: "text"
+  id: "s2_name"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 330.0 y: -284.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "s2_quirk"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 208.0 y: -268.0 }
+  size { x: 30.0 y: 30.0 }
+  type: TYPE_BOX
+  texture: "ui/circle"
+  id: "s2_dot1"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 248.0 y: -268.0 }
+  size { x: 30.0 y: 30.0 }
+  type: TYPE_BOX
+  texture: "ui/circle"
+  id: "s2_dot2"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: -316.0 }
+  type: TYPE_TEXT
+  text: "WASD move   Mouse aim   Hold LMB / RMB cast   SPACE dash"
+  font: "text"
+  id: "help_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 80.0 }
+  type: TYPE_TEXT
+  text: "YOU DIED"
+  font: "text"
+  id: "overlay_title"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 20.0 }
+  type: TYPE_TEXT
+  text: "Click to continue"
+  font: "text"
+  id: "overlay_hint"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 300.0 }
+  type: TYPE_TEXT
+  text: "Room 1"
+  font: "text"
+  id: "room_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 330.0 y: 288.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "inv_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 200.0 }
+  type: TYPE_TEXT
+  text: "REWARD"
+  font: "text"
+  id: "reward_title"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: -270.0 y: 30.0 }
+  size { x: 180.0 y: 220.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "card1_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: -270.0 y: 30.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "card1_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 30.0 }
+  size { x: 180.0 y: 220.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "card2_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 30.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "card2_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 270.0 y: 30.0 }
+  size { x: 180.0 y: 220.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "card3_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 270.0 y: 30.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "card3_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 220.0 }
+  type: TYPE_TEXT
+  text: "CAULDRON"
+  font: "text"
+  id: "cauldron_title"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: -60.0 y: 220.0 }
+  size { x: 48.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/icon_cauldron"
+  id: "cauldron_icon"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 170.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "inv_text2"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: -270.0 y: 60.0 }
+  size { x: 160.0 y: 44.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "sel_ea_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: -270.0 y: 60.0 }
+  type: TYPE_TEXT
+  text: "Elem A"
+  font: "text"
+  id: "sel_ea_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 60.0 }
+  size { x: 160.0 y: 44.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "sel_eb_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 60.0 }
+  type: TYPE_TEXT
+  text: "Elem B"
+  font: "text"
+  id: "sel_eb_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 270.0 y: 60.0 }
+  size { x: 160.0 y: 44.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "sel_shape_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 270.0 y: 60.0 }
+  type: TYPE_TEXT
+  text: "Shape"
+  font: "text"
+  id: "sel_shape_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: -20.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "preview_name"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: -50.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "preview_quirk"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: -80.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "preview_power"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: -120.0 y: -160.0 }
+  size { x: 180.0 y: 44.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "craft1_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: -120.0 y: -160.0 }
+  type: TYPE_TEXT
+  text: "To Slot 1"
+  font: "text"
+  id: "craft1_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 120.0 y: -160.0 }
+  size { x: 180.0 y: 44.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "craft2_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 120.0 y: -160.0 }
+  type: TYPE_TEXT
+  text: "To Slot 2"
+  font: "text"
+  id: "craft2_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: -230.0 }
+  size { x: 160.0 y: 44.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "done_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: -230.0 }
+  type: TYPE_TEXT
+  text: "Done"
+  font: "text"
+  id: "done_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 960.0 y: 640.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "flash_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+layers { name: "graphics" }
+layers { name: "text" }
+
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
