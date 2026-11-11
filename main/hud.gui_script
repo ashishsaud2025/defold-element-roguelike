@@ -225,6 +225,16 @@ local function render(self)
         end
         inv_str = inv_str .. "    |    Shapes: " .. table.concat(sparts, "  ")
     end
+    if self.relics then
+        local rparts = {}
+        for id, owned in pairs(self.relics) do
+            if owned then rparts[#rparts + 1] = (id:gsub("_", " ")) end
+        end
+        if #rparts > 0 then
+            table.sort(rparts)
+            inv_str = inv_str .. "    |    Relics: " .. table.concat(rparts, ", ")
+        end
+    end
     if st == "ROOM" or reward or cauldron then
         text("inv_text", inv_str)
     end
@@ -262,6 +272,10 @@ local function render(self)
             if opt then
                 if opt.kind == "element" then
                     label = ELEM_LABEL[opt.id] .. " (element)"
+                elseif opt.kind == "relic" then
+                    local rid = opt.id
+                    local pretty = rid:gsub("_", " ")
+                    label = string.upper(pretty) .. " (relic)"
                 else
                     label = string.upper(opt.id) .. " (shape)"
                 end
@@ -463,6 +477,7 @@ function on_message(self, message_id, message, sender)
         self.s2 = message.s2
         self.room = message.room or self.room
         self.inventory = message.inventory or self.inventory
+        self.relics = message.relics or self.relics
         self.reward_options = message.reward_options
         self.cauldron = message.cauldron or self.cauldron
         self.preview = message.preview

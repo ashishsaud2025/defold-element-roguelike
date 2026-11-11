@@ -33,7 +33,8 @@ function M.makeSkill(elemA, elemB, shape, playerName)
     local shapeData = data.SHAPES[shape]
 
     local power = math.floor(compound.power * (0.9 + r1 * 0.2) + 0.5)
-    local quirk = QUIRKS[math.floor(r2 * 5) + 1]
+    local quirk_index = math.floor(r2 * 5) + 1
+    local quirk = QUIRKS[quirk_index]
 
     -- Skill color = average of the two element colors (4.1)
     local ca = data.ELEMENTS[sa]
@@ -52,6 +53,7 @@ function M.makeSkill(elemA, elemB, shape, playerName)
         elements = { sa, sb },
         power = power,
         quirk = quirk,
+        quirk_id = (data.QUIRK_IDS and data.QUIRK_IDS[quirk_index]) or nil,
         color = color,
         cooldown = shapeData.cooldown,
         radius = shapeData.radius,

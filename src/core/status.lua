@@ -21,14 +21,18 @@ M.STATUS_DATA = {
 -- Apply a list of statuses to a target.
 -- Unknown names are ignored (e.g. "spread" has no per-enemy effect yet).
 -- burn refreshes its timer rather than stacking.
-function M.apply(target, status_names, now)
+-- `duration_mul` (optional, default 1) scales every applied duration, e.g. Ancient Catalyst.
+function M.apply(target, status_names, now, duration_mul)
     if status_names == nil then return end
     if target.statuses == nil then target.statuses = {} end
+    local mul = duration_mul or 1
 
     for _, name in ipairs(status_names) do
         local def = M.STATUS_DATA[name]
         if def then
-            target.statuses[name] = { expiry = def.duration }
+            -- One entry per status name: a repeated hit refreshes the timer instead of
+            -- creating a second timer/stack.
+            target.statuses[name] = { expiry = def.duration * mul }
             if name == "burn" then
                 target.burn_timer = 0
             end

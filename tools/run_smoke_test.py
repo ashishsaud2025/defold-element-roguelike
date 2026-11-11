@@ -38,9 +38,12 @@ fxm = [r["fx_missing"][i] for i in range(1, len(r["fx_missing"]) + 1)]
 print("skill fx      : %d problem(s); max live one-shot anims %d (cap 90)" % (len(fxm), r["max_anims"]))
 for m in fxm: print("  - FX:", m)
 print("fx per skill  :", r["fx_report"][:600], "...")
+spell = [r["spell_fail"][i] for i in range(1, len(r["spell_fail"]) + 1)]
+print("spellcraft    : %d check(s) passed, %d failed" % (int(r["spell_pass"]), len(spell)))
+for m in spell: print("  - SPELL:", m)
 print("errors        :", len(errs))
 for e in errs: print("  -", str(e)[:300])
-ok = not errs and not fxm and r["max_anims"] <= 90 and r["baseline"] == r["after"] and r["wall_viol"] == 0 and "STUCK" not in r["path"]
+ok = not errs and not fxm and not spell and int(r["spell_pass"]) > 0 and r["max_anims"] <= 90 and r["baseline"] == r["after"] and r["wall_viol"] == 0 and "STUCK" not in r["path"]
 # With art on, the sprite must actually be mirrored in both directions during a run;
 # with ART_TEST=0 (shape fallback) there is no hflip at all.
 if os.environ.get("ART_TEST") != "0" and not (r["flip_true"] > 0 and r["flip_false"] > 0):

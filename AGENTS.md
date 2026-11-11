@@ -312,6 +312,25 @@ Format: **what happened / why / rule for agents.** These are the assistant's own
 - **What:** I ran `rm -f /mnt/user-data/outputs/*.zip` before each new package, so v5 and v6 vanished. This ignores the point of item 33 (versioned deliveries exist so the user can go back).
 - **Rule:** never delete earlier packages; add the new versioned file next to them.
 
+### 49. Burning Mud re-lit itself forever while the fire area lived
+- **What:** the fire-over-mud interaction checked only `if pud.burning_mud then return end`, and the 3 s revert sets `burning_mud = false`. The fire patch that caused it was still alive, so the 0.15 s interaction ticker immediately ignited the same pool again: burn never ended, and a "reverted" pool could flip-flop on screen.
+- **Fix:** `pud.mud_ignited` is a one-shot latch (set the first time, never cleared), so one pool can be ignited once per lifetime. The test now waits past the revert and asserts the pool stays reverted for another 30 frames.
+- **Rule:** any interaction with a timered revert needs a "has happened" latch, not a state check, or the trigger will re-fire before the source effect expires.
+
+### 50. Splitter children could spawn stuck inside walls
+- **What:** `spawn_wisp_at(self, e.x ± 8, e.y)` (splitter death, boss summons) offset the child from the parent. Beside a wall the child's centre landed in a solid cell. The wisp did not move out because its start point was not itself blocked on the movement path, so it sat in geometry; the smoke test's wall-clip check caught it only after an unrelated RNG shift changed room composition.
+- **Fix:** `e.x, e.y = level_mod.free_point_near(self.level, e.x, e.y, e.radius)` in `spawn_wisp_at`.
+- **Rule:** every spawned entity that is positioned relative to another entity must pass through the level's free-point helper. Do not rely on the movement solver to escape a wall.
+
+### 51. I measured a duration before the frame that changes it
+- **What:** the "bigger but slower" spray test expected `duration == 0.3 / 0.8` exactly, but casting and then reading in the same frame gives the value after one 1/60 s update — an 0.016 s difference. It failed as "cone linger" while the game was correct.
+- **Rule:** when asserting a value that a per-frame loop decrements, either read it immediately after the cast (before any frame) or allow one frame's worth of drift. Find out whether the test or the game is wrong before reporting a cause (B45).
+
+### 52. Trail patches must not carry the ambient ember stream
+- **What:** every puddle with `pud.color` spawns tinted embers using `math.random()` (gameplay RNG sequence) plus a particle every 0.1 s. With `leaves a trail` an orbit can hold 20+ patches, so it both shifted the run's RNG and flooded the particle budget.
+- **Fix:** `spawn_trail_puddle` deliberately creates patches without `pud.color`; they keep their glow ring but no embers. Cosmetic variation uses the deterministic phase from position/`pulse_n`.
+- **Rule:** cosmetic per-entity effects must not read gameplay RNG (B38) and must be capped per active skill, not per spawned object.
+
 ---
 ## Definition of Done (run before telling the human a change is finished)
 1. Syntax-check every Lua file you touched (`loadstring` in LuaJIT or `luac -p` for 5.1). No `goto`, `//`, bit operators.

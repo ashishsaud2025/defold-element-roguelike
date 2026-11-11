@@ -66,7 +66,11 @@ function M.bolt_hits(p, ex, ey)
 end
 
 -- ===== Puddle (Pool) =====
+-- The status list is COPIED: a puddle can gain/lose statuses at runtime (Burning Mud),
+-- and must never mutate the generated skill's status table.
 function M.new_puddle(x, y, radius, duration, power, statuses)
+    local st = {}
+    for i, name in ipairs(statuses or {}) do st[i] = name end
     return {
         kind = "puddle",
         x = x, y = y, radius = radius,
@@ -74,7 +78,7 @@ function M.new_puddle(x, y, radius, duration, power, statuses)
         tick_timer = 0,
         tick_interval = 0.5,
         power = power,
-        statuses = statuses,
+        statuses = st,
         alive = true,
     }
 end

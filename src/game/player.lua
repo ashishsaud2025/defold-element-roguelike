@@ -28,6 +28,19 @@ function M.take_damage(player, amount)
     return false, true
 end
 
+-- Pay a health cost (blood magic). Unlike take_damage this grants no invulnerability
+-- and cannot kill: it fails when the player cannot pay and still keep `min_hp`.
+-- Returns true if the cost was paid.
+function M.spend_health(player, amount, min_hp)
+    min_hp = min_hp or 1
+    if player.hp - amount < min_hp then
+        return false
+    end
+    player.hp = player.hp - amount
+    if player.hp < min_hp then player.hp = min_hp end
+    return true
+end
+
 function M.update_invuln(player, dt)
     if player.invuln > 0 then
         player.invuln = player.invuln - dt

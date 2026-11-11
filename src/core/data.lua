@@ -34,7 +34,39 @@ M.SHAPES = {
 }
 
 -- 4.5 Quirks
+-- The ordered list is part of the deterministic generator: never reorder it.
 M.QUIRKS = { "splits in two", "leaves a trail", "repeats once", "bigger but slower", "costs 5% health" }
+
+-- 4.6 Quirk tuning (keyed by stable id; QUIRK_IDS[i] describes QUIRKS[i]).
+-- The generated skill carries both `quirk` (display text, unchanged) and `quirk_id`.
+M.QUIRK_IDS = { "split_in_two", "leaves_trail", "repeat_once", "bigger_slower", "health_cost" }
+M.QUIRK_DATA = {
+    -- Splits in two: two instances, each at 60% strength so the total is not 2x.
+    split_in_two  = { count = 2, strength = 0.60, angle_deg = 15, pool_offset = 0.60, pool_scale = 0.72 },
+    -- Leaves a trail: short-lived secondary patches, capped so it can never stream forever.
+    leaves_trail  = { patch_life = 0.9, patch_radius = 18, patch_power = 0.5, cap = 24,
+                      bolt_interval = 0.14, orbit_interval = 0.5, pool_patches = 3 },
+    -- Repeats once: one extra execution of the same cast, same aim/position.
+    repeat_once   = { delay = 0.25 },
+    -- Bigger but slower: size +30%, delivery speed -20% (player speed untouched).
+    bigger_slower = { size_mul = 1.30, speed_mul = 0.80, puddle_tick_mul = 1.25 },
+    -- Costs 5% health: paid once per successful player cast; must keep at least 1 HP.
+    health_cost   = { hp_frac = 0.05, min_hp = 1, power_mul = 1.5 },
+}
+
+-- 4.7 Environmental spell interactions (Phase 3)
+M.INTERACT = {
+    BURNING_MUD_TIME = 3.0,      -- how long a Mud pool stays Burning Mud
+    BURNING_MUD_BURN = 2.0,      -- burn refresh applied to enemies in Burning Mud
+    SPREAD_FRAC = 0.60,          -- wind-spread fire keeps 60% duration and strength
+    SPREAD_RADIUS_FRAC = 0.80,   -- ... in a slightly smaller pool
+    DENSE_CLOUD_TIME = 2.0,      -- Steam + Dust cloud lifetime
+    DENSE_CLOUD_RADIUS = 80,
+    DENSE_CLOUD_TICK = 0.5,
+    INTERACTION_TICK = 0.15,     -- controlled update interval (never per frame)
+    MAX_SPELL_AREAS = 40,
+    MAX_CLOUDS = 6,
+}
 
 -- 3. Locked tuning numbers (all in one place)
 M.TUNING = {

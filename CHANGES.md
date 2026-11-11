@@ -1,3 +1,63 @@
+# Spellcraft core — quirks, interactions, relics (v9)
+
+Plan: `spellcraft_implementation_plan.md`, phases 0-5. No new elements, compounds, shapes, statuses
+or relic types; Beam/Trap/Chain were **not** added (optional checkpoint, still open).
+Determinism preserved: recipe key, RNG call order and quirk order are unchanged, so every existing
+recipe still gets the same power and quirk (`SELFCHECK OK`).
+
+## Quirks are now real, tuned effects (`src/core/data.lua`, `src/core/skillgen.lua`)
+- `QUIRK_IDS` / `QUIRK_DATA` hold every tuning number. Generated skills carry `quirk_id`; the `quirk`
+  display text is unchanged.
+- **Splits in two:** 2 instances at 60% strength. Bolt ±15°, pool at 60% offset / 72% radius, two
+  orbits with different radii, two sweeps, burst spawns a second smaller burst after 0.3 s.
+- **Leaves a trail:** short-lived patches (0.9 s, r 18, 50% power, cap 24). Bolt every 0.14 s, orbit
+  every 0.5 s, pool drops 3 patches, cone/burst drop 1.
+- **Repeats once:** one extra execution of the original cast after 0.25 s. Repeats never schedule
+  repeats, never start a cooldown and never pay health.
+- **Bigger but slower:** size ×1.30, spell delivery speed ×0.80, pool tick ×1.25. Cooldown and the
+  player's own movement speed are untouched (the old ×1.5 cooldown is gone).
+- **Costs 5% health:** ×1.5 power, paid once per successful player cast, refuses to cast below 1 HP
+  (no cooldown, no health change), never charged for repeats or the Echo echo.
+
+## Statuses + damage go through one path (`main/game.script`, `src/game/combat.lua`)
+- `apply_statuses` and `apply_hit` are used by all five shapes, so every delivery applies the same
+  damage → status → knockback trio, and knockback reads the hit's own status list.
+- `status.apply(target, names, 0, duration_mul)`; `combat.new_puddle` copies the status list.
+- `hide_self` (Mist) still targets the caster; repeated ticks refresh, never stack.
+
+## Environmental interactions (`data.INTERACT`, `game.script`)
+- Fire over Mud → **Burning Mud** for 3 s, then reverts; ignites once per pool (`pud.mud_ignited`).
+- Wind over a fire pool → one spread pool (60% duration/strength, 80% radius), once per source pool.
+- Steam + Dust → **Dense Cloud** (r 80, 2 s) that blinds and confuses inside it; ≤6 clouds.
+- Areas: ≤40, aged on a 0.15 s ticker (never per frame); bolts check overlaps too.
+- Interaction/area positions pass through `level_mod.free_point_near`, so nothing lands in a wall.
+
+## Relics (`src/core/relics.lua`, reward flow, HUD)
+- Inferno Heart (+15% fire power), Echoing Crystal (every 5th player cast echoes at 50%),
+  Ancient Catalyst (+20% status duration), Orbital Crown (orbit +1 orb).
+- At most one relic per reward screen, never a duplicate of one owned. HUD shows the relic label on
+  the card and a relic line in the inventory. Relics reset with the run and never affect generation.
+
+## Bugs fixed on the way
+- Burning Mud re-ignited itself while the fire area lived (loop) → `pud.mud_ignited`.
+- Splitter children / boss summons could spawn stuck inside walls → `free_point_near` in
+  `spawn_wisp_at`.
+- Trail puddles no longer carry `pud.color`, so 20+ trails do not drain gameplay RNG or stream embers.
+
+## Tests
+- `python tools/run_smoke_test.py` → **PASS**: spellcraft **266 checks passed, 0 failed**, 0 errors,
+  live objects 323 → 323, wall clipping 0, max live one-shot anims 90/90.
+  `ART_TEST=1` → PASS (flips 807/1455). `ART_TEST=0` → PASS (flips 0/0).
+- New coverage: 50 combinations' fields; 10×5 compound-status matrix; 25 quirk/shape cells; health
+  cost edges; each relic alone + Echo/repeat/health interactions; relic pick + reset; reward-screen
+  invariants; Burning Mud / fire spread / Dense Cloud; wall boundaries; area/cloud caps; reset cleanup.
+- `python tools/validate_rooms.py` → 10 rooms, 0 problems. `python tools/run_anim_test.py` → 68042
+  checks, 0 failures. Editor compile endpoint → `{"success":true,"issues":[]}`.
+- **Not verified:** rendering, blending, z-order, editor parsing of the new flow, and how the
+  interactions/relics *feel* in play. The mock proves logic only. Max live one-shot anims sits at the
+  90 cap; extras are skipped safely, so a heavier effect pass would need the cap raised.
+- Dev tools kept: `TUNING.DEBUG` still true (1-5 / Q / E skill row, T for the training arena).
+
 # Docs (v8)
 - `AGENTS.md`: items 44-48 (render constants, test-vs-game, skipped DoD/licence TODOs, unverified letterbox assumptions, deleted deliveries), item 1 corrected for nested atlas animations, DoD item 8 added.
 - `README.md`: §5.5 note, §13.1 row, §13.4 rows, new §13.5 (animated effects + letterboxing).
