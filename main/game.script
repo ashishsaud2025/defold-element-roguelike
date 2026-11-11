@@ -871,26 +871,40 @@ local function send_ui(self)
             }
         end
     end
-    msg.post("/hud#gui", "ui", {
+    local ui_msg = {
         state = self.state,
         hp = self.player.hp,
         max_hp = self.player.max_hp,
-        picks = self.picks,
-        credits = credits_lines,
         room = self.room_number,
-        inventory = self.inventory,
-        reward_options = self.reward_options,
-        cauldron = self.cauldron,
-        preview = preview,
         boss = (self.boss ~= nil),
         boss_hp = (self.boss and self.boss.hp) or 0,
         boss_max_hp = (self.boss and self.boss.max_hp) or 0,
         flash = self.screen_flash or 0,
-        s1 = skill_view(self.slot1, self.slot1_cooldown, self.slot1_cd_max,
-                        self.slot1_elem_a, self.slot1_elem_b),
-        s2 = skill_view(self.slot2, self.slot2_cooldown, self.slot2_cd_max,
-                        self.slot2_elem_a, self.slot2_elem_b),
-    })
+    }
+    -- Only send large/conditional fields when needed to stay under msg.post buffer limit
+    if self.state == "PICK_START" then
+        ui_msg.picks = self.picks
+    end
+    if self.state == "CREDITS" then
+        ui_msg.credits = credits_lines
+    end
+    if self.state == "ROOM" or self.state == "REWARD" or self.state == "CAULDRON" then
+        ui_msg.inventory = self.inventory
+    end
+    if self.state == "REWARD" then
+        ui_msg.reward_options = self.reward_options
+    end
+    if self.state == "CAULDRON" then
+        ui_msg.cauldron = self.cauldron
+        ui_msg.preview = preview
+    end
+    if self.state == "ROOM" or self.state == "REWARD" or self.state == "CAULDRON" then
+        ui_msg.s1 = skill_view(self.slot1, self.slot1_cooldown, self.slot1_cd_max,
+                        self.slot1_elem_a, self.slot1_elem_b)
+        ui_msg.s2 = skill_view(self.slot2, self.slot2_cooldown, self.slot2_cd_max,
+                        self.slot2_elem_a, self.slot2_elem_b)
+    end
+    msg.post("/hud#gui", "ui", ui_msg)
 end
 
 -- Delete every live visual exactly once (AGENTS.md item 6), then forget it.
