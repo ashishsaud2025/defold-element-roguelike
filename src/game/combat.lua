@@ -169,7 +169,7 @@ function M.update_orbit(o, dt, player_x, player_y, enemies)
                 local dy = orb.y - e.y
                 local dist = math.sqrt(dx * dx + dy * dy)
                 if dist < (14 + e.radius) then
-                    table.insert(hits, { enemy = e, damage = o.power, statuses = o.statuses })
+                    table.insert(hits, { enemy = e, damage = o.power, statuses = o.statuses, orb = orb })
                     o.enemy_cooldowns[e] = 0.5
                     break
                 end

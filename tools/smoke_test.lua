@@ -1517,6 +1517,339 @@ if begin_room() then
     sf(#errors == errs_before, "nova n4: an error occurred during the delayed split")
   end
 end
+-- ===== Phase D: universal Pool infusion — Orbit (per-orb records) ===============
+-- Orbit rotation is frozen in these tests (orb.rev_per_sec = 0) so each orb sits
+-- exactly where placed; the engine path (segment test, grace, hits) is unchanged.
+if begin_room() then
+  -- D1: only the orb whose path crosses the Pool is infused.
+  local e1, e2, e3 = self.enemies[1], self.enemies[2], self.enemies[3]
+  if e1 and e2 and e3 then
+    for _, en in ipairs({ e1, e2, e3 }) do calm_enemy(en) end
+    place_at(e1, 0, 70)
+    place_at(e2, 120, 70)
+    place_at(e3, 240, 70)
+    self.aim.x, self.aim.y = self.player_pos.x + 70, self.player_pos.y
+    equip(mk("puddle", nil, "earth", "water")); cast1()      -- Mud, d=70
+    local pool = self.puddles[#self.puddles]
+    if pool then pool.radius = 40 end
+    local skd = mk("orbit", nil, "fire", "fire")
+    equip(skd); cast1()
+    local orb = self.orbits[1]
+    if orb then orb.rev_per_sec = 0 end
+    frames(10)
+    local pwr = skd.power
+    sf(e1.statuses and e1.statuses.root ~= nil, "orbit d1: crossing orb did not infuse")
+    sf(near(999 - e1.hp, pwr * 1.25, 0.001), "orbit d1: e1 damage " .. (999 - e1.hp))
+    for _, en in ipairs({ e2, e3 }) do
+      sf(not (en.statuses and en.statuses.root), "orbit d1: an orb that never touched the pool infused its hit")
+      sf(near(999 - en.hp, pwr, 0.001), "orbit d1: uninfused orb hit for " .. (999 - en.hp) .. " (expected " .. tostring(pwr) .. ")")
+    end
+    sf(orb and orb.orbs[1].infuse_live and #orb.orbs[1].infuse_live >= 1,
+       "orbit d1: orb in the pool has no live infusion entries")
+    sf(orb and (#(orb.orbs[2].infuse_live or {}) == 0) and (#(orb.orbs[3].infuse_live or {}) == 0),
+       "orbit d1: an orb outside the pool holds infusion entries")
+  end
+end
+if begin_room() then
+  -- D2: standing in a Pool — every orb infused continuously, one merged x1.25 hit.
+  local e = self.enemies[1]
+  if e then
+    calm_enemy(e)
+    place_at(e, 0, 70)
+    self.aim.x, self.aim.y = self.player_pos.x, self.player_pos.y       -- pool at the player
+    equip(mk("puddle", "bigger_slower", "earth", "water")); cast1()     -- radius x1.3 ~ 78 (covers the ring)
+    local skd2 = mk("orbit", nil, "fire", "fire")
+    equip(skd2); cast1()
+    local orb = self.orbits[1]
+    if orb then orb.rev_per_sec = 0 end
+    frames(12)                                       -- < 0.5 s: no pool tick yet
+    for j = 1, #(orb and orb.orbs or {}) do
+      local lv = orb.orbs[j].infuse_live
+      sf(lv and #lv >= 1, "orbit d2: orb " .. j .. " not infused inside the pool")
+    end
+    local keys = 0 for _ in pairs(e.statuses or {}) do keys = keys + 1 end
+    sf(keys == 2, "orbit d2: statuses " .. keys .. " (expected burn+root)")
+    sf(near(999 - e.hp, skd2.power * 1.25, 0.001), "orbit d2: damage " .. (999 - e.hp))
+  end
+end
+if begin_room() then
+  -- D3: grace per orb through the real loop; pool dying mid-grace keeps the snapshot.
+  local e = self.enemies[1]
+  if e then
+    calm_enemy(e)
+    place_at(e, 0, 70)
+    self.aim.x, self.aim.y = self.player_pos.x + 70, self.player_pos.y
+    equip(mk("puddle", nil, "earth", "water")); cast1()
+    local pool = self.puddles[#self.puddles]
+    if pool then pool.radius = 40 end
+    local skd3 = mk("orbit", nil, "fire", "fire")
+    equip(skd3); cast1()
+    local orb = self.orbits[1]
+    if orb then orb.rev_per_sec = 0 end
+    local errs_before = #errors
+    frames(8)
+    local d1 = 999 - e.hp
+    sf(near(d1, skd3.power * 1.25, 0.001), "orbit d3: first hit " .. d1 .. " (expected infused)")
+    if pool then pool.duration = 0.02 end         -- pool dies mid-grace
+    frames(3)
+    local pool_alive = false
+    for _, p2 in ipairs(self.puddles) do if p2 == pool then pool_alive = true end end
+    sf(not pool_alive, "orbit d3: pool did not expire mid-grace")
+    orb.enemy_cooldowns = {}
+    local hp2 = e.hp
+    frames(2)                                     -- hit inside the grace, pool gone
+    local d2 = hp2 - e.hp
+    sf(near(d2, skd3.power * 1.25, 0.001),
+       "orbit d3: hit inside grace after the pool died = " .. d2 .. " (snapshot missing?)")
+    sf(e.statuses and e.statuses.root ~= nil, "orbit d3: snapshot root missing after the pool died")
+    orb.enemy_cooldowns = {}
+    frames(75)                                    -- let the grace fully elapse
+    orb.enemy_cooldowns = {}                      -- hits may have fired during the wait
+    e.statuses = {}                               -- native-only check is clean now
+    local hp3 = e.hp
+    frames(2)
+    local d3 = hp3 - e.hp
+    sf(near(d3, skd3.power, 0.001),
+       "orbit d3: hit after the grace = " .. d3 .. " (expected native " .. skd3.power .. ")")
+    sf(e.statuses and e.statuses.root == nil and e.statuses.burn ~= nil,
+       "orbit d3: after the grace the hit was not native-only")
+    sf(#errors == errs_before, "orbit d3: an error occurred (pool death / grace path)")
+  end
+end
+if begin_room() then
+  -- D4: one accent per orb per continuous infusion; others never accent.
+  for _, en in ipairs(self.enemies) do en.active = false end
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 70, p.y
+  equip(mk("puddle", nil, "earth", "water")); cast1()
+  local pool = self.puddles[#self.puddles]
+  if pool then pool.radius = 40 end
+  equip(mk("orbit", nil, "fire", "fire")); cast1()
+  local orb = self.orbits[1]
+  if orb then orb.rev_per_sec = 0 end
+  local o1, o2 = orb.orbs[1], orb.orbs[2]
+  local a1, a2 = 0, 0
+  local w1, w2 = o1.infused_visual or false, o2.infused_visual or false
+  local function poll()
+    if o1.infused_visual and not w1 then a1 = a1 + 1 end
+    if o2.infused_visual and not w2 then a2 = a2 + 1 end
+    w1, w2 = o1.infused_visual or false, o2.infused_visual or false
+  end
+  for _ = 1, 6 do self.player.invuln = 5; frame(); poll() end
+  sf(a1 == 1, "orbit d4: continuous infusion accented " .. a1 .. " times on orb 1")
+  sf(a2 == 0, "orbit d4: an orb never touching the pool accented")
+  if pool then
+    pool.x, pool.y = p.x + 500, p.y + 300          -- orb leaves the pool; grace runs
+    for _ = 1, 5 do self.player.invuln = 5; frame(); poll() end
+    pool.x, pool.y = p.x + 70, p.y                  -- back on orb 1, still inside grace
+    for _ = 1, 3 do self.player.invuln = 5; frame(); poll() end
+    sf(a1 == 1, "orbit d4: re-entry during grace re-accented orb 1")
+    pool.x, pool.y = p.x + 500, p.y + 300           -- out of the pool for the full grace
+    for _ = 1, 75 do self.player.invuln = 5; frame(); poll() end
+    sf(w1 == false, "orbit d4: infusion on orb 1 never fully ended")
+    pool.x, pool.y = p.x + 70, p.y                  -- fresh infusion -> a second accent
+    for _ = 1, 4 do self.player.invuln = 5; frame(); poll() end
+    sf(a1 == 2, "orbit d4: restarted infusion accented " .. a1 .. " times (expected 2)")
+  end
+end
+if begin_room() then
+  -- D5: an Orbit with leaves_trail stays at base damage inside its own patches.
+  local e = self.enemies[1]
+  if e then
+    calm_enemy(e)
+    place_at(e, 0, 70)
+    local skd5 = mk("orbit", "leaves_trail", "fire", "fire")
+    equip(skd5); cast1()
+    local orb = self.orbits[1]
+    if orb then orb.rev_per_sec = 0 end
+    local hp0 = 999
+    local logs0 = count_logs("^Enemy HP: ")
+    frames(45)                                       -- < 1.0 s: no burn tick yet
+    local hits = count_logs("^Enemy HP: ") - logs0
+    if hits < 1 then
+      sf(false, "orbit d5: no hits landed (hits=" .. hits .. ")")
+    else
+      sf(near((hp0 - e.hp) / hits, skd5.power, 0.001),
+         "orbit d5: avg damage/hit " .. ((hp0 - e.hp) / hits) .. " (expected " .. tostring(skd5.power) .. ")")
+    end
+    sf(trail_count() >= 1, "orbit d5: leaves_trail spawned no patches")
+    sf(not (e.statuses and e.statuses.root), "orbit d5: the orbit's own trail infused it")
+  end
+end
+-- D6: orbit parameters are identical with and without a Pool; per-enemy cooldown is 0.5.
+local d6 = {}
+if begin_room() then
+  local skd6 = mk("orbit", nil, "fire", "wind")
+  equip(skd6); cast1()
+  local o = self.orbits[1]
+  d6.n, d6.rev, d6.rad, d6.pow = #o.orbs, o.rev_per_sec, o.orbit_radius, o.power
+  d6.dur = o.duration
+  o.rev_per_sec = 0                            -- frozen: orb1 stays at east so the enemy is hit on the next frame
+  frames(30)
+  d6.dur2 = o.duration
+  local e = self.enemies[1]
+  if e then
+    calm_enemy(e)
+    place_at(e, 0, 70)
+    for _ = 1, 10 do
+      self.player.invuln = 5
+      frame()
+      if o.enemy_cooldowns[e] then
+        sf(near(o.enemy_cooldowns[e], 0.5, 1/60 + 0.001),
+           "orbit d6: per-enemy cooldown " .. o.enemy_cooldowns[e] .. " (expected 0.5)")
+        break
+      end
+    end
+  end
+end
+if begin_room() then
+  equip(mk("puddle", nil, "earth", "water")); cast1()     -- a pool sits in the room
+  local skd6b = mk("orbit", nil, "fire", "wind")
+  equip(skd6b); cast1()
+  local o = self.orbits[1]
+  frames(30)
+  sf(d6.n == #o.orbs, "orbit d6: orb count changed with a pool in the room")
+  sf(d6.rev == o.rev_per_sec, "orbit d6: rev_per_sec changed with a pool in the room")
+  sf(d6.rad == o.orbit_radius, "orbit d6: orbit_radius changed with a pool in the room")
+  sf(d6.pow == o.power, "orbit d6: power changed with a pool in the room")
+  sf(near(d6.dur, o.duration + 30 * (1/60), 0.001), "orbit d6: duration drifted with a pool in the room")
+  sf(near(d6.dur2, o.duration, 0.001), "orbit d6: duration after N frames drifted with a pool in the room")
+end
+if begin_room() then
+  -- D7: Orbital Crown's extra orb gets its own record; split_in_two orbits stay independent.
+  self.relics.orbital_crown = true
+  equip(mk("orbit", nil, "fire", "fire")); cast1()
+  local o = self.orbits[1]
+  sf(o and #o.orbs == 4, "orbit d7: orbital crown yielded " .. (o and #o.orbs or -1) .. " orbs (expected 4)")
+  if o then
+    o.rev_per_sec = 0
+    local e_a = self.enemies[1]
+    local e_b = self.enemies[2]
+    calm_enemy(e_a); calm_enemy(e_b)
+    -- orb 1 sits at angle 0, orb 2 at angle 2*pi/4 = 90 deg
+    local x1, y1 = o.orbs[1].x, o.orbs[1].y
+    local x2, y2 = o.orbs[2].x, o.orbs[2].y
+    e_a.x, e_a.y = x1, y1
+    e_b.x, e_b.y = x2, y2
+    self.aim.x, self.aim.y = x1, y1
+    equip(mk("puddle", nil, "earth", "water")); cast1()   -- pool on orb 1's spot only
+    local pool = self.puddles[#self.puddles]
+    if pool then pool.radius = 40 end
+    frames(10)
+    sf(e_a.statuses and e_a.statuses.root ~= nil, "orbit d7: crown orb 1 was not infused")
+    sf(near(999 - e_a.hp, o.power * 1.25, 0.001), "orbit d7: orb 1 hit " .. (999 - e_a.hp) .. " (expected infused)")
+    sf(not (e_b.statuses and e_b.statuses.root), "orbit d7: crown orb 2 was infused by a pool on orb 1")
+    sf(near(999 - e_b.hp, o.power, 0.001), "orbit d7: orb 2 hit " .. (999 - e_b.hp) .. " (expected base)")
+  end
+end
+if begin_room() then
+  -- D7b: split_in_two creates two independent orbit objects with their own records.
+  local e_small = self.enemies[1]
+  local e_big = self.enemies[2]
+  calm_enemy(e_small); calm_enemy(e_big)
+  e_small.x, e_small.y = self.player_pos.x + 52, self.player_pos.y   -- small ring (59.5) hits it
+  e_big.x, e_big.y = self.player_pos.x + 104, self.player_pos.y      -- only the big ring (80.5) reaches
+  self.aim.x, self.aim.y = self.player_pos.x + 100, self.player_pos.y
+  equip(mk("puddle", nil, "earth", "water")); cast1()     -- pool at d=100
+  local pool = self.puddles[#self.puddles]
+  if pool then pool.radius = 20 end                         -- spans 80..120: big ring only (small ring is 40.5 px away > 20+14)
+  equip(mk("orbit", "split_in_two", "fire", "fire")); cast1()
+  sf(#self.orbits == 2, "orbit d7b: split did not create two orbit objects")
+  for _, ob in ipairs(self.orbits) do ob.rev_per_sec = 0 end
+  frames(10)
+  local sp = 0
+  for _, ob in ipairs(self.orbits) do sp = math.max(sp, ob.power) end
+  sf(e_small.statuses and e_small.statuses.root == nil, "orbit d7b: small orbit infused by a pool on the big ring")
+  sf(near(999 - e_small.hp, sp, 0.001), "orbit d7b: small-orbit hit " .. (999 - e_small.hp) .. " (expected base " .. tostring(sp) .. ")")
+  sf(e_big.statuses and e_big.statuses.root ~= nil, "orbit d7b: big orbit not infused by the pool on its ring")
+  sf(near(999 - e_big.hp, sp * 1.25, 0.001), "orbit d7b: big-orbit hit " .. (999 - e_big.hp) .. " (expected infused)")
+end
+if begin_room() then
+  -- D8: orbit expiry and a room reset leave no records or tracked visuals behind.
+  equip(mk("puddle", nil, "earth", "water")); cast1()
+  equip(mk("orbit", nil, "fire", "fire")); cast1()
+  frames(5)
+  local orb = self.orbits[1]
+  if orb then orb.duration = 0.02 end               -- force expiry
+  frames(3)
+  sf(#self.orbits == 0, "orbit d8: expired orbit object still tracked")
+  equip(mk("orbit", nil, "fire", "fire")); cast1()
+  frames(5)
+  local errs_before = #errors
+  self.state = "DEAD"; ui({ action = "continue" })
+  sf(#self.orbits == 0, "orbit d8: orbits survived a room reset")
+  frames(30)
+  sf(#errors == errs_before, "orbit d8: error after a room reset")
+end
+-- ===== 8. 40-cell infusion matrix: 10 Pool compounds x Bolt/Orbit/Spray/Nova ======
+-- Drives do_cast + the update loop (not the module). Spell compound is deliberately
+-- different from the pool pair (Ember, or Mud for the Ember row) so the union is non-trivial.
+local POOL_PAIRS = {
+  { "fire", "fire" }, { "water", "water" }, { "wind", "wind" }, { "earth", "earth" },
+  { "fire", "water" }, { "fire", "wind" }, { "earth", "fire" }, { "water", "wind" },
+  { "earth", "water" }, { "earth", "wind" },
+}
+local STAT = status_mod.STATUS_DATA
+local DIST = { projectile = 150, orbit = 70, cone = 50, burst = 30 }
+local matrix_cells = 0
+for _, pp in ipairs(POOL_PAIRS) do
+  local pa, pb = pp[1], pp[2]
+  local pool_els = pa .. "+" .. pb
+  local sa, sb = "fire", "wind"
+  if pa == "fire" and pb == "wind" then sa, sb = "earth", "water" end
+  for _, shape in ipairs({ "projectile", "orbit", "cone", "burst" }) do
+    local tag = "matrix " .. pool_els .. "/" .. shape
+    local dist = DIST[shape]
+    for _, control in ipairs({ false, true }) do
+      if begin_room() then
+        local e = self.enemies[1]
+        if not e then
+          sf(false, tag .. ": no enemy")
+        else
+          calm_enemy(e)
+          place_target(e, dist)
+          if not control then
+            self.aim.x = self.player_pos.x + (e.x - self.player_pos.x) * 0.55
+            self.aim.y = self.player_pos.y + (e.y - self.player_pos.y) * 0.55
+            equip(mk("puddle", nil, pa, pb)); cast1()
+          end
+          local skS = mk(shape, nil, sa, sb)
+          local want = {}
+          for _, n in ipairs(skS.statuses) do if STAT[n] and not STAT[n].on_player then want[n] = true end end
+          if not control then
+            local psk = mk("puddle", nil, pa, pb)     -- fresh skill, same statuses as the cast pool
+            for _, n in ipairs(psk.statuses) do if STAT[n] and not STAT[n].on_player then want[n] = true end end
+          end
+          local want_n = 0 for _ in pairs(want) do want_n = want_n + 1 end
+          self.aim.x, self.aim.y = e.x, e.y
+          equip(skS); cast1()
+          local orb = self.orbits[1]
+          if orb then orb.rev_per_sec = 0 end
+          if shape == "projectile" then frames(30) else frames(10) end
+          local have_n = 0 for _ in pairs(e.statuses or {}) do have_n = have_n + 1 end
+          local missing = {}
+          for n in pairs(want) do
+            if not e.statuses or not e.statuses[n] then missing[#missing + 1] = n end
+          end
+          if control then
+            sf(have_n == want_n, tag .. ": control statuses=" .. have_n .. " expected " .. want_n)
+            sf(#missing == 0, tag .. ": control missing " .. table.concat(missing, ","))
+            sf(near(999 - e.hp, skS.power, 0.001),
+               tag .. ": control damage " .. (999 - e.hp) .. " (expected " .. skS.power .. ")")
+          else
+            sf(have_n == want_n, tag .. ": merged statuses=" .. have_n .. " expected " .. want_n)
+            sf(#missing == 0, tag .. ": merged missing " .. table.concat(missing, ","))
+            sf(near(999 - e.hp, skS.power * 1.25, 0.001),
+               tag .. ": damage " .. (999 - e.hp) .. " (expected " .. tostring(skS.power * 1.25) .. ")")
+            matrix_cells = matrix_cells + 1
+          end
+          sf(not (e.statuses and e.statuses.hide_self), tag .. ": hide_self on the enemy")
+        end
+      end
+    end
+  end
+end
+sf(matrix_cells == 40, "matrix: only " .. matrix_cells .. " / 40 cells ran")
 -- Grace lifecycle (module contract, deterministic): entry stays live for exactly
 -- INFUSE_GRACE after the pool stops overlapping; re-entry refreshes; expired entries prune.
 do
