@@ -283,6 +283,9 @@ Format: **what happened / why / rule for agents.** These are the assistant's own
 ### 43. `edit` replaced a section heading instead of inserting before it
 - **What:** I "inserted" a DEBUG row into CHANGES.md by replacing the `## 6.5 Shape glyphs: skipped` heading; the 6.5 text ended up orphaned under
   the new heading and the file needed a repair pass.
+- **Again, Phase E (v10 docs):** I replaced the `## Definition of Done` line 1 while inserting item 54 — the same edit that restored it added item 54.
+  The harness flagged the file change before I noticed. In this file, every insertion anchors on the text AFTER the insertion point and puts
+  the anchor text first in `newString`; then re-read the file (AGENTS #54).
 - **Rule:** when adding a new section, anchor `edit` on the *following* text and put the new heading **before** it (insert, never replace the heading
   you want to keep), and re-read the file afterward to confirm the structure survived.
 
