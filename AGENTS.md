@@ -110,6 +110,8 @@
 ### 17. Debug row must cover both slots
 - Keys 1-5 only rebuilt slot 1 and Q/E only cycled `slot1_elem_a/b`, so half of the 50 skills could never be reached from slot 2.
 - **Fix:** keep a canonical `COMPOUND_PAIRS` list of all 10 pairs; Q cycles slot 1's compound, E cycles slot 2's, keys 1-5 set slot 1's shape. Gate the whole block behind `TUNING.DEBUG`.
+- **Update (v9):** keys 1-5 still left slot 2's shape unreachable (it could only ever cast whatever it was crafted as), so a player testing the shape interactions asked "how do I change mouse-button-2's shape?". Keys **6-0** now set slot 2's shape in the same order (6 bolt, 7 pool, 8 orbit, 9 spray, 0 nova) and are bound in `input/game.input_binding`. The smoke test presses all ten keys and asserts each slot's `shape_key`, plus that a swap never leaks a cooldown.
+- **Rule:** a debug row is only usable if it reaches every slot/shape combination the player can cast with. When adding a key, add its binding and a test that presses it.
 
 ### 18. Cooldown ownership: a cooldown belongs to the SKILL, not the slot
 - First bug: `rebuild_skills` swapped the skill object but left the slot timer running, so a freshly picked Orbit inherited 5 s of the old Inferno Pool's cooldown ("all spells share one cooldown").

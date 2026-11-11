@@ -2124,13 +2124,19 @@ function on_input(self, action_id, action)
     -- with a "ui_action" message (handled in on_message).
 
     -- M3 debug row (removed/hidden at the end via TUNING.DEBUG):
-    --   1-5 = slot 1 shape, Q = cycle slot 1 compound, E = cycle slot 2 compound
+    --   1-5 = slot 1 shape, 6-0 = slot 2 shape (same order), Q = cycle slot 1 compound,
+    --   E = cycle slot 2 compound, T = training arena
     if data.TUNING.DEBUG then
         if action_id == hash("1") and action.pressed then self.slot1_shape = "projectile"; rebuild_skills(self) end
         if action_id == hash("2") and action.pressed then self.slot1_shape = "puddle"; rebuild_skills(self) end
         if action_id == hash("3") and action.pressed then self.slot1_shape = "orbit"; rebuild_skills(self) end
         if action_id == hash("4") and action.pressed then self.slot1_shape = "cone"; rebuild_skills(self) end
         if action_id == hash("5") and action.pressed then self.slot1_shape = "burst"; rebuild_skills(self) end
+        if action_id == hash("6") and action.pressed then self.slot2_shape = "projectile"; rebuild_skills(self) end
+        if action_id == hash("7") and action.pressed then self.slot2_shape = "puddle"; rebuild_skills(self) end
+        if action_id == hash("8") and action.pressed then self.slot2_shape = "orbit"; rebuild_skills(self) end
+        if action_id == hash("9") and action.pressed then self.slot2_shape = "cone"; rebuild_skills(self) end
+        if action_id == hash("0") and action.pressed then self.slot2_shape = "burst"; rebuild_skills(self) end
         if action_id == hash("q") and action.pressed then cycle_compound(self, 1) end
         if action_id == hash("e") and action.pressed then cycle_compound(self, 2) end
         if action_id == hash("t") and action.pressed then toggle_training_room(self) end

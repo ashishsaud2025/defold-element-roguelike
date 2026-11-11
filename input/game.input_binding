@@ -43,6 +43,26 @@ key_trigger {
   action: "5"
 }
 key_trigger {
+  input: KEY_6
+  action: "6"
+}
+key_trigger {
+  input: KEY_7
+  action: "7"
+}
+key_trigger {
+  input: KEY_8
+  action: "8"
+}
+key_trigger {
+  input: KEY_9
+  action: "9"
+}
+key_trigger {
+  input: KEY_0
+  action: "0"
+}
+key_trigger {
   input: KEY_Q
   action: "q"
 }

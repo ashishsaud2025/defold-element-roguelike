@@ -608,6 +608,34 @@ if begin_room() then
   sf(#self.bolts == before + 1, "health_cost: paid cast did not fire")
 end
 
+-- Debug row must cover BOTH slots (AGENTS 17) and cooldowns must follow the skill (item 18).
+if begin_room() then
+  local keys = { { "1", "projectile" }, { "2", "puddle" }, { "3", "orbit" }, { "4", "cone" },
+                 { "5", "burst" }, { "6", "projectile" }, { "7", "puddle" }, { "8", "orbit" },
+                 { "9", "cone" }, { "0", "burst" } }
+  for i, k in ipairs(keys) do
+    act(k[1], true, false)
+    act(k[1], false, true)
+    local slot = (i <= 5) and 1 or 2
+    local sk = (slot == 1) and self.slot1 or self.slot2
+    sf(sk.shape_key == k[2], "debug row: key " .. k[1] .. " -> slot " .. slot .. " shape "
+       .. tostring(sk.shape_key) .. " (expected " .. k[2] .. ")")
+  end
+  self.slot2_cooldown = 3                       -- slot 2 is a burst here
+  self.cooldown_ready[2][self.slot2.key] = self.clock + 3
+  act("7", true, false)                         -- burst -> pool: a new skill starts ready
+  sf(self.slot2.shape_key == "puddle", "debug row: slot 2 pool")
+  sf(self.slot2_cooldown == 0, "debug row: a different skill inherited the old cooldown")
+  self.slot2_cooldown = 2.5                     -- now the POOL is cooling down
+  self.cooldown_ready[2][self.slot2.key] = self.clock + 2.5
+  act("6", true, false)                         -- pool -> bolt
+  sf(self.slot2.shape_key == "projectile", "debug row: slot 2 bolt")
+  sf(self.slot2_cooldown == 0, "debug row: bolt inherited the pool's cooldown")
+  act("7", true, false)                         -- back to pool: its own cooldown must resume
+  sf(math.abs(self.slot2_cooldown - 2.5) <= 0.05,
+     "debug row: pool cooldown did not resume (" .. self.slot2_cooldown .. ")")
+end
+
 -- ===== 5.2 relic effects, independently ====================================
 if begin_room() then
   self.relics.inferno_heart = true

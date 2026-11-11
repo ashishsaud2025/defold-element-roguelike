@@ -39,6 +39,11 @@ recipe still gets the same power and quirk (`SELFCHECK OK`).
 - At most one relic per reward screen, never a duplicate of one owned. HUD shows the relic label on
   the card and a relic line in the inventory. Relics reset with the run and never affect generation.
 
+## Dev tools (kept on purpose: `TUNING.DEBUG` is still true)
+- Keys **1-5** set slot 1's shape (bolt / pool / orbit / spray / nova), keys **6-0** set slot 2's
+  shape in the same order; `Q` cycles slot 1's compound, `E` cycles slot 2's, `T` opens the
+  Training Arena. All ten keys are bound in `input/game.input_binding` and covered by the smoke test.
+
 ## Bugs fixed on the way
 - Interactions were only readable in the console (`print`), which failed the plan's "readable in
   combat" check. Added `announce()`: a 1.4 s HUD banner on the existing `help_text` node, an
