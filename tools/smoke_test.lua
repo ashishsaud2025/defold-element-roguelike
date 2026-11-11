@@ -1850,6 +1850,36 @@ for _, pp in ipairs(POOL_PAIRS) do
   end
 end
 sf(matrix_cells == 40, "matrix: only " .. matrix_cells .. " / 40 cells ran")
+-- Accent is uncapped: with the one-shot flipbook cap filled to 90, the infusion accent
+-- (a spawn_particle, never anim_fx) still fires and nothing errors.
+if begin_room() then
+  for _ = 1, 90 do
+    local id = factory.create("#fx_factory", vmath.vector3(100, 100, 0.1))
+    table.insert(self.anims, { t = 999, vx = 0, vy = 0, x = 100, y = 100, z = 0.1, id = id })
+  end
+  local errs_before = #errors
+  sf(#self.anims == 90, "accent cap: could not fill one-shot cap (anims=" .. #self.anims .. ")")
+  local e = self.enemies[1]
+  if e then
+    e.alive, e.active, e.telegraph, e.immortal = true, true, 0, false
+    e.hp, e.speed, e.vx, e.vy = 999, 0, 0, 0
+    e.statuses = {}
+    place_target(e, 150)
+    self.aim.x, self.aim.y = self.player_pos.x + (e.x - self.player_pos.x) * 0.5,
+                              self.player_pos.y + (e.y - self.player_pos.y) * 0.5
+    equip(mk("puddle", nil, "earth", "water")); cast1()
+    self.aim.x, self.aim.y = e.x, e.y
+    local skb = mk("projectile", nil, "fire", "fire")
+    equip(skb); cast1()
+    frames(3)
+    sf(self.bolts[1] ~= nil and self.bolts[1].infused_visual == true,
+       "accent cap: infusion accent dropped at a full one-shot cap")
+    sf(#errors == errs_before, "accent cap: an error occurred at a full one-shot cap")
+  end
+  for _, a in ipairs(self.anims) do a.t = 0 end
+  frames(1)                                     -- let the dummies expire cleanly
+  sf(#self.anims == 0, "accent cap: dummy anims did not expire")
+end
 -- Grace lifecycle (module contract, deterministic): entry stays live for exactly
 -- INFUSE_GRACE after the pool stops overlapping; re-entry refreshes; expired entries prune.
 do

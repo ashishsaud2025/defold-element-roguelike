@@ -340,6 +340,13 @@ Format: **what happened / why / rule for agents.** These are the assistant's own
 - **And:** while writing this very item I replaced the `## Definition of Done` heading with it — item 43, again, two hours later. The habit that works: anchor the edit on the text *after* the insertion point and put the heading first in `newString`.
 
 ---
+
+### 54. I asserted game behaviour from memory instead of reading the code
+- **What:** three separate Phase-B/C errors were the same habit. (1) Hardcoded `14` for spell damage in the infusion tests — `skillgen` jitters power to `floor(cp * (0.9 + r*0.2) + 0.5)`, so the checks were latently flaky and only passed because those rolls happened to come out 14. (2) Expected `split_in_two` on Nova to scale the main burst down; the engine keeps the main burst at full power and adds a delayed second burst at 0.6x instead (my 18.9/21.0 expectations were both wrong, the game was right). (3) Placed a split-orbit test pool too wide, assuming it could separate two rings 21px apart — orbs are 28px wide and the orb-vs-pool boundary is inflated by the orb's radius, so the pool swallowed both rings. Related: the D4 accent test never called its own `poll()` inside the frame loop, so it asserted nothing.
+- **Fix:** compute expected numbers from the actual code path being asserted (`skillgen` power formula, `combat.burst_hits`, `update_orbit`, the infusion segment/circle/sector geometry) and read the skill's rolled `power` back instead of hardcoding it. Every test must call the observer it checks.
+- **Rule:** "should pass" from memory is a coin flip. Read the function, compute the value, then assert (B45, B51). When a test fails, find out whether the test or the game is wrong before reporting a cause.
+
+---
 ## Definition of Done (run before telling the human a change is finished)
 1. Syntax-check every Lua file you touched (`loadstring` in LuaJIT or `luac -p` for 5.1). No `goto`, `//`, bit operators.
 2. `python tools/validate_rooms.py` -> `0 problem(s)` (if you touched rooms).

@@ -1,3 +1,53 @@
+# Pool infusion (v10)
+
+Plan: `universal_pool_spell_infusion_addendum.md` (v2). Every active **Pool** infuses every
+non-Pool spell (Bolt, Orbit, Spray, Nova) that overlaps it. An infused spell keeps its own
+statuses, additionally applies the Pool's statuses, and deals **×1.25** damage per hit/tick,
+once per hit. Pool-to-Pool out of scope. Fire Cyclone / a Combos screen were **not** built
+(separate task, unapproved). No new art.
+
+## One resolver, four deliveries
+- `src/game/infusion.lua` (new): `eligible` (alive, `duration > 0`, not a trail patch, has a
+  `skill_ref`), `circle_hits_pool`, `segment_hits_pool` (a frame hitch cannot skip a Pool),
+  `sector_hits_pool` (asin(r/d) slack near the arc corners), `touch` / `release` / `active`
+  (per-spell record keyed by the Pool table), `merge_statuses` (native first, then entries in
+  entry order; `on_player` and unknown names dropped; new array), `damage(base, infused)`.
+- `data.INTERACT`: `INFUSE_DAMAGE_MUL = 1.25`, `INFUSE_GRACE = 1.0` (Bolt and Orbit orbs only).
+- `apply_hit` gained ONE optional trailing `infusion` parameter — the only place the ×1.25
+  is applied. Callers without it behave exactly as before.
+- Spray: sector-vs-Pool at cast, once per cone (split casts independently); Nova: circle-vs-Pool
+  at each burst's own resolution moment — the delayed split re-tests the live Pools with its
+  0.72× radius; Orbit: per-frame segment test per orb (orbs outrun a Bolt), grace per orb,
+  record lives on the orb entry; Bolt: per-frame segment test (never the 0.15 s ticker).
+- Visuals: one small deterministic `spawn_particle` fan per infusion start in the newest live
+  Pool's colour — never the capped flipbook path (`anim_fx` / ANIM_CAP 90). Bolts and orbs tint
+  head/glow/flame toward the Pool colour and restore base tints when the record empties.
+
+## Decisions (fixed)
+- `spread` passes through unchanged: an Ember Pool chain-ignites through any infused spell.
+- `push` beats `pull` (a Gale Pool over a Tide spell wins the knockback). Documented, not fixed.
+- Same-compound infusion allowed: no new status, still ×1.25.
+- Standing in your own Pool is intended — no guard against it.
+- Fire Cyclone / `spread_fire_area` / Burning Mud / Dense Cloud: untouched.
+
+## Tests
+- 742 spellcraft checks (the v9 baseline was 285) — 0 failed, 0 errors, live objects 323 → 323,
+  wall clipping 0, max live one-shot anims 90/90 (cap). `ART_TEST=1` and `ART_TEST=0` PASS.
+- 40-cell matrix (10 Pool compounds × Bolt/Orbit/Spray/Nova), table-driven, driven through
+  `do_cast` + the update loop, with a control room per cell: merged-status union, exactly one
+  ×1.25, `hide_self` never on an enemy. No cell is module-level only.
+- Grace lifecycle (real path and module contract), per-orb records, Orbital Crown's extra orb,
+  split_in_two orbit independence, leaves-a-trail orbit stays at base damage, Ancient Catalyst
+  scales merged statuses, accent fires once per continuous infusion and never through the cap,
+  Ancient Catalyst / push>pull / Mist-hide_self rows covered.
+- Fail-proofs shown: `INFUSE_DAMAGE_MUL=1.0` fails exactly the 3 infusion damage checks;
+  `INFUSE_GRACE=1000` fails the 4 grace-boundary checks; `segment_hits_pool → false` fails 98
+  Bolt/Orbit/matrix cells; `sector_hits_pool → true` fails the 5 Spray sector checks;
+  `circle_hits_pool → false` fails the 8 Nova checks.
+
+## Delivery
+`Defold Games v10.zip` (in the project folder, next to `Defold Games.zip` — never overwritten).
+
 # Spellcraft core — quirks, interactions, relics (v9)
 
 Plan: `spellcraft_implementation_plan.md`, phases 0-5. No new elements, compounds, shapes, statuses
