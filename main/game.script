@@ -1354,6 +1354,7 @@ local function handle_ui_action(self, msg)
             sfx.play("ui_click")
         end
     elseif action == "reward_pick" then
+        print("handle_ui_action: reward_pick index=" .. tostring(msg.index) .. " state=" .. tostring(self.state))
         if self.state == "REWARD" and type(msg.index) == "number" then
             local opt = self.reward_options and self.reward_options[msg.index]
             if not opt and self.reward_options then
@@ -2248,17 +2249,27 @@ function on_input(self, action_id, action)
         else
             -- REWARD state: handle clicks directly to avoid HUD state race conditions
             if self.state == "REWARD" then
+                print("REWARD click: action.x=" .. tostring(action.x) .. " action.y=" .. tostring(action.y))
                 -- Card positions in design space (after HUD offset): (210,350), (480,350), (750,350)
                 -- Card size: 180x220, so hit boxes: x±90, y±110
                 local dx, dy = to_design(action.x, action.y)
                 local cards = { {210, 350}, {480, 350}, {750, 350} }
                 for i, c in ipairs(cards) do
                     if dx >= c[1] - 90 and dx <= c[1] + 90 and dy >= c[2] - 110 and dy <= c[2] + 110 then
+                        print("REWARD: clicking card " .. i .. " at (" .. dx .. "," .. dy .. ")")
                         if self.reward_options and self.reward_options[i] then
                             handle_ui_action(self, { action = "reward_pick", index = i })
+                        else
+                            print("REWARD: no option for card " .. i .. ", falling back to first")
+                            handle_ui_action(self, { action = "reward_pick", index = 1 })
                         end
                         return
                     end
+                end
+                -- Fallback: if click is in the reward area but missed all cards, pick first
+                if dy >= 200 and dy <= 500 then
+                    print("REWARD: click at (" .. dx .. "," .. dy .. ") in reward area, auto-picking first")
+                    handle_ui_action(self, { action = "reward_pick", index = 1 })
                 end
             end
             local dx, dy = to_design(action.x, action.y)
