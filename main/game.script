@@ -1356,6 +1356,16 @@ local function handle_ui_action(self, msg)
     elseif action == "reward_pick" then
         if self.state == "REWARD" and type(msg.index) == "number" then
             local opt = self.reward_options and self.reward_options[msg.index]
+            if not opt and self.reward_options then
+                -- Fallback: pick the first available option
+                for i = 1, 3 do
+                    if self.reward_options[i] then
+                        opt = self.reward_options[i]
+                        msg.index = i
+                        break
+                    end
+                end
+            end
             if opt then
                 if opt.kind == "element" then
                     self.inventory.elements[opt.id] = self.inventory.elements[opt.id] + 1
@@ -2155,7 +2165,7 @@ function on_input(self, action_id, action)
 
     -- M3 debug row (removed/hidden at the end via TUNING.DEBUG):
     --   1-5 = slot 1 shape, Q = cycle slot 1 compound, E = cycle slot 2 compound
-    if data.TUNING.DEBUG then
+    if data.TUNING.DEBUG and self.state ~= "REWARD" then
         if action_id == hash("1") and action.pressed then self.slot1_shape = "projectile"; rebuild_skills(self) end
         if action_id == hash("2") and action.pressed then self.slot1_shape = "puddle"; rebuild_skills(self) end
         if action_id == hash("3") and action.pressed then self.slot1_shape = "orbit"; rebuild_skills(self) end
@@ -2216,6 +2226,17 @@ function on_input(self, action_id, action)
         events.emit("dash", { self = self, x = self.player_pos.x, y = self.player_pos.y })
     end
 
+    -- Reward pick via keyboard (1/2/3) when the mouse click path is unreliable
+    if self.state == "REWARD" and action.pressed then
+        if action_id == hash("1") and self.reward_options and self.reward_options[1] then
+            handle_ui_action(self, { action = "reward_pick", index = 1 })
+        elseif action_id == hash("2") and self.reward_options and self.reward_options[2] then
+            handle_ui_action(self, { action = "reward_pick", index = 2 })
+        elseif action_id == hash("3") and self.reward_options and self.reward_options[3] then
+            handle_ui_action(self, { action = "reward_pick", index = 3 })
+        end
+    end
+
     -- LMB: cast in ROOM, otherwise hand the click to the HUD (menus)
     if action_id == hash("cast1") and action.pressed then
         if self.state == "ROOM" then
@@ -2225,6 +2246,21 @@ function on_input(self, action_id, action)
                 print(string.format("Slot 1 on cooldown (%.2fs)", self.slot1_cooldown))
             end
         else
+            -- REWARD state: handle clicks directly to avoid HUD state race conditions
+            if self.state == "REWARD" then
+                -- Card positions in design space (after HUD offset): (210,350), (480,350), (750,350)
+                -- Card size: 180x220, so hit boxes: x±90, y±110
+                local dx, dy = to_design(action.x, action.y)
+                local cards = { {210, 350}, {480, 350}, {750, 350} }
+                for i, c in ipairs(cards) do
+                    if dx >= c[1] - 90 and dx <= c[1] + 90 and dy >= c[2] - 110 and dy <= c[2] + 110 then
+                        if self.reward_options and self.reward_options[i] then
+                            handle_ui_action(self, { action = "reward_pick", index = i })
+                        end
+                        return
+                    end
+                end
+            end
             local dx, dy = to_design(action.x, action.y)
             msg.post("/hud#gui", "click", { x = dx, y = dy })
         end

@@ -321,6 +321,7 @@ end
 local function hit(id, x, y)
     local node = n(id)
     if not node then return false end
+    if not gui.is_enabled(node) then return false end
     local p = gui.get_position(node)
     local sz = gui.get_size(node)
     local sc = gui.get_scale(node)
