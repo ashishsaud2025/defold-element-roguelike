@@ -1917,20 +1917,104 @@ if begin_room() then
   frames(3)
   sf(accent_count() >= 6, "accent budget: orbit accent missing at a full particle budget (" .. accent_count() .. ")")
 end
--- 5. Ceiling: with 260 dummies live, many infusion accents stay within ACCENT_CAP (24).
+-- 5. Ceiling: with 260 dummies live, many infusion accents stay within ACCENT_CAP (48).
 if begin_room() then
   for _, en in ipairs(self.enemies) do en.active = false end
   fill_particles()
   local p = self.player_pos
   self.aim.x, self.aim.y = p.x + 75, p.y                -- pool inside the cone's reach every cast
-  for _ = 1, 6 do
+  for _ = 1, 10 do
     equip(mk("puddle", nil, "earth", "water")); cast1()
     equip(mk("cone", nil, "fire", "fire")); cast1()
   end
-  sf(accent_count() == 24,
-     "accent ceiling: accents=" .. accent_count() .. " (expected exactly 24)")
-  sf(#self.particles == 284,
-     "accent ceiling: dummies+accents=" .. #self.particles .. " (expected 284)")
+  sf(accent_count() == 48,
+     "accent ceiling: accents=" .. accent_count() .. " (expected exactly 48)")
+  sf(#self.particles == 308,
+     "accent ceiling: dummies+accents=" .. #self.particles .. " (expected 308)")
+end
+-- ===== Infused Spray/Nova visibility: accent entries + toast at a full particle budget ==
+if begin_room() then
+  for _, en in ipairs(self.enemies) do en.active = false end
+  fill_particles()
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 75, p.y
+  equip(mk("puddle", nil, "water", "wind")); cast1()   -- Mist: no interaction fires, the toast stays infusion-only
+  self.aim.x, self.aim.y = p.x + 300, p.y               -- aim east; the cone sweeps the pool
+  equip(mk("cone", nil, "fire", "fire")); cast1()
+  frames(2)
+  sf(accent_count() >= 13,
+     "spray visibility: accent entries " .. accent_count() .. " (expected >= 13: 6 fan + 7 axis)")
+  sf(self.toast_text == "INFUSED: Mist", "spray visibility: toast " .. tostring(self.toast_text))
+  sf((self.toast_t or 0) > 0 and self.toast_t <= 0.8, "spray visibility: toast_t " .. tostring(self.toast_t))
+end
+if begin_room() then
+  for _, en in ipairs(self.enemies) do en.active = false end
+  fill_particles()
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 300, p.y
+  equip(mk("cone", nil, "fire", "fire")); cast1()
+  frames(2)
+  sf(accent_count() == 0, "spray visibility: control cast accented " .. accent_count())
+  sf(self.toast_text == nil, "spray visibility: control cast set a toast (" .. tostring(self.toast_text) .. ")")
+end
+if begin_room() then
+  for _, en in ipairs(self.enemies) do en.active = false end
+  fill_particles()
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 75, p.y                -- pool near the player: the nova rim touches it
+  equip(mk("puddle", nil, "water", "wind")); cast1()      -- Mist: no interaction fires
+  equip(mk("burst", nil, "fire", "fire")); cast1()
+  frames(2)
+  sf(accent_count() >= 15,
+     "nova visibility: accent entries " .. accent_count() .. " (expected >= 15: 6 fan + 1 ring + 8 rim)")
+  sf(self.toast_text == "INFUSED: Mist", "nova visibility: toast " .. tostring(self.toast_text))
+end
+if begin_room() then
+  for _, en in ipairs(self.enemies) do en.active = false end
+  fill_particles()
+  local p = self.player_pos
+  equip(mk("burst", nil, "fire", "fire")); cast1()
+  frames(2)
+  sf(accent_count() == 0, "nova visibility: control cast accented " .. accent_count())
+  sf(self.toast_text == nil, "nova visibility: control cast set a toast")
+end
+if begin_room() then
+  for _, en in ipairs(self.enemies) do en.active = false end
+  fill_particles()
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 75, p.y
+  equip(mk("puddle", nil, "water", "wind")); cast1()      -- Mist: no interaction fires
+  equip(mk("burst", "split_in_two", "fire", "fire")); cast1()
+  frames(2)
+  local first = accent_count()
+  sf(first >= 15, "nova split: main burst accent entries " .. first .. " (expected >= 15)")
+  frames(22)                                        -- ~+0.4 s: the delayed burst has resolved, its accents are live
+  local second = accent_count()
+  sf(second >= 15, "nova split: delayed burst left no accents (live=" .. second .. ", main was " .. first .. ")")
+  sf(self.toast_text == "INFUSED: Mist", "nova split: toast " .. tostring(self.toast_text) .. " (expected INFUSED: Mist)")
+end
+if begin_room() then
+  for _, en in ipairs(self.enemies) do en.active = false end
+  local p = self.player_pos
+  self.toast_text, self.toast_t = "BURNING MUD", 1.4     -- an interaction banner is up
+  self.aim.x, self.aim.y = p.x + 75, p.y
+  equip(mk("puddle", nil, "water", "wind")); cast1()      -- Mist: the banner stays put either way
+  self.aim.x, self.aim.y = p.x + 300, p.y
+  equip(mk("cone", nil, "fire", "fire")); cast1()
+  frames(2)
+  sf(self.toast_text == "BURNING MUD", "toast priority: an interaction banner was overwritten by an infusion")
+end
+if begin_room() then
+  for _, en in ipairs(self.enemies) do en.active = false end
+  local p = self.player_pos
+  self.toast_text, self.toast_t = nil, 0
+  self.infuse_toast_until = self.clock + 1.0             -- rate-limited: no re-toast for 1 s
+  self.aim.x, self.aim.y = p.x + 75, p.y
+  equip(mk("puddle", nil, "water", "wind")); cast1()      -- Mist
+  self.aim.x, self.aim.y = p.x + 300, p.y
+  equip(mk("cone", nil, "fire", "fire")); cast1()
+  frames(2)
+  sf(self.toast_text == nil, "toast rate limit: re-toasted within 1.5 s (" .. tostring(self.toast_text) .. ")")
 end
 -- Grace lifecycle (module contract, deterministic): entry stays live for exactly
 -- INFUSE_GRACE after the pool stops overlapping; re-entry refreshes; expired entries prune.

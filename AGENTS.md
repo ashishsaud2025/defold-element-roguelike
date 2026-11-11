@@ -354,6 +354,11 @@ Format: **what happened / why / rule for agents.** These are the assistant's own
 - **Fix:** `infusion_accent` now inserts its particles directly (same `fx_make` + `self.particles` entry) with its own ceiling — 24 live accent particles, counted via an `accent` flag on the entry; `spawn_particle` is untouched for everything else. The test fills `self.particles` to 260 and asserts the accent entries actually exist in the list (Bolt/Spray/Nova/Orbit) and that the ceiling holds under repeated infusions; reverting the fix fails all 7 accent checks.
 - **Rule:** a cap audit must read the guard *inside* the helper, not the helper's name. A test must assert the visible object exists — never the flag that precedes its creation.
 
+### 56. I wrote a test that passed for the wrong reason (racing a game mechanic)
+- **What:** the infusion-visibility tests cast a fire Spray/Nova onto a Mud pool and asserted the toast. They passed — but only because the 0.15 s interaction ticker had not fired yet within the 2-frame window. On a longer window the Phase 3 interaction correctly converts the Mud pool to Burning Mud and `announce()` overwrites the toast with BURNING MUD, breaking the assertion. The passing check was luck, not evidence (item 45's family, again).
+- **Fix:** all infusion-toast assertions now use a Mist pool, which has no interaction with a fire spell — the toast is whatever infusion set, deterministically.
+- **Rule:** when a test asserts a HUD/banner value, make sure no game system can write it first. Time-sensitive assertions must be robust to the whole update pipeline, not just the writer you care about. When a test fails, find out whether the test or the game is wrong (B45, B51).
+
 ---
 ## Definition of Done (run before telling the human a change is finished)
 1. Syntax-check every Lua file you touched (`loadstring` in LuaJIT or `luac -p` for 5.1). No `goto`, `//`, bit operators.

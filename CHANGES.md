@@ -45,14 +45,40 @@ once per hit. Pool-to-Pool out of scope. Fire Cyclone / a Combos screen were **n
   Bolt/Orbit/matrix cells; `sector_hits_pool → true` fails the 5 Spray sector checks;
   `circle_hits_pool → false` fails the 8 Nova checks.
 
+## Infused Spray and Nova are now readable
+- Spray was invisible to a player: only 6 small 0.35 s sparks at the cast point, no tint
+  anywhere. Now, only on infused casts: `c.vis` glow and all 14 fan particles are blended
+  60% toward the newest live Pool's colour, and 7 pool-coloured accent particles land along
+  the cone axis at fixed angles (deterministic, never per frame).
+- Nova was the same invisible 6 sparks. Now, on infused casts: `b.vis` glow tinted toward the
+  pool colour, one expanding pool-coloured ring grows from 0.6x to 1.2x the burst radius
+  (particle cap-immune path), and 8 pool-coloured sparks fly off the rim at fixed angles.
+  The delayed split burst mirrors it (its own accents) and does not re-toast.
+- Both draw a short HUD toast `INFUSED: <Pool compound>` (~0.8 s, existing toast path). It
+  never overwrites a live interaction banner (Burning Mud / Dense Cloud win) and fires at
+  most once per 1.5 s. All new accents go through the bounded, cap-immune accent path
+  (`ACCENT_CAP` raised 24 -> 48 so a fully-infused split Nova fits: 30). No new art.
+- `TUNING.DEBUG` now logs one terse line per infused hit for all four shapes:
+  `INFUSED <shape>: pools=<compounds> +<added statuses> x1.25`.
+- Split note: the spray's `math.random()` fan spread is pre-existing spec 6.3 behaviour, not
+  touched here (cosmetic spacing, always < 70 deg either side of the aim).
+
 ## Bugs fixed on the way
 - The infusion accent called `spawn_particle`, whose 260-particle soft cap silently dropped every
   accent particle at a full budget — and the old smoke test asserted the `infused_visual` flag,
-  which is set before dispatch, so it passed anyway. `infusion_accent` now inserts directly
-  (same `fx_make` + `self.particles` entry) with its own ceiling of 24 live accent particles,
-  counted via an `accent` flag on the entry; `spawn_particle` is unchanged for everything else.
-  New test fills `self.particles` to 260 and asserts the accent entries exist (Bolt/Spray/Nova/
-  Orbit) plus the 24-particle ceiling under six infusions. Fail-proofed by reverting the fix.
+  which is set before dispatch, so it passed anyway. `infusion_accent` now inserts its particles
+  directly with its own ceiling (originally 24, raised to 48 this round so a fully-infused split
+  Nova fits — 30 accent entries), counted via an `accent` flag on the entry; `spawn_particle` is
+  unchanged for everything else. New test fills `self.particles` to 260 and asserts the accent
+  entries exist (Bolt/Spray/Nova/Orbit) plus the ceiling under heavy infusion. Fail-proofed by
+  reverting the fix (all 7 accent checks fail).
+- Infusion-only visuals could be confused with the compound's own fireworks even when they
+  fired; Bolt/Orbit read because they tint a sprite the player watches, Spray/Nova had no
+  persistent tint at all. Fixed as above.
+- The visibility tests originally used a Mud pool with a fire nova/spray: the fire spell's
+  area also ignites the Mud pool (Phase 3 interaction) and the resulting BURNING MUD banner
+  raced the toast assertions. All infusion-toast assertions now use a Mist pool (no
+  interaction). (AGENTS #56)
 - Smoke count audit: 285 baseline -> 742 (+39 B, +18 B+, +27 C, +48 D, +321 matrix); no earlier
   check was deleted or duplicated (1000 insertions, 0 deletions in the harness).
 - Definition of Done item 1 was deleted and restored in the v10 doc edit (AGENTS items 43/54).

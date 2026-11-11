@@ -91,6 +91,7 @@ function M.touch(record, pud, now)
     for i, name in ipairs(pud.statuses or {}) do st[i] = name end
     e.statuses = st
     e.color = pud.color or (pud.skill_ref and pud.skill_ref.color) or { r = 1, g = 1, b = 1 }
+    e.compound = pud.compound
     e.expires = math.huge                       -- living expiry while overlapping
     return record
 end

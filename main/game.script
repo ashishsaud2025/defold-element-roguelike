@@ -495,6 +495,7 @@ function init(self)
     -- Interaction banner: set by announce(), decayed in update, drawn by the HUD.
     self.toast_text = nil
     self.toast_t = 0
+    self.infuse_toast_until = 0
 
     -- M4: run start picks + full cooldown length (after quirk scaling) for the HUD bars
     self.picks = {}
@@ -725,6 +726,7 @@ local function reset_run(self)
     self.status_dur_mul = 1
     self.toast_text = nil
     self.toast_t = 0
+    self.infuse_toast_until = 0
     self.state = "TITLE"
     print("State: TITLE")
 end
@@ -1163,10 +1165,28 @@ end
 -- push from an earlier spell cannot knock an enemy back for this hit.
 -- `infusion` (optional): live entries from src/game/infusion.lua. One 1.25x multiplier
 -- (never per Pool) and the merged statuses are applied BEFORE damage/statuses/knockback.
-local function apply_hit(self, enemy, damage, statuses, sx, sy, infusion)
+-- `shape` (optional, with infusion): logs once per infused hit when TUNING.DEBUG is on.
+local function apply_hit(self, enemy, damage, statuses, sx, sy, infusion, shape)
+    local native = statuses
     if infusion and #infusion > 0 then
         damage = infusion_mod.damage(damage, true)
         statuses = infusion_mod.merge_statuses(statuses, infusion)
+        if data.TUNING.DEBUG then
+            local pools, seen = {}, {}
+            for _, e in ipairs(infusion) do
+                local n = e.compound or "?"
+                if not seen[n] then seen[n] = true; pools[#pools + 1] = n end
+            end
+            local native_set = {}
+            for _, n in ipairs(native or {}) do native_set[n] = true end
+            local added = {}
+            for _, n in ipairs(statuses) do
+                if not native_set[n] then added[#added + 1] = n end
+            end
+            print(string.format("INFUSED %s: pools=%s +%s x1.25",
+                shape or "?", table.concat(pools, ","),
+                #added > 0 and table.concat(added, ",") or "-"))
+        end
     end
     local died = combat_mod.apply_damage(enemy, damage)
     apply_statuses(self, enemy, statuses)
@@ -1408,26 +1428,64 @@ end
 -- Infusion accents bypass the 260-particle soft cap (spawn_particle would silently
 -- drop them at a full budget) but are bounded by their own ceiling: at most
 -- ACCENT_CAP live accent particles at once. Everything else keeps the soft cap.
-local ACCENT_CAP = 24                       -- 4 simultaneous accent bursts (6 sparks each)
-local function infusion_accent(self, x, y, color)
-    local c = color or { r = 1, g = 1, b = 1 }
+-- A split Nova needs room for both bursts' accents (30), so the ceiling is 48.
+local ACCENT_CAP = 48
+-- Insert one accent particle directly. Returns true if it was added (false at the ceiling).
+local function accent_particle(self, x, y, c, vx, vy, s0, s1, art)
     local live = 0
     for _, p in ipairs(self.particles) do
         if p.accent then live = live + 1 end
     end
+    if live >= ACCENT_CAP then return false end
+    local id = fx_make(x, y, 0.1, art or FX.glow, c.r, c.g, c.b, 0.9, s0)
+    table.insert(self.particles, {
+        id = id, x = x, y = y, life = 0.35, max_life = 0.35,
+        vx = vx, vy = vy,
+        r = c.r, g = c.g, b = c.b, a = 0.9,
+        s0 = s0, s1 = s1 or s0 * 0.125,
+        accent = true,
+    })
+    return true
+end
+local function infusion_accent(self, x, y, color)
+    local c = color or { r = 1, g = 1, b = 1 }
     for k = 1, 6 do
-        if live >= ACCENT_CAP then return end
         local a = (k / 6) * math.pi * 2
-        local id = fx_make(x, y, 0.1, FX.glow, c.r, c.g, c.b, 0.9, 0.4)
-        table.insert(self.particles, {
-            id = id, x = x, y = y, life = 0.35, max_life = 0.35,
-            vx = math.cos(a) * 55, vy = math.sin(a) * 55,
-            r = c.r, g = c.g, b = c.b, a = 0.9,
-            s0 = 0.4, s1 = 0.05,
-            accent = true,
-        })
-        live = live + 1
+        accent_particle(self, x, y, c, math.cos(a) * 55, math.sin(a) * 55, 0.4, 0.05)
     end
+end
+-- Toast for an infusion, on the existing announce() HUD path. Never overwrites a live
+-- toast (an interaction banner always wins) and fires at most once per 1.5 s.
+local function infuse_toast(self, compound)
+    if (self.toast_t or 0) > 0 then return end
+    if self.clock < (self.infuse_toast_until or 0) then return end
+    self.infuse_toast_until = self.clock + 1.5
+    self.toast_text = "INFUSED: " .. tostring(compound or "?")
+    self.toast_t = 0.8
+end
+
+-- Nova's infused-cast readability: tint the burst glow toward the Pool colour, an
+-- expanding ring from 0.6x to 1.2x the burst radius, rim sparks at 8 fixed angles,
+-- the usual accent fan, and (unless this is the delayed split burst) a short HUD toast.
+-- `b.base_tint` holds the glow's pre-infusion colour. accent_particle stays bounded.
+local function nova_infusion_visual(self, b, infuse_live, allow_toast)
+    if not infuse_live or #infuse_live == 0 then return end
+    local newest = infuse_live[#infuse_live]
+    local c = newest.color or { r = 1, g = 1, b = 1 }
+    local sx, sy = b.x, b.y
+    if b.vis and b.base_tint then
+        go.set(msg.url(nil, b.vis, "sprite"), "tint",
+            vmath.vector4(lerp(b.base_tint.r, c.r, 0.6), lerp(b.base_tint.g, c.g, 0.6),
+                lerp(b.base_tint.b, c.b, 0.6), 0.8))
+    end
+    accent_particle(self, sx, sy, c, 0, 0, (b.radius * 0.6) / 32, (b.radius * 1.2) / 32, FX.circle)
+    for k = 1, 8 do
+        local a = (k / 8) * math.pi * 2 + math.pi / 8
+        accent_particle(self, sx + math.cos(a) * b.radius, sy + math.sin(a) * b.radius, c,
+            math.cos(a) * 85, math.sin(a) * 85, 0.35, 0.05)
+    end
+    infusion_accent(self, sx, sy, c)
+    if allow_toast then infuse_toast(self, newest.compound) end
 end
 
 -- Resolve circle-vs-Pool infusion at one burst's own resolution moment (Nova).
@@ -1930,7 +1988,7 @@ function update(self, dt)
                 if hit_enemy then
                     p.hit = true
                     -- ONE hit path: damage -> statuses -> knockback (statuses from THIS hit)
-                    local died = apply_hit(self, hit_enemy, p.power, p.statuses, p.x, p.y, p.infuse_live)
+                    local died = apply_hit(self, hit_enemy, p.power, p.statuses, p.x, p.y, p.infuse_live, "bolt")
                     local pc = (p.skill and p.skill.color) or { r = 1, g = 1, b = 1 }
                     if died then print("Enemy died") else print("Enemy HP: " .. hit_enemy.hp) end
                     fx_hit(self, p.x, p.y, pc, element_fx(p.skill and p.skill.elements, 2, "hit"), p.skill)
@@ -2075,7 +2133,7 @@ function update(self, dt)
             end
             for _, h in ipairs(hits) do
                 local live = h.orb and h.orb.infuse_live
-                local died = apply_hit(self, h.enemy, h.damage, h.statuses, self.player_pos.x, self.player_pos.y, live)
+                local died = apply_hit(self, h.enemy, h.damage, h.statuses, self.player_pos.x, self.player_pos.y, live, "orbit")
                 if died then
                     h.enemy.alive = false
                     print("Enemy died")
@@ -2601,12 +2659,17 @@ do_cast = function(self, slot_num, is_repeat, ctx)
             end
             local hits = combat_mod.cone_hits(c, self.enemies)
             for _, h in ipairs(hits) do
-                local died = apply_hit(self, h.enemy, h.damage, h.statuses, sx, sy, infuse_live)
+                local died = apply_hit(self, h.enemy, h.damage, h.statuses, sx, sy, infuse_live, "spray")
                 fx_hit(self, h.enemy.x, h.enemy.y, sc, nil, skill)
                 if died then h.enemy.alive = false; print("Enemy died")
                 else print("Enemy HP: " .. h.enemy.hp) end
             end
             c.vis = fx_make(sx, sy, 0.1, FX.glow, sc.r, sc.g, sc.b, 0.7, 1.0)
+            if infuse_live and #infuse_live > 0 then
+                local pc = infuse_live[#infuse_live].color
+                go.set(msg.url(nil, c.vis, "sprite"), "tint",
+                    vmath.vector4(lerp(sc.r, pc.r, 0.6), lerp(sc.g, pc.g, 0.6), lerp(sc.b, pc.b, 0.6), 0.7))
+            end
             local st = fxanim.COMPOUND[skill.compound]
             if st then
                 -- The compound's sweep effect, rotated so it spreads along the aim; B colour layered behind
@@ -2621,6 +2684,11 @@ do_cast = function(self, slot_num, is_repeat, ctx)
                 end
             end
             -- Spray fan alternates element A's and element B's sprites (spec 6.3)
+            local fan_sc = sc
+            if infuse_live and #infuse_live > 0 then
+                local pc = infuse_live[#infuse_live].color
+                fan_sc = { r = lerp(sc.r, pc.r, 0.6), g = lerp(sc.g, pc.g, 0.6), b = lerp(sc.b, pc.b, 0.6) }
+            end
             local ea_art = element_fx(skill.elements, 1, "trail")
             local eb_art = element_fx(skill.elements, 2, "trail")
             for k = 1, 14 do
@@ -2629,9 +2697,20 @@ do_cast = function(self, slot_num, is_repeat, ctx)
                 local ca_rot = nil
                 local art = ((k % 2 == 0) and ea_art) or eb_art
                 if DIRECTIONAL_FX[art] then ca_rot = ca - math.pi / 4 end
-                spawn_particle(self, sx + math.cos(ca) * 14, sy + math.sin(ca) * 14, sc.r, sc.g, sc.b,
+                spawn_particle(self, sx + math.cos(ca) * 14, sy + math.sin(ca) * 14, fan_sc.r, fan_sc.g, fan_sc.b,
                     0.9, 0.55, 0.28, math.cos(ca) * csp, math.sin(ca) * csp,
                     art, 0.12, ca_rot)
+            end
+            -- Infused: 7 pool-coloured accents along the cone axis at fixed angles
+            if infuse_live and #infuse_live > 0 then
+                local pc = infuse_live[#infuse_live].color
+                for k = 1, 7 do
+                    local d = 30 + k * 20
+                    local a = cn.angle + ((k % 2 == 0) and math.rad(9) or -math.rad(9))
+                    accent_particle(self, sx + math.cos(a) * d, sy + math.sin(a) * d, pc,
+                        math.cos(a) * 60, math.sin(a) * 60, 0.35, 0.05)
+                end
+                infuse_toast(self, infuse_live[#infuse_live].compound)
             end
             table.insert(self.cones, c)
             add_spell_area(self, skill, sx, sy, range, 0.3)
@@ -2644,12 +2723,9 @@ do_cast = function(self, slot_num, is_repeat, ctx)
         local b = combat_mod.new_burst(sx, sy, radius, power, statuses)
         -- Pool infusion at this burst's own resolution moment: circle vs circle.
         local infuse_live = burst_infusion_at(self, sx, sy, b.radius)
-        if infuse_live and #infuse_live > 0 then
-            infusion_accent(self, sx, sy, infuse_live[#infuse_live].color)
-        end
         local hits = combat_mod.burst_hits(b, self.enemies)
         for _, h in ipairs(hits) do
-            local died = apply_hit(self, h.enemy, h.damage, h.statuses, sx, sy, infuse_live)
+            local died = apply_hit(self, h.enemy, h.damage, h.statuses, sx, sy, infuse_live, "nova")
             fx_hit(self, h.enemy.x, h.enemy.y, sc, nil, skill)
             if died then h.enemy.alive = false; print("Enemy died")
             else print("Enemy HP: " .. h.enemy.hp) end
@@ -2657,6 +2733,8 @@ do_cast = function(self, slot_num, is_repeat, ctx)
         local scale = radius / 64 * 2
         b.duration = 0.3 / speed_mul          -- "slower": the nova lingers longer
         b.vis = fx_make(sx, sy, 0.1, FX.glow, sc.r, sc.g, sc.b, 0.8, scale * 0.9)
+        b.base_tint = { r = sc.r, g = sc.g, b = sc.b }
+        if infuse_live and #infuse_live > 0 then nova_infusion_visual(self, b, infuse_live, true) end
         local nst = fxanim.COMPOUND[skill.compound]
         if nst then
             -- Outer burst in element A, a smaller counter-rotated burst in element B inside it
@@ -2698,13 +2776,15 @@ do_cast = function(self, slot_num, is_repeat, ctx)
                 end
                 local hits2 = combat_mod.burst_hits(b2, self.enemies)
                 for _, h in ipairs(hits2) do
-                    local died = apply_hit(self, h.enemy, h.damage, h.statuses, sx, sy, infuse_live2)
+                    local died = apply_hit(self, h.enemy, h.damage, h.statuses, sx, sy, infuse_live2, "nova")
                     fx_hit(self, h.enemy.x, h.enemy.y, sc, nil, skill)
                     if died then h.enemy.alive = false; print("Enemy died")
                     else print("Enemy HP: " .. h.enemy.hp) end
                 end
                 b2.duration = 0.3 / speed_mul
                 b2.vis = fx_make(sx, sy, 0.1, FX.glow, sc.r, sc.g, sc.b, 0.6, scale * 0.65)
+                b2.base_tint = { r = sc.r, g = sc.g, b = sc.b }
+                if infuse_live2 and #infuse_live2 > 0 then nova_infusion_visual(self, b2, infuse_live2, false) end
                 local nst2 = fxanim.COMPOUND[skill.compound]
                 if nst2 then
                     anim_fx(self, sx, sy, nst2.nova, skill.elements[1], radius * (qd.pool_scale or 0.72) * 2.4, nil, { z = 0.1 })
