@@ -108,6 +108,32 @@ local self = {}
 init(self)
 local baseline = 0 local base_ids = {} for id in pairs(live) do baseline = baseline + 1 base_ids[id]=true end
 
+-- P1: the event bus is the contract for audio/juice. Listen to it from the harness
+-- (game.script itself registers no listeners yet) and assert every hook fires at
+-- least once during the scripted run.
+local events = require "src.game.events"
+local EVENT_NAMES = { "cast", "hit", "status", "quirk", "kill", "player_hit", "dash", "room_clear", "enemy_spawn" }
+-- Self-test of the check itself: EVENT_TEST=1 adds a hook the game never emits,
+-- so the run must fail. Proves the assertion is live, not vacuous.
+if os.getenv("EVENT_TEST") == "1" then EVENT_NAMES[#EVENT_NAMES + 1] = "bogus_hook" end
+local event_counts = {}
+for _, name in ipairs(EVENT_NAMES) do
+  event_counts[name] = 0
+  events.on(name, function() event_counts[name] = event_counts[name] + 1 end)
+end
+
+-- P2/P3 audio recorder. Injected after init (the game has no `sound` global in the mock).
+local sfx = require "src.core.sfx"
+local hash_mod = require "src.core.hash"
+local sfx_problems = {}
+local audio_log, audio_all = {}, {}
+sfx.backend = function(id, props)
+  audio_log[#audio_log + 1] = { id = id, props = props }
+  audio_all[id] = (audio_all[id] or 0) + 1
+end
+sfx.stop_backend = function() end
+sfx.gain_backend = function() end
+
 local function ui(a) on_message(self, "ui_action", a, nil) end
 local function act(id, pressed, released) on_input(self, id, {pressed=pressed, released=released}) end
 local dt = 1/60
@@ -264,13 +290,87 @@ local function expect_for(skill)
   return want
 end
 for ri, r in ipairs(recipes) do
+  -- handle_ui_action only accepts `start` from TITLE; the pathing phase can leave
+  -- the game in WIN. Normalize through the real DEAD -> continue path first.
+  if self.state ~= "TITLE" then self.state = "DEAD"; ui({action="continue"}); frame() end
   ui({action="start"}); ui({action="pick", element="fire"}); ui({action="pick", element="fire"}); ui({action="enter"})
   self.player.hp = self.player.max_hp
+  -- Deterministic hit coverage: park the room's enemies in a ring around the
+  -- player so every delivery (bolt/cone/burst/orbit) connects inside the
+  -- 150-frame window. Without this the random AI positions made the hit-layer
+  -- assertion flaky, which is a test bug, not a game bug.
+  local px, py = self.player_pos.x, self.player_pos.y
+  -- Aim down the first clear ray so the bolt can actually reach its target
+  -- (a bolt dies on walls; rooms differ in size).
+  local aim_a = 0
+  for k = 0, 15 do
+    local a = k * math.pi / 8
+    local ex, ey = px + math.cos(a) * 150, py + math.sin(a) * 150
+    if not level_mod.blocked(self.level, ex, ey, 10) and level_mod.los(self.level, px, py, ex, ey, 4) then
+      aim_a = a
+      break
+    end
+  end
+  local ax, ay = math.cos(aim_a), math.sin(aim_a)
+  local nx, ny = -ay, ax
+  local near = 0.44   -- ~25 degrees off the aim: inside the 35-degree cone, outside the bolt line
+  local spots = {
+    { 150 * ax, 150 * ay },
+    { 55 * math.cos(aim_a + near), 55 * math.sin(aim_a + near) },
+    { 55 * math.cos(aim_a - near), 55 * math.sin(aim_a - near) },
+    { 45 * nx, 45 * ny },
+    { -45 * nx, -45 * ny },
+    { -55 * ax, -55 * ay },
+  }
+  self.aim = vmath.vector3(px + 150 * ax, py + 150 * ay, 0)
+  local targets = {}
+  local ti = 0
+  for _, e in ipairs(self.enemies) do
+    ti = ti + 1
+    local sp = spots[ti]
+    if e.alive and sp then
+      e.x, e.y = px + sp[1], py + sp[2]
+      e.active = true
+      e.hp, e.max_hp = 99999, 99999
+      targets[#targets+1] = { e = e, dx = sp[1], dy = sp[2] }
+    end
+  end
   local sk = skillgen.makeSkill(r[1], r[2], r[3])
   self.slot1 = sk; self.slot1_cooldown = 0; self.slot1_cd_max = sk.cooldown
   anim_seen = {}
+  audio_log = {}
   act("cast1", true, false); act("cast1", false, true)
-  for f = 1, 150 do self.player.hp = self.player.max_hp; frame() end
+  for f = 1, 150 do
+    self.player.hp = self.player.max_hp
+    for _, t in ipairs(targets) do
+      t.e.x, t.e.y = px + t.dx, py + t.dy
+      t.e.hp, t.e.alive, t.e.active = 99999, true, true
+    end
+    frame()
+  end
+  do
+    local got = {}
+    for _, c in ipairs(audio_log) do got[c.id] = (got[c.id] or 0) + 1 end
+    local want_audio = {
+      "cast_" .. sk.shape_key,
+      "el_" .. sk.elements[1] .. "_cast",
+      "sig_" .. sk.compound:lower():gsub("%s+", "_"),
+    }
+    for _, id in ipairs(want_audio) do
+      if not got[id] then sfx_problems[#sfx_problems+1] = "P3 missing " .. id .. " for " .. sk.compound .. " " .. sk.shape end
+    end
+    local qid = sfx.QUIRK_IDS[sk.quirk]
+    if qid and not got[qid] then
+      sfx_problems[#sfx_problems+1] = "P3 missing quirk " .. qid .. " for " .. sk.compound .. " " .. sk.shape
+    end
+    -- Pool ticks are silent by design; every other delivery must make an element-B hit sound.
+    if sk.shape_key ~= "puddle" then
+      local hit_id = "el_" .. sk.elements[2] .. "_hit"
+      if not got[hit_id] then
+        sfx_problems[#sfx_problems+1] = "P3 missing " .. hit_id .. " for " .. sk.compound .. " " .. sk.shape
+      end
+    end
+  end
   local want, miss = expect_for(sk), {}
   for _, w in ipairs(want) do
     if w == "SMOKE" then
@@ -282,6 +382,138 @@ for ri, r in ipairs(recipes) do
   fx_report[#fx_report+1] = string.format("%s %s:%d", sk.compound, sk.shape, n)
   self.state = "DEAD"; ui({action="continue"}); frame()   -- end the run so the next recipe starts from TITLE
 end
+
+-- P3 aggregate: at least one status cue and both sustain loops must have played.
+do
+  local any_status, any_pool, any_orbit = false, false, false
+  for id in pairs(audio_all) do
+    if id:find("^st_") then any_status = true end
+    if id == "loop_pool" then any_pool = true end
+    if id == "loop_orbit" then any_orbit = true end
+  end
+  if not any_status then sfx_problems[#sfx_problems+1] = "P3: no status cue ever played" end
+  if not any_pool then sfx_problems[#sfx_problems+1] = "P3: loop_pool never started" end
+  if not any_orbit then sfx_problems[#sfx_problems+1] = "P3: loop_orbit never started" end
+end
+
+-- ===== P2: sound manifest, files, map rows, cast layers, throttles =====
+-- Self-test: SFX_TEST=1 adds an id with no file/map row; the run must fail.
+if os.getenv("SFX_TEST") == "1" then sfx.SOUNDS.__missing_audio_test = { gain = 1, bus = "sfx" } end
+local sfx_calls, sfx_stops = {}, {}
+sfx.backend = function(id, props) sfx_calls[#sfx_calls+1] = { id = id, props = props } end
+sfx.stop_backend = function(id) sfx_stops[#sfx_stops+1] = id end
+sfx.gain_backend = function(id, gain) end
+sfx.reset()
+
+local map_text = ""
+do
+  local f = io.open(ROOT .. "assets/sfx/SFX_MAP.md", "r")
+  if f then map_text = f:read("*a"); f:close() else sfx_problems[#sfx_problems+1] = "SFX_MAP.md missing" end
+end
+local function has_sound_file(id)
+  for _, dir in ipairs({ "assets/sfx/", "assets/music/" }) do
+    for _, ext in ipairs({ ".ogg", ".wav" }) do
+      local f = io.open(ROOT .. dir .. id .. ext, "r")
+      if f then f:close(); return true end
+    end
+  end
+  return false
+end
+local sfx_id_count = 0
+for id in pairs(sfx.SOUNDS) do
+  sfx_id_count = sfx_id_count + 1
+  if not has_sound_file(id) then sfx_problems[#sfx_problems+1] = "no audio file for " .. id end
+  if not map_text:find("| `" .. id .. "` |", 1, true) then sfx_problems[#sfx_problems+1] = "no SFX_MAP row for " .. id end
+end
+
+-- Every recipe: shape gesture + element A cast layer + compound signature, all at skill pitch.
+local cast_checked = 0
+for _, r in ipairs(recipes) do
+  local sk = skillgen.makeSkill(r[1], r[2], r[3])
+  sfx.reset()
+  sfx_calls = {}
+  sfx.cast(sk, 480)
+  local want = {
+    "cast_" .. sk.shape_key,
+    "el_" .. sk.elements[1] .. "_cast",
+    "sig_" .. sk.compound:lower():gsub("%s+", "_"),
+  }
+  local got = {}
+  for _, c in ipairs(sfx_calls) do got[c.id] = (got[c.id] or 0) + 1 end
+  for _, id in ipairs(want) do
+    if not got[id] then
+      sfx_problems[#sfx_problems+1] = "cast missing " .. id .. " for " .. sk.compound .. " " .. sk.shape
+    end
+  end
+  local expected_speed = 2 ^ (((hash_mod.hash(sk.key) % 5) - 2) / 12)
+  for _, c in ipairs(sfx_calls) do
+    local sp = c.props and c.props.speed or 1
+    if sp < expected_speed * 0.999 or sp > expected_speed * 1.001 then
+      sfx_problems[#sfx_problems+1] = string.format("speed %.4f != %.4f for %s", sp, expected_speed, c.id)
+    end
+  end
+  cast_checked = cast_checked + 1
+end
+if cast_checked ~= 50 then sfx_problems[#sfx_problems+1] = "expected 50 skills, checked " .. cast_checked end
+
+-- A repeated cast is mixed 0.6x; "bigger but slower" drops the cast 2 extra semitones.
+do
+  local sk = skillgen.makeSkill("fire", "water", "projectile")
+  sfx.reset(); sfx_calls = {}
+  sfx.cast(sk, 480)
+  local base = {}
+  for _, c in ipairs(sfx_calls) do base[c.id] = c.props.gain end
+  sfx.reset(); sfx_calls = {}
+  sfx.cast(sk, 480, 0.6)
+  for _, c in ipairs(sfx_calls) do
+    if not base[c.id] or math.abs(c.props.gain - base[c.id] * 0.6) > 1e-6 then
+      sfx_problems[#sfx_problems+1] = "repeat gain is not 0.6x for " .. c.id
+    end
+  end
+  local expected_speed = 2 ^ (((hash_mod.hash(sk.key) % 5) - 2) / 12) * 2 ^ (-2 / 12)
+  sfx.reset(); sfx_calls = {}
+  sfx.cast(sk, 480, 1, 2 ^ (-2 / 12))
+  for _, c in ipairs(sfx_calls) do
+    if math.abs(c.props.speed - expected_speed) > 1e-6 then
+      sfx_problems[#sfx_problems+1] = "bigger pitch wrong for " .. c.id
+    end
+  end
+end
+
+-- Throttle: a burst of 20 hits in one frame must not exceed the id's max_voices.
+sfx.reset()
+sfx_calls = {}
+local hit_skill = skillgen.makeSkill("fire", "fire", "projectile")
+for _ = 1, 20 do sfx.hit(hit_skill, 480, 1.0) end
+local hit_cap = sfx.SOUNDS["el_fire_hit"].max_voices
+if #sfx_calls > hit_cap then
+  sfx_problems[#sfx_problems+1] = string.format("hit throttle: %d plays > max_voices %d", #sfx_calls, hit_cap)
+end
+if #sfx_calls < 1 then sfx_problems[#sfx_problems+1] = "hit throttle blocked every play" end
+
+-- Disabled and unknown ids must be silent and harmless.
+sfx.reset()
+sfx_calls = {}
+sfx.ENABLED = false
+if sfx.play("cast_projectile") ~= false then sfx_problems[#sfx_problems+1] = "disabled play returned true" end
+if #sfx_calls ~= 0 then sfx_problems[#sfx_problems+1] = "disabled play reached the backend" end
+sfx.ENABLED = true
+if sfx.play("this_id_does_not_exist") ~= false then sfx_problems[#sfx_problems+1] = "unknown id returned true" end
+if #sfx_calls ~= 0 then sfx_problems[#sfx_problems+1] = "unknown id reached the backend" end
+
+-- Loop start/stop bookkeeping (P3 uses loop_set for pools/orbits).
+sfx.reset()
+sfx_stops = {}
+sfx.loop_set("pool", 1)
+if not sfx.is_loop_active("loop_pool") then sfx_problems[#sfx_problems+1] = "loop_pool did not start" end
+sfx.loop_set("pool", 0)
+if sfx.is_loop_active("loop_pool") then sfx_problems[#sfx_problems+1] = "loop_pool did not stop" end
+
+-- Leave audio silent for the remaining frames; P3 wires it into gameplay.
+sfx.backend = nil
+sfx.stop_backend = nil
+sfx.gain_backend = nil
+sfx.reset()
 
 for i=1,300 do frame() end
 -- flush leftover timers
@@ -296,10 +528,17 @@ local kills, heals = 0, 0
 for _, l in ipairs(logs) do if l:find("Enemy died") then kills = kills + 1 end if l:find("Room cleared") then heals = heals + 1 end end
 local state_lines = {}
 for _, l in ipairs(logs) do if l:find("^State:") or l:find("^Room %d") then state_lines[#state_lines+1] = l end end
+local event_missing, event_report = {}, {}
+for _, name in ipairs(EVENT_NAMES) do
+  event_report[#event_report+1] = name .. "=" .. tostring(event_counts[name])
+  if event_counts[name] == 0 then event_missing[#event_missing+1] = name end
+end
 return {
   results = table.concat(results, ","), errors = errors, baseline = baseline, after = after, created = created,
   flip_true = flip_true or 0, flip_false = flip_false or 0,
   path = table.concat(path_report,'\n'), extras = table.concat(extras,' ; '), wall_viol = wall_viol, wall_first = wall_first or 'none', maxlive = stats.maxlive, maxparticles = stats.maxparticles, kills = kills, rooms_cleared = heals,
   fx_missing = fx_missing, fx_report = table.concat(fx_report, " | "), max_anims = max_anims,
+  events = table.concat(event_report, ", "), event_missing = event_missing,
+  sfx = { ids = sfx_id_count, casts = cast_checked, problems = sfx_problems },
   states = table.concat(state_lines, " | "):sub(1, 900), selfcheck = (function() for _, l in ipairs(logs) do if l:find("SELFCHECK") then return l end end end)(),
 }

@@ -40,7 +40,14 @@ for m in fxm: print("  - FX:", m)
 print("fx per skill  :", r["fx_report"][:600], "...")
 print("errors        :", len(errs))
 for e in errs: print("  -", str(e)[:300])
-ok = not errs and not fxm and r["max_anims"] <= 90 and r["baseline"] == r["after"] and r["wall_viol"] == 0 and "STUCK" not in r["path"]
+print("events        :", r["events"])
+evmiss = [r["event_missing"][i] for i in range(1, len(r["event_missing"]) + 1)]
+snd = r["sfx"]
+sfxprob = [snd["problems"][i] for i in range(1, len(snd["problems"]) + 1)]
+print("sound ids     :", snd["ids"], "casts checked:", snd["casts"], "problems:", len(sfxprob))
+for m in sfxprob[:8]: print("  - SFX:", m)
+ok = (not errs and not fxm and not evmiss and not sfxprob and r["max_anims"] <= 90
+      and r["baseline"] == r["after"] and r["wall_viol"] == 0 and "STUCK" not in r["path"])
 # With art on, the sprite must actually be mirrored in both directions during a run;
 # with ART_TEST=0 (shape fallback) there is no hflip at all.
 if os.environ.get("ART_TEST") != "0" and not (r["flip_true"] > 0 and r["flip_false"] > 0):
