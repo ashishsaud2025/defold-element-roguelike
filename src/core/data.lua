@@ -66,6 +66,8 @@ M.INTERACT = {
     INTERACTION_TICK = 0.15,     -- controlled update interval (never per frame)
     MAX_SPELL_AREAS = 40,
     MAX_CLOUDS = 6,
+    INFUSE_DAMAGE_MUL = 1.25,   -- infused spell hit/tick damage multiplier (once, never stacks)
+    INFUSE_GRACE = 1.0,         -- seconds a Bolt/Orbit orb stays infused after leaving a Pool
 }
 
 -- 3. Locked tuning numbers (all in one place)

@@ -903,6 +903,279 @@ if begin_room() then
   sf(#self.clouds <= data.INTERACT.MAX_CLOUDS,
      "cloud cap: " .. #self.clouds .. " > " .. data.INTERACT.MAX_CLOUDS)
 end
+-- ===== Phase B: universal Pool infusion — Bolt =============================
+-- The pool is cast at the MIDPOINT of the player->target ray, so the bolt's swept
+-- path always crosses it. Room 1 has a mostly-open lane for +x.
+local infuse_combat = require "src.game.combat"
+if begin_room() then
+  -- 1. Mud pool + Inferno Bolt: merged statuses, one 1.25x hit.
+  local e = self.enemies[1]
+  if not e then
+    sf(false, "infusion mud: no enemy")
+  else
+    e.alive, e.active, e.telegraph, e.immortal = true, true, 0, false
+    e.hp, e.speed, e.vx, e.vy = 999, 0, 0, 0
+    e.statuses = {}
+    place_target(e, 200)
+    local mx, my = self.player_pos.x + (e.x - self.player_pos.x) * 0.5,
+                   self.player_pos.y + (e.y - self.player_pos.y) * 0.5
+    self.aim.x, self.aim.y = mx, my
+    equip(mk("puddle", nil, "earth", "water")); cast1()     -- Mud: root
+    self.aim.x, self.aim.y = e.x, e.y
+    equip(mk("projectile", nil, "fire", "fire")); cast1()    -- Inferno Bolt: burn
+    local hp0 = 999
+    frames(30)
+    sf(e.statuses and e.statuses.burn ~= nil, "infusion mud: native burn missing")
+    sf(e.statuses and e.statuses.root ~= nil, "infusion mud: pool root missing")
+    local keys = 0 for _ in pairs(e.statuses or {}) do keys = keys + 1 end
+    sf(keys == 2, "infusion mud: status keys=" .. keys .. " (expected 2)")
+    sf(near(hp0 - e.hp, 14 * 1.25, 0.001),
+       "infusion mud: damage " .. (hp0 - e.hp) .. " (expected 17.5)")
+  end
+end
+if begin_room() then
+  -- Control: the same bolt cast with no pool in the room deals base damage.
+  local e = self.enemies[1]
+  if not e then
+    sf(false, "infusion control: no enemy")
+  else
+    e.alive, e.active, e.telegraph, e.immortal = true, true, 0, false
+    e.hp, e.speed, e.vx, e.vy = 999, 0, 0, 0
+    e.statuses = {}
+    place_target(e, 200)
+    self.aim.x, self.aim.y = e.x, e.y
+    equip(mk("projectile", nil, "fire", "fire")); cast1()
+    local hp0 = 999
+    frames(30)
+    local keys = 0 for _ in pairs(e.statuses or {}) do keys = keys + 1 end
+    sf(keys == 1 and e.statuses.burn ~= nil, "infusion control: unexpected statuses")
+    sf(near(hp0 - e.hp, 14, 0.001), "infusion control: damage " .. (hp0 - e.hp) .. " (expected 14)")
+  end
+end
+if begin_room() then
+  -- 2. Same-compound infusion: no new status, still 1.25x (Inferno Pool + Inferno Bolt).
+  local e = self.enemies[1]
+  if e then
+    e.alive, e.active, e.telegraph, e.immortal = true, true, 0, false
+    e.hp, e.speed, e.vx, e.vy = 999, 0, 0, 0
+    e.statuses = {}
+    place_target(e, 200)
+    self.aim.x, self.aim.y = self.player_pos.x + (e.x - self.player_pos.x) * 0.5,
+                              self.player_pos.y + (e.y - self.player_pos.y) * 0.5
+    equip(mk("puddle", nil, "fire", "fire")); cast1()        -- Inferno Pool
+    self.aim.x, self.aim.y = e.x, e.y
+    equip(mk("projectile", nil, "fire", "fire")); cast1()
+    local hp0 = 999
+    frames(30)
+    local keys = 0 for _ in pairs(e.statuses or {}) do keys = keys + 1 end
+    sf(keys == 1, "infusion same-compound: keys=" .. keys .. " (burn should not double)")
+    sf(near(hp0 - e.hp, 17.5, 0.001), "infusion same-compound: damage " .. (hp0 - e.hp))
+  end
+end
+if begin_room() then
+  -- 3. Three overlapping pools: union of statuses, push present, ONE 1.25x.
+  local e = self.enemies[1]
+  if e then
+    e.alive, e.active, e.telegraph, e.immortal = true, true, 0, false
+    e.hp, e.speed, e.vx, e.vy = 999, 0, 0, 0
+    e.statuses = {}
+    place_target(e, 220)
+    self.aim.x, self.aim.y = self.player_pos.x + (e.x - self.player_pos.x) * 0.5,
+                              self.player_pos.y + (e.y - self.player_pos.y) * 0.5
+    equip(mk("puddle", nil, "earth", "water")); cast1()      -- Mud: root
+    equip(mk("puddle", nil, "wind", "wind")); cast1()        -- Gale: push
+    equip(mk("puddle", nil, "fire", "wind")); cast1()        -- Ember: burn+spread
+    self.aim.x, self.aim.y = e.x, e.y
+    equip(mk("projectile", nil, "fire", "fire")); cast1()
+    local hp0 = 999
+    frames(30)
+    for _, want in ipairs({ "burn", "root", "push", "spread" }) do
+      sf(e.statuses and e.statuses[want] ~= nil, "infusion 3 pools: missing " .. want)
+    end
+    local keys = 0 for _ in pairs(e.statuses or {}) do keys = keys + 1 end
+    sf(keys == 4, "infusion 3 pools: keys=" .. keys .. " (duplicates must merge)")
+    sf(near(hp0 - e.hp, 14 * 1.25, 0.001),
+       "infusion 3 pools: damage " .. (hp0 - e.hp) .. " (multiplier must not stack)")
+  end
+end
+if begin_room() then
+  -- 4. Push beats pull (Gale pool over a Tide Bolt): the pool's push drives knockback.
+  local e = self.enemies[1]
+  local kb = {}
+  local orig_kb = infuse_combat.knockback
+  infuse_combat.knockback = function(ex, ey, sx, sy, strength, toward)
+    kb[#kb + 1] = { toward = toward == true }
+    return orig_kb(ex, ey, sx, sy, strength, toward)
+  end
+  if e then
+    e.alive, e.active, e.telegraph, e.immortal = true, true, 0, false
+    e.hp, e.speed, e.vx, e.vy = 999, 0, 0, 0
+    e.statuses = {}
+    place_target(e, 220)
+    self.aim.x, self.aim.y = self.player_pos.x + (e.x - self.player_pos.x) * 0.5,
+                              self.player_pos.y + (e.y - self.player_pos.y) * 0.5
+    equip(mk("puddle", nil, "wind", "wind")); cast1()        -- Gale: push
+    self.aim.x, self.aim.y = e.x, e.y
+    equip(mk("projectile", nil, "water", "water")); cast1()  -- Tide: pull + slow
+    frames(30)
+    sf(e.statuses and e.statuses.push ~= nil, "infusion push>pull: push missing")
+    sf(e.statuses and e.statuses.pull ~= nil, "infusion push>pull: pull missing")
+    sf(#kb == 1, "infusion push>pull: knockback calls=" .. #kb)
+    if kb[1] then sf(kb[1].toward == false, "infusion push>pull: pool push lost to pull") end
+  end
+  infuse_combat.knockback = orig_kb
+end
+if begin_room() then
+  -- 5. Mist pool (blind + hide_self): enemy is blinded, never gets hide_self.
+  local e = self.enemies[1]
+  if e then
+    e.alive, e.active, e.telegraph, e.immortal = true, true, 0, false
+    e.hp, e.speed, e.vx, e.vy = 999, 0, 0, 0
+    e.statuses = {}
+    place_target(e, 180)
+    self.aim.x, self.aim.y = self.player_pos.x + (e.x - self.player_pos.x) * 0.5,
+                              self.player_pos.y + (e.y - self.player_pos.y) * 0.5
+    equip(mk("puddle", nil, "water", "wind")); cast1()       -- Mist: blind + hide_self
+    self.aim.x, self.aim.y = e.x, e.y
+    equip(mk("projectile", nil, "fire", "fire")); cast1()
+    frames(30)
+    sf(e.statuses and e.statuses.blind ~= nil, "infusion mist: blind missing")
+    sf(not (e.statuses and e.statuses.hide_self), "infusion mist: hide_self leaked onto the enemy")
+  end
+end
+if begin_room() then
+  -- 6. Ancient Catalyst scales the MERGED statuses (root from the pool scales too).
+  self.relics.ancient_catalyst = true
+  self.status_dur_mul = relics_mod.status_duration_mul(self.relics)
+  local e = self.enemies[1]
+  if e then
+    e.alive, e.active, e.telegraph, e.immortal = true, true, 0, false
+    e.hp, e.speed, e.vx, e.vy = 999, 0, 0, 0
+    e.statuses = {}
+    place_target(e, 200)
+    self.aim.x, self.aim.y = self.player_pos.x + (e.x - self.player_pos.x) * 0.5,
+                              self.player_pos.y + (e.y - self.player_pos.y) * 0.5
+    equip(mk("puddle", nil, "earth", "water")); cast1()      -- Mud: root
+    self.aim.x, self.aim.y = e.x, e.y
+    equip(mk("projectile", nil, "fire", "fire")); cast1()
+    -- The hit applies statuses mid-frame; the first frame root exists, its expiry is
+    -- still exactly duration x mul (decrements start the following frame).
+    local hit_root, hit_burn
+    for _ = 1, 60 do
+      self.player.invuln = 5
+      frame()
+      if e.statuses and e.statuses.root and not hit_root then
+        hit_root = e.statuses.root.expiry
+        hit_burn = e.statuses.burn and e.statuses.burn.expiry
+      end
+    end
+    sf(hit_root ~= nil, "infusion catalyst: root was never applied")
+    sf(hit_root and near(hit_root, 2.0 * 1.2, 0.02),
+       "infusion catalyst: root expiry " .. tostring(hit_root))
+    sf(hit_burn ~= nil, "infusion catalyst: burn was never applied")
+    sf(hit_burn and near(hit_burn, 3.0 * 1.2, 0.02),
+       "infusion catalyst: burn expiry " .. tostring(hit_burn))
+  end
+end
+if begin_room() then
+  -- 7. Ember pool + Inferno Bolt: e1 burns and spreads; e2 (within 60 px) is ignited.
+  local e1 = self.enemies[1]
+  local e2 = self.enemies[2]
+  if not (e1 and e2) then
+    sf(false, "infusion ember: need two enemies, 1=" .. tostring(e1 ~= nil) .. " 2=" .. tostring(e2 ~= nil))
+  else
+    for _, en in ipairs({ e1, e2 }) do
+      en.alive, en.active, en.telegraph, en.immortal = true, true, 0, false
+      en.hp, en.speed, en.vx, en.vy = 999, 0, 0, 0
+      en.statuses = {}
+    end
+    place_target(e1, 180)
+    e2.x, e2.y = e1.x + 40, e1.y
+    if level_mod.blocked(self.level, e2.x, e2.y, e2.radius) then
+      e2.x, e2.y = level_mod.free_point_near(self.level, e1.x + 40, e1.y, e2.radius)
+    end
+    self.aim.x, self.aim.y = self.player_pos.x + (e1.x - self.player_pos.x) * 0.5,
+                                self.player_pos.y + (e1.y - self.player_pos.y) * 0.5
+    equip(mk("puddle", nil, "fire", "wind")); cast1()        -- Ember: burn + spread
+    self.aim.x, self.aim.y = e1.x, e1.y
+    equip(mk("projectile", nil, "fire", "fire")); cast1()
+    frames(45)
+    sf(e1.statuses and e1.statuses.burn ~= nil, "infusion ember: e1 missing burn")
+    sf(e1.statuses and e1.statuses.spread ~= nil, "infusion ember: e1 missing spread (Ember pool)")
+    sf(e2.statuses and e2.statuses.burn ~= nil,
+       "infusion ember: e2 did not ignite within 60 px")
+  end
+end
+if begin_room() then
+  -- 8. A "leaves a trail" Bolt its own trail patches never infuse; no free +25%.
+  local e = self.enemies[1]
+  if e then
+    e.alive, e.active, e.telegraph, e.immortal = true, true, 0, false
+    e.hp, e.speed, e.vx, e.vy = 999, 0, 0, 0
+    e.statuses = {}
+    place_target(e, 150)
+    self.aim.x, self.aim.y = e.x, e.y
+    equip(mk("projectile", "leaves_trail", "fire", "fire")); cast1()
+    local hp0 = 999
+    frames(30)
+    local tc = 0 for _, p2 in ipairs(self.puddles) do if p2.is_trail then tc = tc + 1 end end
+    sf(tc >= 1, "infusion trail: quirk produced no trail patches")
+    sf(near(hp0 - e.hp, 14, 0.001), "infusion trail: damage " .. (hp0 - e.hp) .. " (own trail must not infuse)")
+  end
+end
+-- Grace lifecycle (module contract, deterministic): entry stays live for exactly
+-- INFUSE_GRACE after the pool stops overlapping; re-entry refreshes; expired entries prune.
+do
+  local infuse_mod = require "src.game.infusion"
+  local fake_pool = { x = 0, y = 0, radius = 60, alive = true, duration = 5,
+                      is_trail = false, skill_ref = {}, statuses = { "root" }, color = { r = 1, g = 1, b = 1 } }
+  local rec = infuse_mod.touch(nil, fake_pool, 100)       -- enters at t=100
+  infuse_mod.release(rec, fake_pool, 101, 1.0)            -- leaves at t=101
+  local lv = infuse_mod.active(rec, 101.5)
+  sf(lv and #lv == 1, "grace: entry shed before the grace ended")
+  rec = infuse_mod.touch(rec, fake_pool, 101.6)           -- re-entry refreshes, not duplicated
+  lv = infuse_mod.active(rec, 101.7)
+  sf(lv and #lv == 1, "grace: re-entry did not refresh the entry")
+  infuse_mod.release(rec, fake_pool, 101.7, 1.0)          -- leaves again; grace ends at 102.7
+  lv = infuse_mod.active(rec, 102.69)
+  sf(lv and #lv == 1, "grace: entry shed before 1.0 s elapsed")
+  lv = infuse_mod.active(rec, 102.71)
+  sf(lv == nil or #lv == 0, "grace: entry outlived INFUSE_GRACE")
+  -- pool dying mid-grace must not error and must not resurrect an in-flight effect
+  rec = infuse_mod.touch(nil, fake_pool, 200)
+  fake_pool.alive = false                                  -- pool dies while overlapping
+  infuse_mod.release(rec, fake_pool, 200.5, 1.0)
+  lv = infuse_mod.active(rec, 201.0)
+  sf(lv and #lv == 1, "grace: pool dying mid-grace dropped a live entry")
+  sf(lv and lv[1] and lv[1].statuses and lv[1].statuses[1] == "root",
+     "grace: entry statuses were not the snapshot from touch")
+  lv = infuse_mod.active(rec, 201.51)
+  sf(lv == nil or #lv == 0, "grace: entry survived past the grace after the pool died")
+  local pool_keys = 0
+  for k in pairs(rec) do if type(k) == "table" then pool_keys = pool_keys + 1 end end
+  sf(pool_keys == 0, "grace: expired entries were not pruned from the record")
+end
+-- Room reset while the reset happens with a live infused bolt pending: records die with the spell.
+if begin_room() then
+  local e = self.enemies[1]
+  if e then
+    e.alive, e.active, e.telegraph, e.immortal = true, true, 0, false
+    e.hp, e.speed, e.vx, e.vy = 999, 0, 0, 0
+    e.statuses = {}
+    place_target(e, 200)
+    self.aim.x, self.aim.y = self.player_pos.x + (e.x - self.player_pos.x) * 0.5,
+                              self.player_pos.y + (e.y - self.player_pos.y) * 0.5
+    equip(mk("puddle", nil, "earth", "water")); cast1()
+    self.aim.x, self.aim.y = e.x, e.y
+    equip(mk("projectile", nil, "fire", "fire")); cast1()
+    frames(10)                                     -- bolt is inside/past the pool now
+    local errs_before = #errors
+    self.state = "DEAD"; ui({ action = "continue" })  -- room reset: bolts are cleared
+    sf(#self.bolts == 0, "infusion reset: bolts survived a room reset")
+    frames(30)
+    sf(#errors == errs_before, "infusion reset: leftover callback errored")
+  end
+end
 -- Room reset while split/repeat/trail/interaction effects are pending.
 if begin_room() then
   equip(mk("burst", "split_in_two")); cast1()
