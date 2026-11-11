@@ -1,7 +1,8 @@
 # Spellcraft core — quirks, interactions, relics (v9)
 
 Plan: `spellcraft_implementation_plan.md`, phases 0-5. No new elements, compounds, shapes, statuses
-or relic types; Beam/Trap/Chain were **not** added (optional checkpoint, still open).
+or relic types; Beam/Trap/Chain were **not** added (optional checkpoint, declined — scope frozen at
+the five existing shapes).
 Determinism preserved: recipe key, RNG call order and quirk order are unchanged, so every existing
 recipe still gets the same power and quirk (`SELFCHECK OK`).
 
