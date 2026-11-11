@@ -1405,12 +1405,28 @@ end
 
 -- Shared infusion accent: a small deterministic fan of glow sparks in the Pool colour.
 -- One burst, never per frame; deterministic geometry only (AGENTS #38, #52); existing art.
+-- Infusion accents bypass the 260-particle soft cap (spawn_particle would silently
+-- drop them at a full budget) but are bounded by their own ceiling: at most
+-- ACCENT_CAP live accent particles at once. Everything else keeps the soft cap.
+local ACCENT_CAP = 24                       -- 4 simultaneous accent bursts (6 sparks each)
 local function infusion_accent(self, x, y, color)
     local c = color or { r = 1, g = 1, b = 1 }
+    local live = 0
+    for _, p in ipairs(self.particles) do
+        if p.accent then live = live + 1 end
+    end
     for k = 1, 6 do
+        if live >= ACCENT_CAP then return end
         local a = (k / 6) * math.pi * 2
-        spawn_particle(self, x, y, c.r, c.g, c.b, 0.9, 0.4, 0.35,
-            math.cos(a) * 55, math.sin(a) * 55, FX.glow, 0.05)
+        local id = fx_make(x, y, 0.1, FX.glow, c.r, c.g, c.b, 0.9, 0.4)
+        table.insert(self.particles, {
+            id = id, x = x, y = y, life = 0.35, max_life = 0.35,
+            vx = math.cos(a) * 55, vy = math.sin(a) * 55,
+            r = c.r, g = c.g, b = c.b, a = 0.9,
+            s0 = 0.4, s1 = 0.05,
+            accent = true,
+        })
+        live = live + 1
     end
 end
 

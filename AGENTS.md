@@ -349,6 +349,11 @@ Format: **what happened / why / rule for agents.** These are the assistant's own
 - **Fix:** compute expected numbers from the actual code path being asserted (`skillgen` power formula, `combat.burst_hits`, `update_orbit`, the infusion segment/circle/sector geometry) and read the skill's rolled `power` back instead of hardcoding it. Every test must call the observer it checks.
 - **Rule:** "should pass" from memory is a coin flip. Read the function, compute the value, then assert (B45, B51). When a test fails, find out whether the test or the game is wrong before reporting a cause.
 
+### 55. I audited a cap by reading which helper was called, not that helper's own guard
+- **What:** I claimed "infusion accents can never be dropped at a cap" because they use `spawn_particle` — without reading that `spawn_particle` begins with `if #self.particles >= 260 then return end`. Every accent was silently skipped at a full 260-particle budget, and the smoke test asserted `p.infused_visual`, a flag set before dispatch, so it passed while nothing drew. The user caught it.
+- **Fix:** `infusion_accent` now inserts its particles directly (same `fx_make` + `self.particles` entry) with its own ceiling — 24 live accent particles, counted via an `accent` flag on the entry; `spawn_particle` is untouched for everything else. The test fills `self.particles` to 260 and asserts the accent entries actually exist in the list (Bolt/Spray/Nova/Orbit) and that the ceiling holds under repeated infusions; reverting the fix fails all 7 accent checks.
+- **Rule:** a cap audit must read the guard *inside* the helper, not the helper's name. A test must assert the visible object exists — never the flag that precedes its creation.
+
 ---
 ## Definition of Done (run before telling the human a change is finished)
 1. Syntax-check every Lua file you touched (`loadstring` in LuaJIT or `luac -p` for 5.1). No `goto`, `//`, bit operators.

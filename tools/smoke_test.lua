@@ -1850,35 +1850,87 @@ for _, pp in ipairs(POOL_PAIRS) do
   end
 end
 sf(matrix_cells == 40, "matrix: only " .. matrix_cells .. " / 40 cells ran")
--- Accent is uncapped: with the one-shot flipbook cap filled to 90, the infusion accent
--- (a spawn_particle, never anim_fx) still fires and nothing errors.
+-- Accent survives a full 260-particle budget. Assert the accent particle ENTRIES exist in
+-- self.particles (flagged accent), never just the flag that precedes dispatch.
+local function accent_count()
+  local n = 0
+  for _, p in ipairs(self.particles) do if p.accent then n = n + 1 end end
+  return n
+end
+local function fill_particles()
+  for _ = 1, 260 do
+    local id = factory.create("#fx_factory", vmath.vector3(50, 50, 0.1))
+    table.insert(self.particles, {
+      id = id, x = 50, y = 50, life = 999, max_life = 999,
+      vx = 0, vy = 0, r = 1, g = 1, b = 1, a = 1, s0 = 0.1, s1 = 0.1,
+    })
+  end
+end
+-- 1. Bolt: accent entries exist at a full budget.
 if begin_room() then
-  for _ = 1, 90 do
-    local id = factory.create("#fx_factory", vmath.vector3(100, 100, 0.1))
-    table.insert(self.anims, { t = 999, vx = 0, vy = 0, x = 100, y = 100, z = 0.1, id = id })
-  end
-  local errs_before = #errors
-  sf(#self.anims == 90, "accent cap: could not fill one-shot cap (anims=" .. #self.anims .. ")")
-  local e = self.enemies[1]
-  if e then
-    e.alive, e.active, e.telegraph, e.immortal = true, true, 0, false
-    e.hp, e.speed, e.vx, e.vy = 999, 0, 0, 0
-    e.statuses = {}
-    place_target(e, 150)
-    self.aim.x, self.aim.y = self.player_pos.x + (e.x - self.player_pos.x) * 0.5,
-                              self.player_pos.y + (e.y - self.player_pos.y) * 0.5
+  for _, en in ipairs(self.enemies) do en.active = false end
+  fill_particles()
+  sf(#self.particles == 260, "accent budget: pre-fill failed, particles=" .. #self.particles)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 75, p.y
+  equip(mk("puddle", nil, "earth", "water")); cast1()
+  local pool = self.puddles[#self.puddles]
+  if pool then pool.radius = 40 end
+  self.aim.x, self.aim.y = p.x + 150, p.y               -- bolt flies through the pool on the way
+  equip(mk("projectile", nil, "fire", "fire")); cast1()
+  frames(15)
+  sf(accent_count() >= 6, "accent budget: bolt accent missing at a full particle budget (" .. accent_count() .. ")")
+  sf(#self.particles > 260, "accent budget: accent added nothing at a full particle budget")
+end
+-- 2. Spray: accent entries exist at a full budget.
+if begin_room() then
+  for _, en in ipairs(self.enemies) do en.active = false end
+  fill_particles()
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 75, p.y
+  equip(mk("puddle", nil, "earth", "water")); cast1()
+  self.aim.x, self.aim.y = p.x + 300, p.y               -- cone sweeps across the pool
+  equip(mk("cone", nil, "fire", "fire")); cast1()
+  frames(2)
+  sf(accent_count() >= 6, "accent budget: spray accent missing at a full particle budget (" .. accent_count() .. ")")
+end
+-- 3. Nova: accent entries exist at a full budget.
+if begin_room() then
+  for _, en in ipairs(self.enemies) do en.active = false end
+  fill_particles()
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 75, p.y                -- pool near the player: the rim touches it
+  equip(mk("puddle", nil, "earth", "water")); cast1()
+  self.aim.x, self.aim.y = p.x + 150, p.y
+  equip(mk("burst", nil, "fire", "fire")); cast1()
+  frames(2)
+  sf(accent_count() >= 6, "accent budget: nova accent missing at a full particle budget (" .. accent_count() .. ")")
+end
+-- 4. Orbit: accent entries exist at a full budget.
+if begin_room() then
+  for _, en in ipairs(self.enemies) do en.active = false end
+  fill_particles()
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 70, p.y                -- pool on the orb's ring
+  equip(mk("puddle", nil, "earth", "water")); cast1()
+  equip(mk("orbit", nil, "fire", "fire")); cast1()
+  frames(3)
+  sf(accent_count() >= 6, "accent budget: orbit accent missing at a full particle budget (" .. accent_count() .. ")")
+end
+-- 5. Ceiling: with 260 dummies live, many infusion accents stay within ACCENT_CAP (24).
+if begin_room() then
+  for _, en in ipairs(self.enemies) do en.active = false end
+  fill_particles()
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 75, p.y                -- pool inside the cone's reach every cast
+  for _ = 1, 6 do
     equip(mk("puddle", nil, "earth", "water")); cast1()
-    self.aim.x, self.aim.y = e.x, e.y
-    local skb = mk("projectile", nil, "fire", "fire")
-    equip(skb); cast1()
-    frames(3)
-    sf(self.bolts[1] ~= nil and self.bolts[1].infused_visual == true,
-       "accent cap: infusion accent dropped at a full one-shot cap")
-    sf(#errors == errs_before, "accent cap: an error occurred at a full one-shot cap")
+    equip(mk("cone", nil, "fire", "fire")); cast1()
   end
-  for _, a in ipairs(self.anims) do a.t = 0 end
-  frames(1)                                     -- let the dummies expire cleanly
-  sf(#self.anims == 0, "accent cap: dummy anims did not expire")
+  sf(accent_count() == 24,
+     "accent ceiling: accents=" .. accent_count() .. " (expected exactly 24)")
+  sf(#self.particles == 284,
+     "accent ceiling: dummies+accents=" .. #self.particles .. " (expected 284)")
 end
 -- Grace lifecycle (module contract, deterministic): entry stays live for exactly
 -- INFUSE_GRACE after the pool stops overlapping; re-entry refreshes; expired entries prune.
