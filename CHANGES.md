@@ -1,3 +1,21 @@
+# Audio / reactions / juice — P2: audio plumbing + 89 placeholder sounds
+- `src/core/sfx.lua`: complete id manifest with per-id gain/min-gap/max-voices/pitch/loop/bus, injected backend, 16-voice global cap, pan and semitone pitch, high-level `cast`/`hit`/`status`/`quirk`/`loop_set` helpers.
+- `src/core/crng.lua`: cosmetic-only RNG so pitch wobble never shifts gameplay determinism.
+- `tools/make_sfx.py` (stdlib only): deterministic mono 16-bit 22050 Hz WAVs for every id, 5 ms fades, idempotent, `--force`; also rewrites `assets/sfx/SFX_MAP.md`.
+- `tools/add_sounds.py`: scans `assets/sfx` + `assets/music`, prefers `.ogg`, writes `.sound` resources and regenerates `main/sfx.go`; idempotent.
+- `main/sfx.go` (89 components), `sfx` instance in `main/main.collection`, additive `[sound]` limits in `game.project` (max data 128, instances 64, component count 128).
+- `game.script`: injects `sound.play/stop/set_gain`, runs `sfx.update(dt)`, stops loops in `clear_world`; DEBUG audition keys `O`/`P` (previous/next), `L` (play), `K` (slot-1 cast layers).
+- Smoke test: 89 ids have files + map rows, all 50 casts produce shape + element-A + signature at the exact skill pitch, hit throttle, disabled/unknown id, loop start/stop. `SFX_TEST=1` adds a missing id and must FAIL.
+- Results unchanged from P1: 323 -> 323 live, 0 errors, rooms 10/0, anim 68,042/0, compile success. Mock only for playback.
+
+# Audio / reactions / juice — P1: one choke point for hits
+- New `src/game/events.lua`: synchronous event bus (`on`/`off`/`clear`/`emit`/`count`) with no listeners registered yet.
+- `main/game.script`: `apply_hit` now handles all six delivery paths (bolt, puddle, orbit, cone, burst, delayed Nova echo) and burn ticks. It deliberately preserves the old quirks: the echo has no knockback, puddle/orbit ticks have no hit FX, burn ticks are silent.
+- `src/core/status.lua`: `apply` returns the statuses that were newly applied (existing callers ignore it; audio will use it to avoid tick spam).
+- Hooks emitted: `cast`, `hit`, `status`, `quirk`, `kill` (now carries the enemy), `player_hit`, `dash`, `room_clear`, `enemy_spawn`.
+- `tools/smoke_test.lua`: asserts every hook fires at least once; `EVENT_TEST=1` adds a bogus hook and must FAIL, proving the check is live.
+- Results unchanged from P0: live 323 -> 323, max 551, 0 errors, 0 wall clipping, rooms 10/0, anim 68,042/0, compile success. Mock only.
+
 # Docs (v8)
 - `AGENTS.md`: items 44-48 (render constants, test-vs-game, skipped DoD/licence TODOs, unverified letterbox assumptions, deleted deliveries), item 1 corrected for nested atlas animations, DoD item 8 added.
 - `README.md`: §5.5 note, §13.1 row, §13.4 rows, new §13.5 (animated effects + letterboxing).

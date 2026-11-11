@@ -21,19 +21,25 @@ M.STATUS_DATA = {
 -- Apply a list of statuses to a target.
 -- Unknown names are ignored (e.g. "spread" has no per-enemy effect yet).
 -- burn refreshes its timer rather than stacking.
+-- Returns the list of names that were NOT present before this call (fresh
+-- applications). Existing callers may ignore the return value; audio uses it to
+-- avoid spamming a status cue every time a puddle ticks.
 function M.apply(target, status_names, now)
-    if status_names == nil then return end
+    local fresh = {}
+    if status_names == nil then return fresh end
     if target.statuses == nil then target.statuses = {} end
 
     for _, name in ipairs(status_names) do
         local def = M.STATUS_DATA[name]
         if def then
+            if target.statuses[name] == nil then table.insert(fresh, name) end
             target.statuses[name] = { expiry = def.duration }
             if name == "burn" then
                 target.burn_timer = 0
             end
         end
     end
+    return fresh
 end
 
 -- Tick all statuses down by dt. Returns the list of names that expired this frame.
