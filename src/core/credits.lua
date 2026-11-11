@@ -16,4 +16,5 @@ return {
     "Pixel fire asset pack by devkidd (devkidd.itch.io), free to use",
     "Pixel Holy Effects Pack 01 by Sentient Dream Studio, free to use",
     "Spell effects: Effect and FX Pixel All Free, RPG Effect All Free, Free Smoke Fx Pixel 2 (itch.io)",
+    "Audio generated for this project by tools/make_sfx.py (original synthesis)",
 }

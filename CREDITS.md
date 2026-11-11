@@ -29,3 +29,5 @@ Element FX sprites in assets/art/fx are whitened to white-on-alpha (tools/whiten
 fx_drop.png is generated for this project (tools/make_drop.py).
 actors/target_dummy.png is generated for this project (tools/make_target.py).
 glow.png, floor.png and vignette.png are generated for this project.
+
+All audio in assets/sfx and assets/music is generated for this project by tools/make_sfx.py (original synthesis, no third-party samples). Replace any file with a same-named .ogg/.wav and run tools/add_sounds.py.
