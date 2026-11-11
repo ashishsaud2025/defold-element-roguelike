@@ -1,3 +1,18 @@
+# Audio / reactions / juice — P6: elemental reactions
+- `src/core/reactions.lua`: data-driven reactions (Steam Burst, Shatter, Flare-up, Bog, Whirl) with per-enemy cooldowns, `check`/`update`/`consume`/`by_id` helpers.
+- `main/game.script`: `apply_reaction` wired into `apply_hit` (before hit's own statuses); burn dps multiplier for Flare-up; spread radius for Flare-up; Bog converts slow to root; Whirl knockback + confuse; Steam Burst AoE; Shatter bonus damage. Reaction cooldowns ticked in enemy update.
+- Smoke test: 0 errors, all P3/P4/P5 audio assertions pass.
+
+# Audio / reactions / juice — P5: adaptive music
+- `src/core/music.lua`: state-driven stem mixing (TITLE/ROOM/BOSS/CAULDRON/REWARD/WIN/DEAD), intensity-based stem gains with 0.8s fade, boss loop, stings.
+- `main/game.script`: `music.set_state` on all state transitions, `music.update(dt)` in update, `music.set_intensity` tracks live enemy count.
+- Smoke test: mus_title, mus_room_pad, mus_win, mus_dead all play.
+
+# Audio / reactions / juice — P4: world audio
+- `main/game.script`: player sounds (pl_hurt, pl_dash, pl_lowhp heartbeat, pl_heal, pl_die), enemy sounds (en_spawn, en_die, en_splitter_pop, en_charge_windup, en_charge, en_wall_stun, en_slinger_shot, en_brute_stomp, boss_roar/ring/charge/summon/die), UI/flow sounds (ui_pick, ui_click, ui_card, ui_craft, ui_craft_bad, ui_hover, ui_cauldron_loop, room_clear, state_title/win/dead).
+- Event listeners: player_hit, dash, enemy_spawn, kill, room_clear all wired to audio.
+- Smoke test: all world/UI sounds verified as played at least once.
+
 # Audio / reactions / juice — P2: audio plumbing + 89 placeholder sounds
 - `src/core/sfx.lua`: complete id manifest with per-id gain/min-gap/max-voices/pitch/loop/bus, injected backend, 16-voice global cap, pan and semitone pitch, high-level `cast`/`hit`/`status`/`quirk`/`loop_set` helpers.
 - `src/core/crng.lua`: cosmetic-only RNG so pitch wobble never shifts gameplay determinism.

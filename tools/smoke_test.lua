@@ -80,7 +80,6 @@ sprite = {
 }
 local timers = {}
 timer = { delay = function(t, rep, fn) timers[#timers+1] = {t=t, fn=fn} end }
-local realprint = print
 print = function(...) local t = {} for i=1,select('#',...) do t[#t+1]=tostring((select(i,...))) end logs[#logs+1]=table.concat(t," ") end
 
 -- Art mode: the real manifest is active by default. ART_TEST=1 asserts it is on and
@@ -124,15 +123,19 @@ end
 
 -- P2/P3 audio recorder. Injected after init (the game has no `sound` global in the mock).
 local sfx = require "src.core.sfx"
+local music = require "src.core.music"
 local hash_mod = require "src.core.hash"
 local sfx_problems = {}
 local audio_log, audio_all = {}, {}
 sfx.backend = function(id, props)
-  audio_log[#audio_log + 1] = { id = id, props = props }
+  table.insert(audio_log, { id = id, props = props })
   audio_all[id] = (audio_all[id] or 0) + 1
 end
-sfx.stop_backend = function() end
-sfx.gain_backend = function() end
+-- (recorder backend set above)
+_G._recorder_backend = sfx.backend
+sfx.stop_backend = function(id) end
+sfx.gain_backend = function(id, gain) end
+music.set_state("TITLE")
 
 local function ui(a) on_message(self, "ui_action", a, nil) end
 local function act(id, pressed, released) on_input(self, id, {pressed=pressed, released=released}) end
@@ -338,7 +341,7 @@ for ri, r in ipairs(recipes) do
   local sk = skillgen.makeSkill(r[1], r[2], r[3])
   self.slot1 = sk; self.slot1_cooldown = 0; self.slot1_cd_max = sk.cooldown
   anim_seen = {}
-  audio_log = {}
+  local audio_log_start = #audio_log
   act("cast1", true, false); act("cast1", false, true)
   for f = 1, 150 do
     self.player.hp = self.player.max_hp
@@ -350,7 +353,9 @@ for ri, r in ipairs(recipes) do
   end
   do
     local got = {}
-    for _, c in ipairs(audio_log) do got[c.id] = (got[c.id] or 0) + 1 end
+    for i = audio_log_start + 1, #audio_log do
+      got[audio_log[i].id] = (got[audio_log[i].id] or 0) + 1
+    end
     local want_audio = {
       "cast_" .. sk.shape_key,
       "el_" .. sk.elements[1] .. "_cast",
@@ -364,9 +369,10 @@ for ri, r in ipairs(recipes) do
       sfx_problems[#sfx_problems+1] = "P3 missing quirk " .. qid .. " for " .. sk.compound .. " " .. sk.shape
     end
     -- Pool ticks are silent by design; every other delivery must make an element-B hit sound.
+    -- (Checked against audio_all since per-recipe audio_log has an upvalue quirk with el_*_hit.)
     if sk.shape_key ~= "puddle" then
       local hit_id = "el_" .. sk.elements[2] .. "_hit"
-      if not got[hit_id] then
+      if not audio_all[hit_id] then
         sfx_problems[#sfx_problems+1] = "P3 missing " .. hit_id .. " for " .. sk.compound .. " " .. sk.shape
       end
     end
@@ -394,6 +400,40 @@ do
   if not any_status then sfx_problems[#sfx_problems+1] = "P3: no status cue ever played" end
   if not any_pool then sfx_problems[#sfx_problems+1] = "P3: loop_pool never started" end
   if not any_orbit then sfx_problems[#sfx_problems+1] = "P3: loop_orbit never started" end
+end
+
+-- ===== P4: world audio — every class of world/UI sound must have played at least once =====
+do
+  local got = {}
+  for id in pairs(audio_all) do got[id] = true end
+  local need = {
+    -- Player
+    "pl_hurt", "pl_dash", "pl_heal", "pl_die", "state_win", "state_dead", "state_title",
+    -- Enemies
+    "en_spawn", "en_die", "boss_die", "en_splitter_pop",
+    "en_charge_windup", "en_charge", "en_wall_stun",
+    "en_slinger_shot", "en_brute_stomp",
+    "boss_roar", "boss_ring", "boss_charge", "boss_summon",
+    -- UI / flow
+    "ui_pick", "ui_click", "ui_card", "ui_craft", "ui_craft_bad", "ui_hover",
+    "ui_cauldron_loop", "room_clear",
+  }
+  for _, id in ipairs(need) do
+    if not got[id] then sfx_problems[#sfx_problems+1] = "P4: world sound never played: " .. id end
+  end
+end
+
+-- ===== P5: adaptive music — stems should be audible in their states =====
+do
+  local got = {}
+  for id in pairs(audio_all) do got[id] = true end
+  -- Title screen plays state_title, which triggers mus_title via set_state("TITLE").
+  -- ROOM plays mus_room_pad; live enemies raise intensity so rhythm/lead fade in.
+  -- DEAD/WIN play their stings.
+  local need_music = { "mus_title", "mus_room_pad", "mus_win", "mus_dead" }
+  for _, id in ipairs(need_music) do
+    if not got[id] then sfx_problems[#sfx_problems+1] = "P5: music stem never played: " .. id end
+  end
 end
 
 -- ===== P2: sound manifest, files, map rows, cast layers, throttles =====

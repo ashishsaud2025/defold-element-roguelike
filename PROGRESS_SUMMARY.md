@@ -5,11 +5,10 @@
 
 ## 1. Overall summary (rewritten each phase)
 
-**Phase P2 complete: audio plumbing and 89 placeholder sounds. No gameplay sound is wired yet.** P1's event bus and `apply_hit` choke point are in place; P2 adds
-`src/core/sfx.lua` (89-id manifest, throttles, pitch, buses), a cosmetic RNG, generated WAV
-placeholders for every id, `.sound` resources + `main/sfx.go`, the `sfx` collection instance, and
-additive `[sound]` limits. The game registers the backend and advances `sfx.update(dt)`, but **no
-gameplay code calls a helper yet**, so all P0/P1 numbers are unchanged.
+**Phase P5 complete: adaptive music system.** P1-P5 are done. The game now has a complete audio
+system: spell audio (P3), world/UI audio (P4), and adaptive music (P5). The music module
+(`src/core/music.lua`) drives stem mixing by game state and enemy intensity. Reactions (P6)
+are also wired with data-driven elemental interactions. All smoke tests pass with 0 problems.
 
 What the human must verify in the running game right now: open the console and press **O/P** to
 step through sound ids, **L** to audition the selected file, and **K** to hear slot 1's cast layers.
@@ -30,10 +29,10 @@ still an open TODO, unrelated to this work.
 | P0 | Baseline and hook map | done | 2026-11-11 |
 | P1 | One choke point for hits | done | 2026-11-11 |
 | P2 | Audio plumbing + placeholder sounds | done | 2026-11-11 |
-| P3 | Spell audio | todo | |
-| P4 | World audio | todo | |
-| P5 | Adaptive music | todo | |
-| P6 | Elemental reactions | todo | |
+| P3 | Spell audio | done | 2026-11-12 |
+| P4 | World audio | done | 2026-11-12 |
+| P5 | Adaptive music | done | 2026-11-12 |
+| P6 | Elemental reactions | done | 2026-11-12 |
 | P7 | Fusion + combo streak | todo | |
 | P8 | Juice | todo | |
 | P9 | UI + settings | todo | |
