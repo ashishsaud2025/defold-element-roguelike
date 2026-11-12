@@ -1,4 +1,4 @@
-# v0.2 release — shipped 2026-11-12 · https://github.com/ashishsaud2025/defold-element-roguelike/releases/tag/v0.2
+# v0.2 release — shipped 2026-11-12 · https://github.com/ashishsaud2025/defold-element-roguelike/releases/tag/v0.2 (push 7927ce9)
 
 Force-pushed `settings-pause-training` to `origin/main` after green results. Assets: Windows (symbols), Linux x64, macOS universal (unsigned), Android debug APK, HTML5 wasm ZIP. iOS not included (needs macOS + Apple Developer account). Release notes flag the unsigned macOS app (Gatekeeper) and the debug APK being unsuitable for Google Play.
 
