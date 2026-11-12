@@ -3971,7 +3971,7 @@ do
     { "KEY_Q", "cast1" }, { "KEY_R", "cast2" }, { "KEY_E", "interact" },
     { "KEY_LBRACKET", "dbg_prev" }, { "KEY_RBRACKET", "dbg_next" },
     { "KEY_SPACE", "dash" }, { "KEY_W", "up" }, { "KEY_1", "1" }, { "KEY_0", "0" },
-    { "KEY_T", "t" }, { "KEY_F1", "ui_audit" },
+    { "KEY_ESC", "pause" }, { "KEY_F1", "ui_audit" },
   }
   for _, p in ipairs(required) do
     sf(bind:find("input: " .. p[1] .. "%s+action: \"" .. p[2] .. "\"") ~= nil,
@@ -3979,8 +3979,8 @@ do
   end
   sf(bind:find('MOUSE_BUTTON_1%s+action: "basic"') ~= nil,
      "input: LMB is not the basic action")
-  sf(bind:find("MOUSE_BUTTON_2", 1, true) == nil,
-     "input: RMB must stay unbound")
+  sf(bind:find('MOUSE_BUTTON_2%s+action: "basic_rmb"') ~= nil,
+     "input: RMB must be bound to basic_rmb (LMB/RMB toggle for the basic)")
   -- Q and R cast their slots in ROOM (split_in_two fires two bolts, so compare relatively)
   if begin_room() then
     local b0 = #self.bolts

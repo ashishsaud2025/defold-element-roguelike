@@ -2903,7 +2903,7 @@ function on_input(self, action_id, action)
     -- with a "ui_action" message (handled in on_message).
 
     -- M3 debug row (hidden in public builds via TUNING.DEBUG):
-    --   1-5 = slot 1 shape, 6-0 = slot 2 shape (same order), [/] = cycle compounds, T = training arena
+    --   1-5 = slot 1 shape, 6-0 = slot 2 shape (same order), [/] = cycle compounds
     if data.TUNING.DEBUG and self.state ~= "REWARD" then
         if action_id == hash("1") and action.pressed then self.slot1_shape = "projectile"; rebuild_skills(self) end
         if action_id == hash("2") and action.pressed then self.slot1_shape = "puddle"; rebuild_skills(self) end
@@ -2917,7 +2917,6 @@ function on_input(self, action_id, action)
         if action_id == hash("0") and action.pressed then self.slot2_shape = "burst"; rebuild_skills(self) end
         if action_id == hash("dbg_prev") and action.pressed then cycle_compound(self, 1) end
         if action_id == hash("dbg_next") and action.pressed then cycle_compound(self, 2) end
-        if action_id == hash("t") and action.pressed then toggle_training_room(self) end
         if action_id == hash("ui_audit") and action.pressed then
             msg.post("/hud#gui", "ui_audit", {})
         end
