@@ -149,6 +149,9 @@ gui = {
     n.pos, n.text, n.positioned = pos, tostring(text or ""), true
     return n
   end,
+  delete_node = function(node)
+    if node and node.id then known[node.id] = nil; nodes[node.id] = nil end
+  end,
 }
 
 local sent_actions = {}

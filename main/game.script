@@ -166,6 +166,8 @@ end
 -- `hit_art` (optional) overrides the central star with element B's hit sprite (spec 6.3).
 local anim_fx   -- forward declaration (defined below the particle helpers)
 
+-- (removed: label-based damage numbers; using GUI-based instead)
+
 local function fx_hit(self, x, y, c, hit_art, skill)
     if skill and skill.elements then
         -- Animated impact in element B's colours; the family is chosen per compound.
@@ -680,6 +682,7 @@ function init(self)
     self.mouse_pos = { x = -1, y = -1 }
     self.particles = {}
     self.anims = {}
+    self.damage_numbers = {}
     build_environment(self)
     local lv0 = set_room_visuals(self, 1)
     self.player_glow = fx_make(ARENA_W * 0.5, ARENA_H * 0.5, 0.05, FX.glow, 1, 1, 1, 0.6, 1.1)
@@ -743,6 +746,7 @@ function init(self)
     self.enemy_bolts = {}
     self.bolts = {}
     self.particles = {}
+    self.damage_numbers = {}
     self.anims = {}
     self.screen_flash = 0
     self.puddles = {}
@@ -1153,6 +1157,10 @@ clear_world = function(self)
         if p.id then go.delete(p.id) end
     end
     self.particles = {}
+    for _, d in ipairs(self.damage_numbers or {}) do
+        if d.id then go.delete(d.id) end
+    end
+    self.damage_numbers = {}
     for _, a in ipairs(self.anims or {}) do
         if a.id then go.delete(a.id) end
     end
@@ -1870,6 +1878,8 @@ local function apply_hit(self, enemy, damage, statuses, sx, sy, infusion, shape,
         end
     end
     local died = combat_mod.apply_damage(enemy, damage)
+    -- Damage number near the enemy
+    msg.post("/hud#gui", "damage_number", { x = enemy.x, y = enemy.y, amount = damage })
     apply_statuses(self, enemy, statuses)
     if has_status(statuses, "push") then
         enemy.vx, enemy.vy = combat_mod.knockback(enemy.x, enemy.y, sx, sy, 260, false)

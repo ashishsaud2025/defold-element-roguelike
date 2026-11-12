@@ -93,7 +93,7 @@ msg = { url = function(sock, path, frag) return {path=path, frag=frag} end, post
     end
   end
 end }
-local factories = { ["#visual_factory"]=true, ["#fx_factory"]=true }
+local factories = { ["#visual_factory"]=true, ["#fx_factory"]=true, ["#damage_label_factory"]=true }
 local SPRITE_MAX = tonumber(os.getenv("SPRITE_MAX") or "2048")
 local function livecount() local n=0 for _ in pairs(live) do n=n+1 end return n end
 factory = { create = function(url, pos)
@@ -123,6 +123,12 @@ go = {
   set_rotation = function(q, id) chk(id,"set_rotation") end,
   animate = function(id) chk(id,"animate") end,
   delete = function(id) if chk(id,"go.delete (double delete?)") then live[id]=nil end end,
+}
+label = {
+  set_text = function(url, text)
+    if type(url) ~= "table" or not chk(url.path, "label.set_text") then return end
+    if type(text) ~= "string" then err("label.set_text expects a string, got " .. tostring(text)) end
+  end,
 }
 sprite = {
   play_flipbook = function(url, anim)

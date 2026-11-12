@@ -1259,6 +1259,23 @@ local function render(self)
             show("credits_body", false)
         end
     end
+
+    -- Update floating damage numbers: rise, fade, delete
+    local dt = 1 / 60
+    for i = #self.damage_numbers, 1, -1 do
+        local dn = self.damage_numbers[i]
+        dn.life = dn.life - dt
+        dn.y = dn.y + (dn.vy or 60) * dt
+        local alpha = math.max(0, dn.life / (dn.max_life or 0.8))
+        if dn.node then
+            gui.set_position(dn.node, vmath.vector3(dn.x, dn.y, 0))
+            gui.set_color(dn.node, vmath.vector4(1, 1, 1, alpha))
+        end
+        if dn.life <= 0 then
+            if dn.node then gui.delete_node(dn.node) end
+            table.remove(self.damage_numbers, i)
+        end
+    end
 end
 
 local function send(action, extra)
@@ -1351,6 +1368,7 @@ function init(self)
     self.casts = 0
     self.relic_tip = nil
     self.started = false
+    self.damage_numbers = {}
 
     -- The authored control hint (keep in sync with main/hud.gui -> help_text).
     -- Restored whenever no interaction banner is up.
@@ -1413,6 +1431,19 @@ function on_message(self, message_id, message, sender)
         self.roll_t = message.roll_t
         self.toast = message.toast
         if message.name_buffer ~= nil then self.name_buffer = message.name_buffer end
+        if message.damage_number then
+            local dn = message.damage_number
+            local gen_id = "__dn" .. (#self.damage_numbers + 1)
+            local node = gui.new_text_node(vmath.vector3(dn.x, dn.y, 0), tostring(dn.amount))
+            gui.set_scale(node, vmath.vector3(1, 1, 1))
+            gui.set_color(node, vmath.vector4(1, 1, 1, 1))
+            self.damage_numbers[#self.damage_numbers + 1] = {
+                node = node, id = gen_id,
+                x = dn.x, y = dn.y, amount = dn.amount,
+                life = 0.8, max_life = 0.8,
+                vy = 60,
+            }
+        end
         if not self.started then
             self.started = true
             print("HUD ready")
