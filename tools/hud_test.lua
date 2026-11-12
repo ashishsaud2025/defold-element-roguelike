@@ -61,6 +61,8 @@ for block in gui_text:gmatch("nodes%s*{(.-)\n}\n") do
   end
 end
 
+local PIVOT_VALUES = { PIVOT_CENTER = true, PIVOT_N = true, PIVOT_NE = true, PIVOT_E = true,
+                       PIVOT_SE = true, PIVOT_S = true, PIVOT_SW = true, PIVOT_W = true, PIVOT_NW = true }
 local nodes = {}
 local gen = 0
 local function new_known_id(id)
@@ -95,6 +97,16 @@ gui = {
     if s.x <= 0 or s.y <= 0 or s.z <= 0 then err("gui.set_scale: non-positive component"); return end
     if node then node.scale = s end
   end,
+  set_size = function(node, s)
+    if not is_vec3(s) then err("gui.set_size: expected vmath.vector3, got " .. tostring(s)); return end
+    if s.x <= 0 or s.y <= 0 then err("gui.set_size: non-positive x/y component"); return end
+    if node then node.size = s end   -- z is unused by the engine (gui sizes are 2D)
+  end,
+  set_pivot = function(node, p)
+    -- the real API takes gui.PIVOT_* enum values; distinct stable strings suffice here
+    if type(p) ~= "string" or not PIVOT_VALUES[p] then err("gui.set_pivot: expected a known PIVOT_* constant, got " .. tostring(p)); return end
+    if node then node.pivot = p end
+  end,
   set_color = function(node, c)
     if is_plain_palette(c) then
       err("gui.set_color: plain palette table passed ({r,g,b,a}); gui colors must be vmath.vector4")
@@ -119,6 +131,8 @@ gui = {
     if id == nil or id == "" then err("gui.play_flipbook: empty animation id") end
     if node then node.flipbook = id end
   end,
+  PIVOT_CENTER = "PIVOT_CENTER", PIVOT_N = "PIVOT_N", PIVOT_NE = "PIVOT_NE", PIVOT_E = "PIVOT_E",
+  PIVOT_SE = "PIVOT_SE", PIVOT_S = "PIVOT_S", PIVOT_SW = "PIVOT_SW", PIVOT_W = "PIVOT_W", PIVOT_NW = "PIVOT_NW",
   new_box_node = function(pos, size)
     if not is_vec3(pos) or not is_vec3(size) then err("gui.new_box_node: expected vector3 pos and size"); return nil end
     gen = gen + 1
