@@ -5,18 +5,18 @@
 >
 > **Layout:** Part A = mistakes by the first coding agent (items 1-22). Part B = mistakes made by the assistant (Claude)
 > that wrote the master prompt, the patches and the reviews (items 23-37). Part C = bugs found in agent-written code during
-> review. Then a Definition of Done, and the asset quick reference (full details: `README.md` §13).
-> Where `README.md` and this file disagree, **this file wins** (it records what the real editor did).
+> review. Then a Definition of Done, and the asset quick reference (full details: `docs.md` §13).
+> Where `docs.md` and this file disagree, **this file wins** (it records what the real editor did).
 
 ## Defold version
-- Editor/engine: **Defold 1.14.0 (d295ed4)** on Windows. Trust the editor over `README.md` field examples when they conflict.
+- Editor/engine: **Defold 1.14.0 (d295ed4)** on Windows. Trust the editor over `docs.md` field examples when they conflict.
 
 ---
 
 ## Part A — Mistakes made by the first coding agent (do NOT repeat)
 
 ### 1. `.atlas` animation fields — the README is WRONG for this version
-- `README.md` §5.5 shows animations with `start:` / `end:`. **This editor rejects them.**
+- `docs.md` §5.5 shows animations with `start:` / `end:`. **This editor rejects them.**
 - Tried and rejected: `start`/`end`, `from`/`to`, `first`/`last` (all "unknown fields").
 - **What actually works:** omit the `animations { }` blocks entirely. Defold **auto-generates one animation per image, named after the image file** (`square.png` → animation `"square"`, `circle.png` → `"circle"`).
 - Also: do NOT define an explicit animation with the same id as an auto-generated one — you get `"square" is in use by another instance.`
@@ -501,7 +501,7 @@ Format: **what happened / why / rule for agents.** These are the assistant's own
 9. Tell the human what you ran, what passed, and what you could **not** verify (rendering, blending, z-order, editor parsing). Ask them for the console and read the **first** error.
 
 ---
-## Asset quick reference (details and recipes: `README.md` §13)
+## Asset quick reference (details and recipes: `docs.md` §13)
 - **One manifest** `src/core/art.lua`, **one atlas** `assets/art/shapes.atlas`. Animation id = image file name without `.png`; keep names unique.
 - Add images: `python tools/add_to_atlas.py "assets/art/<folder>/<prefix>_*.png"` (additive, idempotent). Slice sheets: `python tools/slice_sheet.py SHEET OUT_DIR PREFIX 16`.
 - **Environment tiles:** `art.TILES.*` (floor_a, floor_b, wall_face, wall_top, pillar, torch). Tile cell = 48 px, so 16 px art uses `scale = 3`. `tint = false` for coloured art.

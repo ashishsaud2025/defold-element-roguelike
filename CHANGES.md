@@ -668,7 +668,7 @@ recipe still gets the same power and quirk (`SELFCHECK OK`).
 
 # Docs (v8)
 - `AGENTS.md`: items 44-48 (render constants, test-vs-game, skipped DoD/licence TODOs, unverified letterbox assumptions, deleted deliveries), item 1 corrected for nested atlas animations, DoD item 8 added.
-- `README.md`: §5.5 note, §13.1 row, §13.4 rows, new §13.5 (animated effects + letterboxing).
+- `docs.md`: §5.5 note, §13.1 row, §13.4 rows, new §13.5 (animated effects + letterboxing).
 
 # Render script fix (v7)
 - `letterbox.render_script` crashed every frame on Defold 1.14 (`render.STATE_DEPTH_TEST` is nil there; the constants moved
@@ -898,7 +898,7 @@ ROOM_COUNT, DASH_SPEED, DASH_TIME, DASH_COOLDOWN, HEAL_ON_CLEAR, DEBUG.
 ---
 # Docs + tooling pass (2026-11-10)
 - `AGENTS.md`: added Part B (assistant mistakes 23-37), Definition of Done, asset quick reference; reorganised into Parts A/B/C.
-- `README.md`: corrected the atlas section, added capacity limits, additive sprite, smoke test, failure modes 15-26, and section 13 (asset pipeline).
+- `docs.md`: corrected the atlas section, added capacity limits, additive sprite, smoke test, failure modes 15-26, and section 13 (asset pipeline).
 - `src/core/art.lua` is now the single source of art ids: `FX` roles and `ELEMENT_ICONS` (HUD and `data.ART` read from it); player art + facing supported.
 - Fixed: splitter children / boss summons used the wrong scale after a hit flash (`spawn_wisp_at` now sets `base_scale`).
 - New tools: `tools/validate_rooms.py`, `tools/run_smoke_test.py` (wraps `tools/smoke_test.lua`; modes: default, `ART_TEST=1`, `SPRITE_MAX=n`).
