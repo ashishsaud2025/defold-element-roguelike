@@ -140,11 +140,15 @@ function M.default_id(r2)
 end
 
 local function valid_def(def)
-    return type(def) == "table"
-        and type(def.id) == "string" and #def.id > 0
-        and type(def.label) == "string" and #def.label > 0
-        and type(def.short) == "string" and #def.short > 0 and #def.short <= 9
-        and type(def.desc) == "string" and #def.desc > 0
+    if type(def) ~= "table" then return false end
+    if type(def.id) ~= "string" or #def.id == 0 then return false end
+    if def.flags ~= nil and type(def.flags) ~= "table" then return false end
+    if def.data ~= nil and type(def.data) ~= "table" then return false end
+    if type(def.label) ~= "string" or #def.label == 0 then return false end
+    if type(def.short) ~= "string" or #def.short == 0 or #def.short > 9 then return false end
+    if type(def.desc) ~= "string" or #def.desc == 0 then return false end
+    if def.basic_ok ~= true and def.basic_ok ~= false then return false end
+    return true
 end
 
 -- Add an extra quirk. False (never a crash) when the def is incomplete, the id is

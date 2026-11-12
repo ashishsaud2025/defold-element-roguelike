@@ -3769,6 +3769,12 @@ local fake = { id = "test_extra", label = "test only", short = "test",
                flags = { test_only = true }, data = {} }
 sf(quirks.register(fake) == true, "quirks: register(fake) failed")
 sf(quirks.register(fake) == false, "quirks: register must reject a duplicate id")
+sf(quirks.register({ id = "test_bad_flags", label = "bad flags", short = "bad",
+                     desc = "bad flags", basic_ok = true, flags = "split", data = {} }) == false,
+   "quirks: register must reject a non-table flags field")
+sf(quirks.register({ id = "test_bad_data", label = "bad data", short = "bad",
+                     desc = "bad data", basic_ok = true, flags = {}, data = "nope" }) == false,
+   "quirks: register must reject a non-table data field")
 -- Complete def, so only the frozen-id guard can reject it.
 sf(quirks.register({ id = "split_in_two", label = "x", short = "x", desc = "x",
                      flags = {}, data = {} }) == false,
