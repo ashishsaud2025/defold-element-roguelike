@@ -84,6 +84,10 @@ key_trigger {
 }
 key_trigger {
   input: KEY_F1
+  action: "dbg_boss"
+}
+key_trigger {
+  input: KEY_F2
   action: "ui_audit"
 }
 key_trigger {

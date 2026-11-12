@@ -1544,6 +1544,14 @@ local function toggle_training_room(self)
     end
 end
 
+-- TEMP DEBUG: jump straight to the boss room (Archmage's Sanctum, room 9).
+-- Press F1 from anywhere; removes itself before any release.
+local BOSS_ROOM = 9
+local function toggle_boss_room(self)
+    self.room_number = BOSS_ROOM - 1
+    enter_room(self)            -- enter_room increments room_number -> BOSS_ROOM
+end
+
 -- M5 helpers: rewards, cauldron crafting, inventory cycling.
 local function owned_elements(self)
     local out = {}
@@ -3272,6 +3280,7 @@ function on_input(self, action_id, action)
         if action_id == hash("0") and action.pressed then self.slot2_shape = "burst"; rebuild_skills(self) end
         if action_id == hash("dbg_prev") and action.pressed then cycle_compound(self, 1) end
         if action_id == hash("dbg_next") and action.pressed then cycle_compound(self, 2) end
+        if action_id == hash("dbg_boss") and action.pressed then toggle_boss_room(self) end
         if action_id == hash("ui_audit") and action.pressed then
             msg.post("/hud#gui", "ui_audit", {})
         end
