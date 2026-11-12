@@ -40,6 +40,9 @@ local reaction_mod = require "src.game.reaction"
 local status_mod = require "src.core.status"
 local relics_mod = require "src.core.relics"
 local rewards_mod = require "src.game.rewards"
+local events = require "src.game.events"
+local sfx = require "src.core.sfx"
+local music = require "src.core.music"
 
 local ARENA_W = data.TUNING.ARENA_W
 local ARENA_H = data.TUNING.ARENA_H
@@ -125,7 +128,8 @@ local function fx_hit(self, x, y, c, hit_art, skill)
     end
 end
 
-local function fx_kill(self, x, y, c)
+local function fx_kill(self, x, y, c, enemy)
+    events.emit("kill", { self = self, enemy = enemy, x = x, y = y, color = c })
     spawn_particle(self, x, y, c.r, c.g, c.b, 0.9, 0.3, 0.4, 0, 0, data.ART.particle.circle, 2.0)
     spawn_particle(self, x, y, 1, 0.95, 0.85, 1, 1.0, 0.25, 0, 0, data.ART.particle.scorch, 1.6)
     for _ = 1, 9 do
@@ -137,6 +141,7 @@ end
 
 local function fx_player_hit(self)
     local p = self.player_pos
+    events.emit("player_hit", { self = self, x = p.x, y = p.y })
     spawn_particle(self, p.x, p.y, 1, 0.25, 0.25, 1, 0.4, 0.35, 0, 0, data.ART.particle.circle, 2.2)
     spawn_particle(self, p.x, p.y, 1, 0.3, 0.3, 0.8, 1.2, 0.25, 0, 0, FX.glow, 0.3)
 end
@@ -145,6 +150,74 @@ local function fx_cast(self, x, y, c, skill)
     spawn_particle(self, x, y, c.r, c.g, c.b, 0.9, 0.7, 0.14, 0, 0, FX.glow, 0.2)
     if skill and skill.elements then
         anim_fx(self, x, y, fxanim.CAST, skill.elements[1], 60, nil, { z = 0.13 })
+    end
+end
+
+-- Audio listeners: fire-and-forget sfx through src/core/sfx.lua.
+-- ctx.src is whatever the caller put there; our apply_hit passes
+-- { kind = shape, x, y, skill = skill }. No src -> no hit sound.
+local function on_hit_audio(ctx)
+    local src = ctx.src or {}
+    -- Burn and pool ticks are intentionally silent (MASTER_PROMPT P3 item 2).
+    if src.kind == "burn" or src.kind == "puddle" then return end
+    local skill = src.skill
+    if not skill then return end
+    local power = skill.power or 1
+    local strength = 1
+    if power > 0 then strength = math.min(1, (ctx.damage or power) / power) end
+    local x = (ctx.enemy and ctx.enemy.x) or src.x
+    sfx.hit(skill, x, strength)
+end
+local function on_status_audio(ctx)
+    if not ctx.name then return end
+    local x = (ctx.enemy and ctx.enemy.x) or ctx.x
+    sfx.status(ctx.name, x)
+end
+local function on_quirk_audio(ctx)
+    local q = ctx.quirk
+    if not q then return end
+    sfx.quirk(q, ctx.x)
+    if q == "costs 5% health" then
+        sfx.play("pl_hurt", { x = ctx.x, gain = 0.4 })
+    end
+end
+local function on_player_hit_audio(ctx)
+    local x = ctx.x or (ctx.self and ctx.self.player_pos and ctx.self.player_pos.x)
+    sfx.play("pl_hurt", { x = x })
+end
+local function on_dash_audio(ctx)
+    local x = ctx.x or (ctx.self and ctx.self.player_pos and ctx.self.player_pos.x)
+    sfx.play("pl_dash", { x = x })
+end
+local function on_enemy_spawn_audio(ctx)
+    local e = ctx.enemy
+    if not e then return end
+    local x = e.x or 0
+    sfx.play("en_spawn", { x = x })
+    local t = e.type
+    if t == "brute" then
+        sfx.play("en_brute_stomp", { x = x })
+    elseif t == "boss" then
+        sfx.play("boss_roar", { x = x })
+    end
+end
+local function on_kill_audio(ctx)
+    local e = ctx.enemy
+    if not e then return end
+    local x = (e and e.x) or 0
+    if e.type == "boss" then
+        sfx.play("boss_die", { x = x })
+    elseif e.type == "splitter" then
+        sfx.play("en_splitter_pop", { x = x })
+    else
+        sfx.play("en_die", { x = x })
+    end
+end
+local function on_room_clear_audio(ctx)
+    local x = (ctx.self and ctx.self.player_pos and ctx.self.player_pos.x) or ARENA_W * 0.5
+    sfx.play("room_clear", { x = x })
+    if ctx.boss then
+        sfx.play("boss_die", { x = x })
     end
 end
 
@@ -416,6 +489,29 @@ end
 function init(self)
     msg.post(".", "acquire_input_focus")
 
+    -- Audio listeners (audio layer only). Registered once per init; a hot
+    -- reload cannot double-register them. No pcall: a broken listener is a bug.
+    events.clear()
+    events.on("hit", on_hit_audio)
+    events.on("status", on_status_audio)
+    events.on("quirk", on_quirk_audio)
+    events.on("player_hit", on_player_hit_audio)
+    events.on("dash", on_dash_audio)
+    events.on("enemy_spawn", on_enemy_spawn_audio)
+    events.on("kill", on_kill_audio)
+    events.on("room_clear", on_room_clear_audio)
+
+    -- Audio backend. Everything routes through src/core/sfx.lua; no direct sound.play elsewhere.
+    -- `sound` is absent in the headless mock, so guard it.
+    if sound then
+        sfx.backend = function(id, props) sound.play("/sfx#" .. id, props) end
+        sfx.stop_backend = function(id) sound.stop("/sfx#" .. id) end
+        sfx.gain_backend = function(id, gain) sound.set_gain("/sfx#" .. id, gain) end
+    end
+    sfx.reset()
+    music.reset()
+    self.sfx_debug_index = 1
+
     local ok = selfcheck.run()
     if not ok then
         print("SELFCHECK FAILED - fix hash/RNG/skillgen before continuing")
@@ -448,6 +544,8 @@ function init(self)
     self.dash_t, self.dash_cd, self.dash_dx, self.dash_dy = 0, 0, 0, 0
     self.player_moving = false
     self.hold1, self.hold2 = false, false
+    self.low_hp = false        -- heartbeat loop state (pl_lowhp)
+    self.cauldron_loop = false -- ui_cauldron_loop state
 
     -- Player state
     self.player = player_mod.new()
@@ -532,6 +630,8 @@ function init(self)
     self.room_budget = 0
 
     self.state = "TITLE"
+    sfx.play("state_title")
+    music.set_state("TITLE")
     print("Game initialized. State: " .. self.state)
 end
 
@@ -736,6 +836,8 @@ local function clear_world(self)
     self.spell_areas = {}
     self.interaction_timer = 0
     self.room_flags = {}   -- per-room one-shot trigger toasts (D4); cleared on every room enter/reset
+    sfx.stop("loop_pool")
+    sfx.stop("loop_orbit")
 end
 
 local function reset_run(self)
@@ -771,7 +873,13 @@ local function reset_run(self)
     self.toast_text = nil
     self.toast_t = 0
     self.infuse_toast_until = 0
+    if self.cauldron_loop then
+        sfx.stop("ui_cauldron_loop")
+        self.cauldron_loop = false
+    end
     self.state = "TITLE"
+    sfx.play("state_title")
+    music.set_state("TITLE")
     print("State: TITLE")
 end
 
@@ -824,6 +932,7 @@ local function spawn_wisp_at(self, x, y)
     e.telegraph = 0
     e.active = true
     table.insert(self.enemies, e)
+    events.emit("enemy_spawn", { self = self, enemy = e })
 end
 
 local function is_boss_room(room) return room > data.TUNING.ROOM_COUNT end
@@ -1005,6 +1114,13 @@ local function enter_room(self)
 
     self.spawn_timer = 0
     self.state = "ROOM"
+    if self.room_number > data.TUNING.ROOM_COUNT then
+        music.set_state("BOSS")
+    else
+        local alive_n = 0
+        for _, e in ipairs(self.enemies or {}) do if e.alive then alive_n = alive_n + 1 end end
+        music.set_state("ROOM", { intensity = math.min(1, alive_n / 8) })
+    end
     print("Room " .. self.room_number .. " (" .. (lv.name or "?") .. ", " .. self.room_budget .. " enemies)")
 end
 
@@ -1047,6 +1163,7 @@ local function craft_skill(self, slot, ea, eb, shape)
        or (self.inventory.elements[eb] or 0) < 1
        or (self.inventory.shapes[shape] or 0) < 1 then
         print("Not enough ingredients")
+        sfx.play("ui_craft_bad")
         return false
     end
     self.inventory.elements[ea] = self.inventory.elements[ea] - 1
@@ -1063,6 +1180,11 @@ local function craft_skill(self, slot, ea, eb, shape)
         self.cooldown_ready[2] = {}
     end
     print("Crafted " .. skill.compound .. " " .. skill.shape .. " -> Slot " .. slot)
+    sfx.play("ui_craft")
+    local compound = tostring(skill.compound or ""):lower():gsub("%s+", "_")
+    if compound ~= "" then
+        sfx.play("sig_" .. compound, { gain = 0.9 })
+    end
     return true
 end
 
@@ -1109,15 +1231,21 @@ local function handle_ui_action(self, msg)
     elseif action == "back" then
         if self.state == "CREDITS" or self.state == "COMBOS" then
             self.state = "TITLE"
+            sfx.play("state_title")
+            music.set_state("TITLE")
             print("State: TITLE")
         end
     elseif action == "pick" then
         if self.state == "PICK_START" and msg.element and #self.picks < 2 then
             table.insert(self.picks, msg.element)
             print("Picked " .. msg.element .. " (" .. #self.picks .. "/2)")
+            sfx.play("ui_pick")
         end
     elseif action == "enter" then
-        if self.state == "PICK_START" then enter_room(self) end
+        if self.state == "PICK_START" then
+            enter_room(self)
+            sfx.play("ui_click")
+        end
     elseif action == "reward_pick" then
         if self.state == "REWARD" and type(msg.index) == "number" then
             local opt = self.reward_options and self.reward_options[msg.index]
@@ -1133,18 +1261,23 @@ local function handle_ui_action(self, msg)
                     self.inventory.shapes[opt.id] = self.inventory.shapes[opt.id] + 1
                 end
                 print("Reward: " .. opt.kind .. " " .. opt.id)
+                sfx.play("ui_card")
                 local oe = owned_elements(self)
                 local os_ = owned_shapes(self)
                 if #oe > 0 then self.cauldron.ea = oe[1] end
                 if #oe >= 2 then self.cauldron.eb = oe[2] elseif #oe == 1 then self.cauldron.eb = oe[1] end
                 if #os_ > 0 then self.cauldron.shape = os_[1] end
                 self.state = "CAULDRON"
+                sfx.play("ui_cauldron_loop", { gain = 0.45 })
+                self.cauldron_loop = true
+                music.set_state("CAULDRON")
                 print("State: CAULDRON")
             end
         end
     elseif action == "cauldron_cycle" then
         if self.state == "CAULDRON" and msg.field then
             cauldron_cycle(self, msg.field)
+            sfx.play("ui_hover")
         end
     elseif action == "craft" then
         if self.state == "CAULDRON" then
@@ -1153,6 +1286,10 @@ local function handle_ui_action(self, msg)
         end
     elseif action == "done" then
         if self.state == "CAULDRON" then
+            if self.cauldron_loop then
+                sfx.stop("ui_cauldron_loop")
+                self.cauldron_loop = false
+            end
             enter_room(self)
         end
     elseif action == "continue" then
@@ -1201,7 +1338,12 @@ local function apply_statuses(self, target, names)
                 { r = 1.0, g = 0.78, b = 0.25 }, 50)
         end
     end
-    status_mod.apply(target, names, 0, self.status_dur_mul or 1)
+    local fresh = status_mod.apply(target, names, 0, self.status_dur_mul or 1)
+    if fresh then
+        for _, name in ipairs(fresh) do
+            events.emit("status", { self = self, enemy = target, name = name, x = target.x, y = target.y })
+        end
+    end
 end
 
 -- ONE hit path for every shape: damage -> statuses -> knockback (Phase 2).
@@ -1210,7 +1352,7 @@ end
 -- `infusion` (optional): live entries from src/game/infusion.lua. One 1.25x multiplier
 -- (never per Pool) and the merged statuses are applied BEFORE damage/statuses/knockback.
 -- `shape` (optional, with infusion): logs once per infused hit when TUNING.DEBUG is on.
-local function apply_hit(self, enemy, damage, statuses, sx, sy, infusion, shape)
+local function apply_hit(self, enemy, damage, statuses, sx, sy, infusion, shape, skill)
     local native = statuses
     if infusion and #infusion > 0 then
         damage = infusion_mod.damage(damage, true)
@@ -1239,6 +1381,8 @@ local function apply_hit(self, enemy, damage, statuses, sx, sy, infusion, shape)
     elseif has_status(statuses, "pull") then
         enemy.vx, enemy.vy = combat_mod.knockback(enemy.x, enemy.y, sx, sy, 260, true)
     end
+    events.emit("hit", { self = self, enemy = enemy, damage = damage, statuses = statuses,
+        src = { kind = shape, x = sx, y = sy, skill = skill }, died = died })
     return died
 end
 
@@ -1705,6 +1849,27 @@ local do_cast
 
 function update(self, dt)
     self.clock = self.clock + dt
+    sfx.update(dt)
+    music.update(dt)
+    -- Sustain loops: one per type, gain rises with the active count.
+    sfx.loop_set("pool", #(self.puddles or {}))
+    sfx.loop_set("orbit", #(self.orbits or {}))
+    -- Low-HP heartbeat: pl_lowhp while below 30% HP in a room.
+    local low = self.state == "ROOM" and self.player and self.player.hp > 0
+        and self.player.hp < self.player.max_hp * 0.3
+    if low and not self.low_hp then
+        sfx.play("pl_lowhp", { gain = 0.5 })
+        self.low_hp = true
+    elseif not low and self.low_hp then
+        sfx.stop("pl_lowhp")
+        self.low_hp = false
+    end
+    -- Music intensity tracks live enemy count in ROOM state.
+    if self.state == "ROOM" then
+        local alive_n = 0
+        for _, e in ipairs(self.enemies or {}) do if e.alive then alive_n = alive_n + 1 end end
+        music.set_intensity(math.min(1, alive_n / 8))
+    end
     if self.level and self.state == "ROOM" then
         level_mod.update_flow(self.level, self.player_pos.x, self.player_pos.y)
     end
@@ -1810,7 +1975,7 @@ function update(self, dt)
             local e = self.enemies[i]
             if not e.alive then
                 local kc = (enemies_mod.ENEMY_TYPES[e.type] or {}).color or { r = 1, g = 1, b = 1 }
-                fx_kill(self, e.x, e.y, kc)
+                fx_kill(self, e.x, e.y, kc, e)
                 if e.type == "splitter" then
                     spawn_wisp_at(self, e.x - 8, e.y)
                     spawn_wisp_at(self, e.x + 8, e.y)
@@ -1993,6 +2158,9 @@ function update(self, dt)
                                 print("PLAYER DEAD")
                                 print("State: DEAD")
                                 self.state = "DEAD"
+                                sfx.play("pl_die", { x = self.player_pos.x })
+                                sfx.play("state_dead", { x = self.player_pos.x })
+                                music.set_state("DEAD")
                                 break   -- one death message per frame, never per enemy
                             elseif applied then
                                 print("Player HP: " .. self.player.hp)
@@ -2117,7 +2285,7 @@ function update(self, dt)
                 if hit_enemy then
                     p.hit = true
                     -- ONE hit path: damage -> statuses -> knockback (statuses from THIS hit)
-                    local died = apply_hit(self, hit_enemy, p.power, p.statuses, p.x, p.y, p.infuse_live, "bolt")
+                    local died = apply_hit(self, hit_enemy, p.power, p.statuses, p.x, p.y, p.infuse_live, "bolt", p.skill)
                     local pc = (p.skill and p.skill.color) or { r = 1, g = 1, b = 1 }
                     if died then print("Enemy died") else print("Enemy HP: " .. hit_enemy.hp) end
                     fx_hit(self, p.x, p.y, pc, element_fx(p.skill and p.skill.elements, 2, "hit"), p.skill)
@@ -2191,7 +2359,7 @@ function update(self, dt)
             if pud.reaction and self.clock >= pud.reaction.until_time then reaction_restore(self, pud) end
             local hits = combat_mod.update_puddle(pud, dt, self.enemies)
             for _, h in ipairs(hits) do
-                local died = apply_hit(self, h.enemy, h.damage, h.statuses, pud.x, pud.y)
+                local died = apply_hit(self, h.enemy, h.damage, h.statuses, pud.x, pud.y, nil, nil, pud.skill_ref)
                 if died then
                     h.enemy.alive = false
                     print("Enemy died")
@@ -2269,7 +2437,7 @@ function update(self, dt)
             end
             for _, h in ipairs(hits) do
                 local live = h.orb and h.orb.infuse_live
-                local died = apply_hit(self, h.enemy, h.damage, h.statuses, self.player_pos.x, self.player_pos.y, live, "orbit")
+                local died = apply_hit(self, h.enemy, h.damage, h.statuses, self.player_pos.x, self.player_pos.y, live, "orbit", orb.skill_ref)
                 if died then
                     h.enemy.alive = false
                     print("Enemy died")
@@ -2349,6 +2517,9 @@ function update(self, dt)
                         print("PLAYER DEAD")
                         print("State: DEAD")
                         self.state = "DEAD"
+                        sfx.play("pl_die", { x = self.player_pos.x })
+                        sfx.play("state_dead", { x = self.player_pos.x })
+                        music.set_state("DEAD")
                         break
                     elseif applied then
                         print("Player HP: " .. self.player.hp)
@@ -2384,12 +2555,14 @@ function update(self, dt)
                 self.room_clear_timer = 2.0
                 self.player.hp = math.min(self.player.max_hp, self.player.hp + data.TUNING.HEAL_ON_CLEAR)
                 spawn_particle(self, self.player_pos.x, self.player_pos.y, 0.4, 1, 0.5, 0.9, 0.4, 0.6, 0, 0, data.ART.particle.circle, 3.0)
+                sfx.play("pl_heal", { x = self.player_pos.x })
                 -- ROOM CLEARED banner (deterministic; never overwrites another banner).
                 if (self.toast_t or 0) == 0 then
                     announce(self, "ROOM CLEARED", self.player_pos.x, self.player_pos.y, { r = 1.0, g = 0.78, b = 0.25 }, 80)
                 end
                 print("Room cleared (+" .. data.TUNING.HEAL_ON_CLEAR .. " HP)")
             end
+            events.emit("room_clear", { self = self, room = self.room_number, boss = self.boss ~= nil })
         end
         if self.room_clear_timer then
             self.room_clear_timer = self.room_clear_timer - dt
@@ -2397,10 +2570,13 @@ function update(self, dt)
                 self.room_clear_timer = nil
                 if self.boss then
                     self.state = "WIN"
+                    sfx.play("state_win", { x = self.player_pos.x })
+                    music.set_state("WIN")
                     print("State: WIN")
                 else
                     self.reward_options = generate_rewards(self)
                     self.state = "REWARD"
+                    music.set_state("CAULDRON")   -- pad-only calm while the player picks
                     print("State: REWARD")
                 end
             end
@@ -2496,7 +2672,7 @@ function on_input(self, action_id, action)
     -- M3 debug row (removed/hidden at the end via TUNING.DEBUG):
     --   1-5 = slot 1 shape, 6-0 = slot 2 shape (same order), Q = cycle slot 1 compound,
     --   E = cycle slot 2 compound, T = training arena
-    if data.TUNING.DEBUG then
+    if data.TUNING.DEBUG and self.state ~= "REWARD" then
         if action_id == hash("1") and action.pressed then self.slot1_shape = "projectile"; rebuild_skills(self) end
         if action_id == hash("2") and action.pressed then self.slot1_shape = "puddle"; rebuild_skills(self) end
         if action_id == hash("3") and action.pressed then self.slot1_shape = "orbit"; rebuild_skills(self) end
@@ -2512,6 +2688,39 @@ function on_input(self, action_id, action)
         if action_id == hash("t") and action.pressed then toggle_training_room(self) end
         if action_id == hash("ui_audit") and action.pressed then
             msg.post("/hud#gui", "ui_audit", {})
+        end
+        -- Audio audition row (O/P = prev/next sound, L = play, K = cast slot 1's layers)
+        local snd_ids = sfx.ids()
+        if #snd_ids > 0 then
+            if action_id == hash("sfx_prev") and action.pressed then
+                self.sfx_debug_index = ((self.sfx_debug_index or 1) - 2) % #snd_ids + 1
+                print(string.format("Sound %d/%d: %s", self.sfx_debug_index, #snd_ids, snd_ids[self.sfx_debug_index]))
+            elseif action_id == hash("sfx_next") and action.pressed then
+                self.sfx_debug_index = (self.sfx_debug_index or 1) % #snd_ids + 1
+                print(string.format("Sound %d/%d: %s", self.sfx_debug_index, #snd_ids, snd_ids[self.sfx_debug_index]))
+            elseif action_id == hash("sfx_play") and action.pressed then
+                local id = snd_ids[self.sfx_debug_index or 1]
+                local played = sfx.play(id)
+                print(string.format("Sound %s: %s", id, played and "played" or "throttled/disabled"))
+            elseif action_id == hash("sfx_cast") and action.pressed then
+                if self.slot1 then
+                    print("Sound cast layers: " .. tostring(self.slot1.compound) .. " " .. tostring(self.slot1.shape))
+                    sfx.cast(self.slot1, self.player_pos and self.player_pos.x or ARENA_W * 0.5)
+                else
+                    print("Sound cast layers: no slot-1 skill")
+                end
+            end
+        end
+    end
+
+    -- Reward pick via keyboard (1/2/3) when the mouse click path is unreliable
+    if self.state == "REWARD" and action.pressed then
+        if action_id == hash("1") and self.reward_options and self.reward_options[1] then
+            handle_ui_action(self, { action = "reward_pick", index = 1 })
+        elseif action_id == hash("2") and self.reward_options and self.reward_options[2] then
+            handle_ui_action(self, { action = "reward_pick", index = 2 })
+        elseif action_id == hash("3") and self.reward_options and self.reward_options[3] then
+            handle_ui_action(self, { action = "reward_pick", index = 3 })
         end
     end
 
@@ -2539,6 +2748,7 @@ function on_input(self, action_id, action)
         self.dash_t = data.TUNING.DASH_TIME
         self.dash_cd = data.TUNING.DASH_COOLDOWN
         self.player.invuln = math.max(self.player.invuln, data.TUNING.DASH_TIME + 0.12)
+        events.emit("dash", { self = self, x = self.player_pos.x, y = self.player_pos.y })
         print("Dash")
     end
 
@@ -2635,11 +2845,22 @@ do_cast = function(self, slot_num, is_repeat, ctx)
     -- Determine skill color for visual tint
     local sc = skill.color
     fx_cast(self, sx, sy, sc, skill)
+    -- Audio: cast event + elemental/quirk cues (repeat casts are quieter).
+    events.emit("cast", { self = self, skill = skill, slot = slot_num, is_repeat = is_repeat, x = sx, y = sy })
 
     local split = qid == "split_in_two"
     local trail = qid == "leaves_trail"
     local repeat_once = qid == "repeat_once"
     local shape_key = skill.shape_key or "projectile"
+
+    if skill.quirk then
+        events.emit("quirk", {
+            self = self, quirk = skill.quirk, raw = skill.quirk,
+            skill = skill, x = sx, y = sy, is_repeat = is_repeat,
+        })
+    end
+    local pitch_mul = skill.quirk == "bigger but slower" and 2 ^ (-2 / 12) or 1
+    sfx.cast(skill, sx, is_repeat and 0.6 or 1, pitch_mul)
 
     if shape_key == "projectile" then
         local bolt_speed = 450 * speed_mul
@@ -2813,7 +3034,7 @@ do_cast = function(self, slot_num, is_repeat, ctx)
             end
             local hits = combat_mod.cone_hits(c, self.enemies)
             for _, h in ipairs(hits) do
-                local died = apply_hit(self, h.enemy, h.damage, h.statuses, sx, sy, infuse_live, "spray")
+                local died = apply_hit(self, h.enemy, h.damage, h.statuses, sx, sy, infuse_live, "spray", skill)
                 fx_hit(self, h.enemy.x, h.enemy.y, sc, nil, skill)
                 if died then h.enemy.alive = false; print("Enemy died")
                 else print("Enemy HP: " .. h.enemy.hp) end
@@ -2879,7 +3100,7 @@ do_cast = function(self, slot_num, is_repeat, ctx)
         local infuse_live = burst_infusion_at(self, sx, sy, b.radius)
         local hits = combat_mod.burst_hits(b, self.enemies)
         for _, h in ipairs(hits) do
-            local died = apply_hit(self, h.enemy, h.damage, h.statuses, sx, sy, infuse_live, "nova")
+            local died = apply_hit(self, h.enemy, h.damage, h.statuses, sx, sy, infuse_live, "nova", skill)
             fx_hit(self, h.enemy.x, h.enemy.y, sc, nil, skill)
             if died then h.enemy.alive = false; print("Enemy died")
             else print("Enemy HP: " .. h.enemy.hp) end
@@ -2930,7 +3151,7 @@ do_cast = function(self, slot_num, is_repeat, ctx)
                 end
                 local hits2 = combat_mod.burst_hits(b2, self.enemies)
                 for _, h in ipairs(hits2) do
-                    local died = apply_hit(self, h.enemy, h.damage, h.statuses, sx, sy, infuse_live2, "nova")
+                    local died = apply_hit(self, h.enemy, h.damage, h.statuses, sx, sy, infuse_live2, "nova", skill)
                     fx_hit(self, h.enemy.x, h.enemy.y, sc, nil, skill)
                     if died then h.enemy.alive = false; print("Enemy died")
                     else print("Enemy HP: " .. h.enemy.hp) end

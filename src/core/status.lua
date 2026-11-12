@@ -22,8 +22,11 @@ M.STATUS_DATA = {
 -- Unknown names are ignored (e.g. "spread" has no per-enemy effect yet).
 -- burn refreshes its timer rather than stacking.
 -- `duration_mul` (optional, default 1) scales every applied duration, e.g. Ancient Catalyst.
+-- Returns the list of names that were NOT present before this call (fresh applications);
+-- existing callers may ignore the return value (audio uses it).
 function M.apply(target, status_names, now, duration_mul)
-    if status_names == nil then return end
+    local fresh = {}
+    if status_names == nil then return fresh end
     if target.statuses == nil then target.statuses = {} end
     local mul = duration_mul or 1
 
@@ -32,12 +35,14 @@ function M.apply(target, status_names, now, duration_mul)
         if def then
             -- One entry per status name: a repeated hit refreshes the timer instead of
             -- creating a second timer/stack.
+            if target.statuses[name] == nil then table.insert(fresh, name) end
             target.statuses[name] = { expiry = def.duration * mul }
             if name == "burn" then
                 target.burn_timer = 0
             end
         end
     end
+    return fresh
 end
 
 -- Tick all statuses down by dt. Returns the list of names that expired this frame.

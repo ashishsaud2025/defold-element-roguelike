@@ -82,3 +82,19 @@ key_trigger {
   input: KEY_SPACE
   action: "dash"
 }
+key_trigger {
+  input: KEY_O
+  action: "sfx_prev"
+}
+key_trigger {
+  input: KEY_P
+  action: "sfx_next"
+}
+key_trigger {
+  input: KEY_L
+  action: "sfx_play"
+}
+key_trigger {
+  input: KEY_K
+  action: "sfx_cast"
+}

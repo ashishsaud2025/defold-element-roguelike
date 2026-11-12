@@ -1,3 +1,38 @@
+# Audio layer (ported from the `effects` branch) (v17)
+
+Audio ported from the `effects` branch (squashed into one commit on branch `audio-sfx`;
+the 8-commit history was not preserved). Avinash Joshi's branch carried an audio layer
+on top of an older tree; the audit/UI fixes it also contained were superseded by the
+`ui-relics` work and are not ported. **Nothing here has been verified on screen** —
+audio is unverifiable headlessly.
+
+## What shipped
+
+- **`src/game/events.lua`**: synchronous event bus (`cast`, `hit`, `status`, `quirk`,
+  `kill`, `player_hit`, `dash`, `room_clear`, `enemy_spawn`); listeners registered once
+  at init (hot-reload safe). No `pcall` — a broken listener is a real bug.
+- **`src/core/sfx.lua`**: manifest of every sound id with gain/min_gap/voice cap, global
+  voice cap 16, pan from x, `skill_speed` pitch-per-recipe. `sound.play` goes through
+  `/sfx#<id>` components wired in `main/sfx.go` (89 components).
+- **`src/core/music.lua`**: adaptive stems (`title`, `room_pad`/`rhythm`/`lead` with
+  intensity, `boss`, `win`/`dead` stings, `CAULDRON`/`REWARD` pad-only calm).
+- **`src/core/crng.lua`**: cosmetic-only RNG (Numerical Recipes LCG); used for pitch wobble.
+- **SFX/music assets** (`assets/sfx/**`, `assets/music/**`): generated for this project by
+  `tools/make_sfx.py` (original synthesis, no third-party samples — see CREDITS.md).
+- **Wiring**: `apply_hit` now emits `hit` (+ `status` per fresh application), `do_cast`
+  emits `cast`/`quirk`, `apply_statuses` emits `status` events, plus emitters at dash /
+  spawn / kill / room-clear / WIN / DEAD / REWARD→CAULDRON transitions; low-HP heartbeat
+  (`pl_lowhp` while below 30 % HP); ROOM music intensity from live enemy count (until
+  room clear), `CAULDRON` pad-only music, `DEAD`/`WIN` music stops.
+- **Audio audition row**: O/P = previous/next sound, L = play it, K = cast slot 1's
+  elemental layers (`TUNING.DEBUG` only). F1 audit = `ui_audit`.
+- **Trigger banners/toasts unchanged**: nothing about banners was altered.
+- **NOT ported**: the effects branch's elemental-reaction damage engine
+  (`src/core/reactions.lua`), its `apply_hit` rewrite, keyboard 1/2/3 reward fallback,
+  and its HUD changes (all superseded or out of scope).
+- **NOT verified on screen or in any engine build**: audio volume levels, pans, loops,
+  music stems, timing. Editor must compile; human must play.
+
 # UI Overhaul + Relic v2 (v16)
 
 Plan: `Agent Instructions/ui_and_relics_master_prompt.md` (Phases 0–E; branch `ui-relics`).

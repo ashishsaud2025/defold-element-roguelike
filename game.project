@@ -31,3 +31,11 @@ max_count = 2048
 
 [collection]
 max_instances = 4096
+
+[sound]
+gain = 1.0
+use_linear_gain = 1
+max_sound_data = 128
+max_sound_buffers = 64
+max_sound_instances = 64
+max_component_count = 128
