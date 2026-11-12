@@ -4154,6 +4154,26 @@ do
   sf(self.state == "HOME", "editor: done did not return to HOME (2nd)")
 end
 
+-- ===== Pause from HOME_EDIT via ESC; resume returns to HOME_EDIT =====
+do
+  self.state = "DEAD"
+  ui({ action = "continue" })
+  ui({ action = "start" })
+  ui({ action = "edit" })
+  sf(self.state == "HOME_EDIT", "pause-edit: did not land in HOME_EDIT")
+  act("pause", true, false); act("pause", false, true)
+  sf(self.state == "PAUSED", "pause-edit: ESC in HOME_EDIT did not pause")
+  ui({ action = "settings_open" })
+  sf(self.state == "SETTINGS", "pause-edit: settings did not open from edit-pause")
+  ui({ action = "back" })
+  sf(self.state == "PAUSED", "pause-edit: back from settings did not return to PAUSED")
+  ui({ action = "resume" })
+  sf(self.state == "HOME_EDIT", "pause-edit: resume did NOT return to HOME_EDIT")
+  act("pause", true, false); act("pause", false, true)
+  ui({ action = "quit_main" })
+  sf(self.state == "TITLE", "pause-edit: quit_main did not go to TITLE")
+end
+
 -- ===== Rebind engine: defaults, dispatch, collision, capture =====
 -- slot1 is pinned to a known recipe (Earth Bolt, repeats once) so THIS section
 -- does not inherit whatever the preceding suite left in self.loadout[1].

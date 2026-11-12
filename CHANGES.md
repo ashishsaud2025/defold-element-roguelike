@@ -8,10 +8,13 @@ Branch `settings-pause-training`; never touched `main` and never built a zip.
 
 - **TITLE gains two buttons**: `SETTINGS` (mid stack, under CREDITS) and `TRAINING HALL` (under SETTINGS).
   The debug `T` key is gone; training is the menu button and only that.
-- **ESC = pause** in ROOM only. ESC in ROOM toggles `PAUSED` — a world-rendered overlay over the
-  frozen world (enemies, timers, dashes, cooldowns all freeze exactly like DEAD/WIN). Four buttons:
-  `RESUME` / `SETTINGS` / `QUIT` / `QUIT TO MAIN MENU`. QUIT is `sys.exit(0)`;
+- **ESC = pause** in ROOM, HOME and HOME_EDIT. ESC toggles `PAUSED` — a world-rendered overlay
+  over the frozen world (enemies, timers, dashes, cooldowns all freeze exactly like DEAD/WIN). Four buttons:
+  `RESUME` / `SETTINGS` / `QUIT` / `QUIT TO MAIN MENU`. RESUME returns to the state ESC was pressed in
+  (`ROOM`, `HOME`, `HOME_EDIT`). QUIT is `sys.exit(0)`;
   QUIT TO MAIN MENU resets the run (loadout kept), like DEAD/WIN continue.
+- **Editor tabs are colored per tab**: MOUSE = gold, Q = water-blue, R = win-green. The selected tab
+  is accent-tinted on dark bg with white text; the others use dim-accent text on plain slot-bg.
 - **SETTINGS screen**: `MST/SFX/MUSIC` volume bars at 0.1 steps (0-100%), wired straight into
   `sfx.BUS`; live-rebindable rows for WASD / Q / R / E / SPACE / LMB↔RMB toggle.
   Master, SFX and Music values show as numbers next to the bar.

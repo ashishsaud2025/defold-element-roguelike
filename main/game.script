@@ -1588,7 +1588,10 @@ local function handle_ui_action(self, msg)
             enter_room(self)
         end
     elseif action == "resume" then
-        if self.state == "PAUSED" then self.state = "ROOM"; print("State: ROOM") end
+        if self.state == "PAUSED" then
+            self.state = self.pause_from or "ROOM"
+            print("State: " .. self.state)
+        end
     elseif action == "settings_open" then
         if self.state == "TITLE" or self.state == "PAUSED" then
             self.settings_from = self.state
@@ -3007,15 +3010,18 @@ function on_input(self, action_id, action)
         return
     end
 
-    -- ESC: pause in ROOM (settings and menus stay click-driven)
+    -- ESC: pause in any "world-on-screen" state; PAUSED toggles back to the state it came from
+    -- (menus are click-driven; TITLE/CREDITS/COMBOS keep the mouse path)
+    local pausable = { ROOM = true, HOME = true, HOME_EDIT = true }
     if action_id == hash("pause") and action.pressed then
-        if self.state == "ROOM" then
+        if pausable[self.state] then
+            self.pause_from = self.state
             self.state = "PAUSED"
             music.set_state("PAUSED")
             print("State: PAUSED")
         elseif self.state == "PAUSED" then
-            self.state = "ROOM"
-            print("State: ROOM")
+            self.state = self.pause_from or "ROOM"
+            print("State: " .. self.state)
         end
         return
     end
