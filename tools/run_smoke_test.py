@@ -43,7 +43,7 @@ print("spellcraft    : %d check(s) passed, %d failed" % (int(r["spell_pass"]), l
 if "ui_msg_max" in r:
     print("ui msg size   : worst frame = %d bytes (engine limit 2048)" % int(r["ui_msg_max"]))
 if "ui_worst" in r:
-    order = ["TITLE", "COMBOS", "CREDITS", "HOME", "HOME_EDIT", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN"]
+    order = ["TITLE", "COMBOS", "CREDITS", "HOME", "HOME_EDIT", "PAUSED", "SETTINGS", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN"]
     parts = []
     for st in order:
         try:

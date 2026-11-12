@@ -1620,6 +1620,8 @@ local function handle_ui_action(self, msg)
         if self.state == "PAUSED" then sys.exit(0) end
     elseif action == "quit_main" then
         if self.state == "PAUSED" then reset_run(self) end
+    elseif action == "training" then
+        if self.state == "TITLE" then toggle_training_room(self) end
     elseif action == "continue" then
         if self.state == "DEAD" or self.state == "WIN" then reset_run(self) end
     end
@@ -2179,7 +2181,7 @@ function update(self, dt)
     self.clock = self.clock + dt
     sfx.update(dt)
     music.update(dt)
-    if self.state == "PAUSED" then return end
+    if self.state == "PAUSED" then send_ui(self) return end
     -- Sustain loops: one per type, gain rises with the active count.
     sfx.loop_set("pool", #(self.puddles or {}))
     sfx.loop_set("orbit", #(self.orbits or {}))

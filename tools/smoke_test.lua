@@ -4261,6 +4261,16 @@ do
   sf(sys_exit_calls == exits_before + 1, "exit: TITLE quit did not route to the sys.exit stub")
 end
 
+-- ===== Training from the main menu =====
+ui({ action = "training" })
+sf(self.state == "ROOM", "menu: training button did not enter the training room")
+sf(self.room_number == 10, "menu: training button did not load the training room (room=" .. tostring(self.room_number) .. ")")
+-- The Training Room has no enemies to kill; ESC -> quit to main menu is the exit.
+act("pause", true, false); act("pause", false, true)
+sf(self.state == "PAUSED", "menu: ESC from training hall did not pause")
+ui({ action = "quit_main" })
+sf(self.state == "TITLE", "menu: quit_main from training did not return to TITLE")
+
 -- ===== HUD message budget: every state's ui message must fit the 2 KB msg.post limit =====
 -- Force each screen state with the heaviest payload the game can carry, then
 -- check the posted message. ui_seen/ui_worst were recorded by the msg.post stub.
@@ -4280,6 +4290,8 @@ do
   force("CREDITS", function() end)
   force("HOME", function() self.loadout_tab = 1 end)
   force("HOME_EDIT", function() self.loadout_tab = 1 end)
+  force("PAUSED", function() self.dash_cd = 0.5 end)
+  force("SETTINGS", function() end)
   force("ROOM", function()
     self.inventory = big_inventory
     self.relics = four_relics
@@ -4306,7 +4318,7 @@ do
   end)
   force("DEAD", function() self.relics = four_relics end)
   force("WIN", function() self.relics = four_relics end)
-  local ORDER = { "TITLE", "COMBOS", "CREDITS", "HOME", "HOME_EDIT", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN" }
+  local ORDER = { "TITLE", "COMBOS", "CREDITS", "HOME", "HOME_EDIT", "PAUSED", "SETTINGS", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN" }
   for _, st in ipairs(ORDER) do
     sf((ui_seen[st] or 0) >= 1, "ui msg: no ui message posted in state " .. st)
     local w = ui_worst[st] or 0
