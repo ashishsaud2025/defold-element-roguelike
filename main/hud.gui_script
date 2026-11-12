@@ -557,8 +557,13 @@ local function render(self)
     color("panel", over and C.panel_soft or C.panel)
     -- STORY: the panel becomes a dialogue box along the bottom of the window
     if story then
-        gui.set_size(n("panel"), vmath.vector3(880, 190, 0))
-        gui.set_position(n("panel"), vmath.vector3(480, 111, 0))
+        -- the box hugs the bottom edge and is only as tall as the page needs:
+        -- hint row + body lines + speaker line + padding (body line height ~22 px)
+        local lines = 1
+        for _ in string.gmatch(self.story_body or "", "\n") do lines = lines + 1 end
+        local h = 74 + 22 * lines
+        gui.set_size(n("panel"), vmath.vector3(880, h, 0))
+        gui.set_position(n("panel"), vmath.vector3(480, 10 + h / 2, 0))
         color("panel", C.panel)
     else
         gui.set_size(n("panel"), vmath.vector3(960, 640, 0))
