@@ -1,6 +1,6 @@
-# Unreleased - floating damage numbers, element colors, status labels, TUTORIAL screen (v20 candidate), release packaging
+# v0.1 release — shipped 2026-11-12 · https://github.com/ashishsaud2025/defold-element-roguelike/releases/tag/v0.1
 
-Working tree on `settings-pause-training`; nothing here has been verified on screen until the user confirms. `TUNING.DEBUG` is now `false` in the shipped source (the smoke harness forces it back on for its own checks).
+Force-pushed `settings-pause-training` to `origin/main` (4f8bed2) after green results. Assets: Windows (symbols), Linux x64, macOS universal (unsigned), Android debug APK, HTML5 wasm ZIP. iOS not included (needs macOS + Apple Developer account). Release notes flag the unsigned macOS app (Gatekeeper) and the debug APK being unsuitable for Google Play.
 
 - **Credits audit + app icon**: CREDITS entries cross-checked against the atlas/code (every entry was in use). `icon_player.png` (credited as lorc/wizard-staff) was unused — removed from the atlas and from credits (file kept on disk). `bed.png`/`chest.png` (16x16, Tiny Dungeon style) attributed to Tiny Dungeon (CC0, style match only — not byte-verified; see CREDITS.md). Name line is now "Code and game design: Ashish Saud and Avinash Joshi" in both CREDITS.md and `src/core/credits.lua`.
 - **App icon is AI-generated**: the bundled icon art (`downloads/ai_gen_icon.png`) is AI-generated pixel art — noted in CREDITS.md and on the in-game CREDITS screen. All platform icons rebuilt from it (1024 master, Windows BMP `app.ico`, macOS `app.icns` ic07-ic10, Android 36-192 PNGs, HTML5 splash).
