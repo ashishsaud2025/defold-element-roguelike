@@ -39,7 +39,6 @@ local infusion_mod = require "src.game.infusion"
 local reaction_mod = require "src.game.reaction"
 local status_mod = require "src.core.status"
 local relics_mod = require "src.core.relics"
-local credits_lines = require "src.core.credits"
 
 local ARENA_W = data.TUNING.ARENA_W
 local ARENA_H = data.TUNING.ARENA_H
@@ -425,6 +424,7 @@ function init(self)
     -- Set the fields update/on_input rely on BEFORE anything that can fail, so a
     -- problem while building the arena can never leave the script half-initialised.
     self.aim = vmath.vector3(ARENA_W * 0.5, ARENA_H * 0.5, 0)
+    self.mouse_pos = { x = -1, y = -1 }
     self.particles = {}
     self.anims = {}
     build_environment(self)
@@ -454,6 +454,7 @@ function init(self)
 
     -- Aim point (mouse)
     self.aim = vmath.vector3(ARENA_W * 0.5, ARENA_H * 0.5, 0)
+    self.mouse_pos = { x = -1, y = -1 }
 
     -- Movement keys
     self.keys = { up = false, left = false, down = false, right = false }
@@ -604,17 +605,23 @@ local function skill_view(skill, cd, cd_max, ea, eb)
     return {
         name = skill.compound .. " " .. (SHAPE_DISPLAY[skill.shape] or skill.shape),
         quirk = skill.quirk,
-        power = skill.power,
         cd = cd or 0,
         cd_max = cd_max or skill.cooldown,
         ea = ea,
         eb = eb,
+        shape = skill.shape,
     }
 end
 
+-- Defold's msg.post has a hard ~2 KB limit on the encoded table (Messaging API
+-- manual), and this message was within a few dozen bytes of it. Send the heavy
+-- nested tables only on the states whose screens render them; the HUD keeps its
+-- last-known values for anything absent (every field has an `or` fallback except
+-- reward_options, which is only meaningful on REWARD).
 local function send_ui(self)
+    local st = self.state
     local preview = nil
-    if self.state == "CAULDRON" then
+    if st == "CAULDRON" then
         local ok = (self.inventory.elements[self.cauldron.ea] or 0) > 0
             and (self.inventory.elements[self.cauldron.eb] or 0) > 0
             and (self.inventory.shapes[self.cauldron.shape] or 0) > 0
@@ -624,31 +631,51 @@ local function send_ui(self)
                 name = sk.compound .. " " .. (SHAPE_DISPLAY[sk.shape] or sk.shape),
                 quirk = sk.quirk,
                 power = sk.power,
+                cooldown = sk.cooldown,
+                statuses = sk.statuses,
             }
         end
     end
-    msg.post("/hud#gui", "ui", {
-        state = self.state,
+    local ui = {
+        state = st,
         hp = self.player.hp,
         max_hp = self.player.max_hp,
-        picks = self.picks,
-        credits = credits_lines,
         room = self.room_number,
-        inventory = self.inventory,
-        relics = self.relics,
-        reward_options = self.reward_options,
-        cauldron = self.cauldron,
-        preview = preview,
         boss = (self.boss ~= nil),
         boss_hp = (self.boss and self.boss.hp) or 0,
         boss_max_hp = (self.boss and self.boss.max_hp) or 0,
         flash = self.screen_flash or 0,
         toast = ((self.toast_t or 0) > 0) and self.toast_text or nil,
-        s1 = skill_view(self.slot1, self.slot1_cooldown, self.slot1_cd_max,
-                        self.slot1_elem_a, self.slot1_elem_b),
-        s2 = skill_view(self.slot2, self.slot2_cooldown, self.slot2_cd_max,
-                        self.slot2_elem_a, self.slot2_elem_b),
-    })
+        hover_x = self.mouse_pos and self.mouse_pos.x or nil,
+        hover_y = self.mouse_pos and self.mouse_pos.y or nil,
+    }
+    if st == "PICK_START" then
+        ui.picks = self.picks
+    end
+    if st == "ROOM" or st == "DEAD" or st == "WIN" then
+        ui.s1 = skill_view(self.slot1, self.slot1_cooldown, self.slot1_cd_max,
+                           self.slot1_elem_a, self.slot1_elem_b)
+        ui.s2 = skill_view(self.slot2, self.slot2_cooldown, self.slot2_cd_max,
+                           self.slot2_elem_a, self.slot2_elem_b)
+    end
+    if st == "ROOM" or st == "REWARD" or st == "CAULDRON" or st == "DEAD" or st == "WIN" then
+        ui.relics = self.relics
+    end
+    if st == "ROOM" or st == "REWARD" or st == "CAULDRON" then
+        ui.inventory = self.inventory
+    end
+    if st == "REWARD" then
+        ui.reward_options = self.reward_options
+    end
+    if st == "CAULDRON" then
+        ui.cauldron = self.cauldron
+        ui.preview = preview
+        -- slim slot names for the craft buttons (what each slot holds / will replace)
+        local s1 = self.slot1 and (self.slot1.compound .. " " .. (SHAPE_DISPLAY[self.slot1.shape] or self.slot1.shape)) or nil
+        local s2 = self.slot2 and (self.slot2.compound .. " " .. (SHAPE_DISPLAY[self.slot2.shape] or self.slot2.shape)) or nil
+        ui.slots = { s1 or "empty", s2 or "empty" }
+    end
+    msg.post("/hud#gui", "ui", ui)
 end
 
 -- Delete every live visual exactly once (AGENTS.md item 6), then forget it.
@@ -2365,6 +2392,10 @@ function update(self, dt)
                 self.room_clear_timer = 2.0
                 self.player.hp = math.min(self.player.max_hp, self.player.hp + data.TUNING.HEAL_ON_CLEAR)
                 spawn_particle(self, self.player_pos.x, self.player_pos.y, 0.4, 1, 0.5, 0.9, 0.4, 0.6, 0, 0, data.ART.particle.circle, 3.0)
+                -- ROOM CLEARED banner (deterministic; never overwrites another banner).
+                if (self.toast_t or 0) == 0 then
+                    announce(self, "ROOM CLEARED", self.player_pos.x, self.player_pos.y, { r = 1.0, g = 0.78, b = 0.25 }, 80)
+                end
                 print("Room cleared (+" .. data.TUNING.HEAL_ON_CLEAR .. " HP)")
             end
         end
@@ -2445,9 +2476,11 @@ local function to_design(ax, ay)
 end
 
 function on_input(self, action_id, action)
-    -- Mouse aim
-    if action_id == nil then
-        self.aim.x, self.aim.y = to_design(action.x, action.y)
+    -- Mouse aim (also feeds GUI hover, design space 0..960 / 0..640)
+    if action_id == nil and action.x and action.y then
+        local dx, dy = to_design(action.x, action.y)
+        self.mouse_pos = { x = dx, y = dy }
+        self.aim.x, self.aim.y = dx, dy
     end
 
     -- WASD
@@ -2485,6 +2518,9 @@ function on_input(self, action_id, action)
         if action_id == hash("q") and action.pressed then cycle_compound(self, 1) end
         if action_id == hash("e") and action.pressed then cycle_compound(self, 2) end
         if action_id == hash("t") and action.pressed then toggle_training_room(self) end
+        if action_id == hash("ui_audit") and action.pressed then
+            msg.post("/hud#gui", "ui_audit", {})
+        end
     end
 
     -- Hold-to-fire flags (the update loop casts while a button is held)

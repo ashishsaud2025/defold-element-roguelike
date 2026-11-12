@@ -2,7 +2,7 @@ script: "/main/hud.gui_script"
 
 fonts {
   name: "text"
-  font: "/builtins/fonts/default.font"
+  font: "/assets/fonts/cascadia.font"
 }
 
 textures {
@@ -252,7 +252,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: -200.0 }
-  size { x: 260.0 y: 56.0 }
+  size { x: 280.0 y: 56.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "enter_box"
@@ -272,7 +272,7 @@ nodes {
 
 nodes {
   position { x: -330.0 y: 288.0 }
-  size { x: 300.0 y: 24.0 }
+  size { x: 280.0 y: 22.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "hp_bg"
@@ -282,7 +282,7 @@ nodes {
 
 nodes {
   position { x: -330.0 y: 288.0 }
-  size { x: 300.0 y: 24.0 }
+  size { x: 280.0 y: 22.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "hp_fill"
@@ -302,7 +302,7 @@ nodes {
 
 nodes {
   position { x: -330.0 y: -268.0 }
-  size { x: 300.0 y: 76.0 }
+  size { x: 290.0 y: 88.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "s1_bg"
@@ -312,7 +312,7 @@ nodes {
 
 nodes {
   position { x: -330.0 y: -268.0 }
-  size { x: 300.0 y: 76.0 }
+  size { x: 290.0 y: 88.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "s1_cd"
@@ -342,7 +342,7 @@ nodes {
 
 nodes {
   position { x: -452.0 y: -268.0 }
-  size { x: 30.0 y: 30.0 }
+  size { x: 28.0 y: 28.0 }
   type: TYPE_BOX
   texture: "ui/circle"
   id: "s1_dot1"
@@ -352,7 +352,7 @@ nodes {
 
 nodes {
   position { x: -412.0 y: -268.0 }
-  size { x: 30.0 y: 30.0 }
+  size { x: 28.0 y: 28.0 }
   type: TYPE_BOX
   texture: "ui/circle"
   id: "s1_dot2"
@@ -362,7 +362,7 @@ nodes {
 
 nodes {
   position { x: 330.0 y: -268.0 }
-  size { x: 300.0 y: 76.0 }
+  size { x: 290.0 y: 88.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "s2_bg"
@@ -372,7 +372,7 @@ nodes {
 
 nodes {
   position { x: 330.0 y: -268.0 }
-  size { x: 300.0 y: 76.0 }
+  size { x: 290.0 y: 88.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "s2_cd"
@@ -402,7 +402,7 @@ nodes {
 
 nodes {
   position { x: 208.0 y: -268.0 }
-  size { x: 30.0 y: 30.0 }
+  size { x: 28.0 y: 28.0 }
   type: TYPE_BOX
   texture: "ui/circle"
   id: "s2_dot1"
@@ -412,7 +412,7 @@ nodes {
 
 nodes {
   position { x: 248.0 y: -268.0 }
-  size { x: 30.0 y: 30.0 }
+  size { x: 28.0 y: 28.0 }
   type: TYPE_BOX
   texture: "ui/circle"
   id: "s2_dot2"
@@ -461,16 +461,6 @@ nodes {
 }
 
 nodes {
-  position { x: 330.0 y: 288.0 }
-  type: TYPE_TEXT
-  text: ""
-  font: "text"
-  id: "inv_text"
-  layer: "text"
-  inherit_alpha: true
-}
-
-nodes {
   position { x: 0.0 y: 200.0 }
   type: TYPE_TEXT
   text: "REWARD"
@@ -481,8 +471,38 @@ nodes {
 }
 
 nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 212.0 y: 292.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "card1_frame"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 212.0 y: 292.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "card2_frame"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 212.0 y: 292.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "card3_frame"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
   position { x: -270.0 y: 30.0 }
-  size { x: 180.0 y: 220.0 }
+  size { x: 200.0 y: 280.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "card1_box"
@@ -502,7 +522,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 30.0 }
-  size { x: 180.0 y: 220.0 }
+  size { x: 200.0 y: 280.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "card2_box"
@@ -522,7 +542,7 @@ nodes {
 
 nodes {
   position { x: 270.0 y: 30.0 }
-  size { x: 180.0 y: 220.0 }
+  size { x: 200.0 y: 280.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "card3_box"
@@ -561,18 +581,8 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: 170.0 }
-  type: TYPE_TEXT
-  text: ""
-  font: "text"
-  id: "inv_text2"
-  layer: "text"
-  inherit_alpha: true
-}
-
-nodes {
   position { x: -270.0 y: 60.0 }
-  size { x: 160.0 y: 44.0 }
+  size { x: 108.0 y: 108.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "sel_ea_box"
@@ -592,7 +602,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 60.0 }
-  size { x: 160.0 y: 44.0 }
+  size { x: 108.0 y: 108.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "sel_eb_box"
@@ -612,7 +622,7 @@ nodes {
 
 nodes {
   position { x: 270.0 y: 60.0 }
-  size { x: 160.0 y: 44.0 }
+  size { x: 108.0 y: 108.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "sel_shape_box"
@@ -651,18 +661,8 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: -80.0 }
-  type: TYPE_TEXT
-  text: ""
-  font: "text"
-  id: "preview_power"
-  layer: "text"
-  inherit_alpha: true
-}
-
-nodes {
   position { x: -120.0 y: -160.0 }
-  size { x: 180.0 y: 44.0 }
+  size { x: 172.0 y: 72.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "craft1_box"
@@ -682,7 +682,7 @@ nodes {
 
 nodes {
   position { x: 120.0 y: -160.0 }
-  size { x: 180.0 y: 44.0 }
+  size { x: 172.0 y: 72.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "craft2_box"
@@ -702,7 +702,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: -230.0 }
-  size { x: 160.0 y: 44.0 }
+  size { x: 200.0 y: 56.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "done_box"
@@ -716,6 +716,476 @@ nodes {
   text: "Done"
   font: "text"
   id: "done_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "e1_role"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "e2_role"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "e3_role"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "e4_role"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 34.0 y: 34.0 }
+  type: TYPE_BOX
+  texture: "ui/icon_rune"
+  id: "relic1"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 34.0 y: 34.0 }
+  type: TYPE_BOX
+  texture: "ui/icon_rune"
+  id: "relic2"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 34.0 y: 34.0 }
+  type: TYPE_BOX
+  texture: "ui/icon_rune"
+  id: "relic3"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 34.0 y: 34.0 }
+  type: TYPE_BOX
+  texture: "ui/icon_rune"
+  id: "relic4"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 46.0 y: 46.0 }
+  type: TYPE_BOX
+  texture: "ui/particle_flare"
+  id: "s1_shape_icon"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 46.0 y: 46.0 }
+  type: TYPE_BOX
+  texture: "ui/particle_flare"
+  id: "s2_shape_icon"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "death_room"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "death_relics"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 56.0 y: 56.0 }
+  type: TYPE_BOX
+  texture: "ui/icon_fire"
+  id: "card1_icon"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "card1_tag"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "card1_desc"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 56.0 y: 56.0 }
+  type: TYPE_BOX
+  texture: "ui/icon_fire"
+  id: "card2_icon"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "card2_tag"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "card2_desc"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 56.0 y: 56.0 }
+  type: TYPE_BOX
+  texture: "ui/icon_fire"
+  id: "card3_icon"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "card3_tag"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "card3_desc"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "INGREDIENTS"
+  font: "text"
+  id: "ing_title"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "SHAPES"
+  font: "text"
+  id: "shape_title"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 28.0 y: 28.0 }
+  type: TYPE_BOX
+  texture: "ui/icon_fire"
+  id: "ing_icon_1"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "ing_elem_1"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 28.0 y: 28.0 }
+  type: TYPE_BOX
+  texture: "ui/icon_fire"
+  id: "ing_icon_2"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "ing_elem_2"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 28.0 y: 28.0 }
+  type: TYPE_BOX
+  texture: "ui/icon_fire"
+  id: "ing_icon_3"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "ing_elem_3"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 28.0 y: 28.0 }
+  type: TYPE_BOX
+  texture: "ui/icon_fire"
+  id: "ing_icon_4"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "ing_elem_4"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "ing_shape_1"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "ing_shape_2"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "ing_shape_3"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "ing_shape_4"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "ing_shape_5"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 52.0 y: 52.0 }
+  type: TYPE_BOX
+  texture: "ui/icon_fire"
+  id: "slot_icon_ea"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 52.0 y: 52.0 }
+  type: TYPE_BOX
+  texture: "ui/icon_water"
+  id: "slot_icon_eb"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 52.0 y: 52.0 }
+  type: TYPE_BOX
+  texture: "ui/particle_flare"
+  id: "slot_icon_shape"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "preview_detail"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "preview_status"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "reaction_hint"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "RELICS"
+  font: "text"
+  id: "relic_title"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "relic_1"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "relic_2"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "relic_3"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "relic_4"
   layer: "text"
   inherit_alpha: true
 }

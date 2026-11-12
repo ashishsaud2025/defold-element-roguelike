@@ -34,7 +34,58 @@ vmath = {
   quat_rotation_z = function(a) return {a=a} end,
 }
 function hash(s) return s end
-msg = { url = function(sock, path, frag) return {path=path, frag=frag} end, post = function() end }
+-- Defold's msg.post has a hard ~2 KB limit on the encoded table (Messaging API
+-- manual). The mock cannot compute the engine's encoder exactly, so this is a
+-- CONTENT tripwire, not a byte model:
+--   * ui_big_str: a >512-byte string in any ui message whose state is not
+--     CREDITS. (The pre-fix message carried the ~1.1 KB credits blob on every
+--     frame and overflowed the engine's buffer at element #18.)
+--   * ui_field_leak: an inventory/relics/reward_options/cauldron/preview field
+--     attached to a ui message whose state does not render it.
+-- Both are exact, model-free checks of the gating send_ui performs; they fire
+-- loudly if anyone re-attaches heavy payloads to every frame.
+-- A strict UPPER-BOUND model of the engine's message encoder (the real format
+-- is undocumented). Calibrated: the pre-fix always-attach message scored ~2400
+-- and overflowed the real 2040-byte engine buffer at element #18; the current
+-- state-gated messages score ~400-800. Every ui message the suite posts is
+-- measured; any of them at or over 2048 fails the run.
+local function enc_upper(v)
+  local t = type(v)
+  if t == "string" then return #v + 16
+  elseif t == "number" or t == "boolean" then return 8
+  elseif t == "table" then
+    local s = 40
+    for k, val in pairs(v) do s = s + (#tostring(k) + 16) + enc_upper(val) end
+    return s
+  else return 16 end
+end
+local ui_seen, ui_worst = {}, {}
+local ui_big_str, ui_big_str_state = nil, "?"
+local ui_field_leak, ui_field_leak_state = nil, "?"
+local ui_msg_max, ui_msg_max_state = 0, "?"
+msg = { url = function(sock, path, frag) return {path=path, frag=frag} end, post = function(target, id, message)
+  if type(message) ~= "table" then return end
+  local st = tostring(message.state)
+  local enc = enc_upper(message)
+  if enc > ui_msg_max then ui_msg_max = enc; ui_msg_max_state = st end
+  ui_seen[st] = (ui_seen[st] or 0) + 1
+  if enc > (ui_worst[st] or 0) then ui_worst[st] = enc end
+  local gated = { inventory = { ROOM = true, REWARD = true, CAULDRON = true },
+                  relics    = { ROOM = true, REWARD = true, CAULDRON = true, DEAD = true, WIN = true },
+                  reward_options = { REWARD = true },
+                  cauldron  = { CAULDRON = true },
+                  preview   = { CAULDRON = true },
+                  slots     = { CAULDRON = true },
+                  s1        = { ROOM = true, DEAD = true, WIN = true },
+                  s2        = { ROOM = true, DEAD = true, WIN = true },
+                  credits   = { CREDITS = true } }
+  for field, ok_states in pairs(gated) do
+    if message[field] ~= nil and not ok_states[st] then
+      if not ui_field_leak then ui_field_leak = field .. " @ " .. st end
+      ui_field_leak_state = st
+    end
+  end
+end }
 local factories = { ["#visual_factory"]=true, ["#fx_factory"]=true }
 local SPRITE_MAX = tonumber(os.getenv("SPRITE_MAX") or "2048")
 local function livecount() local n=0 for _ in pairs(live) do n=n+1 end return n end
@@ -3291,6 +3342,71 @@ if begin_room() then
      "reset: live objects drifted (" .. tostring(reset_probe.after) .. " vs " .. tostring(reset_probe.pristine) .. ")")
 end
 
+-- ===== Phase B: UI layout (pure Lua; the harness never runs gui.*) ===========
+local ui_layout = require "src.ui.layout"
+for _, screen in ipairs({ "TITLE", "COMBOS", "CREDITS" }) do
+  local scr = ui_layout.SCREENS[screen]
+  for i, b in ipairs(scr.buttons) do
+    sf(b.x >= 0 and b.y >= 0 and b.x + b.w <= ui_layout.DESIGN_W and b.y + b.h <= ui_layout.DESIGN_H,
+       "layout " .. screen .. "." .. b.id .. ": rect leaves the design area")
+    sf(b.h >= ui_layout.BUTTON_MIN_H and b.w >= ui_layout.BUTTON_MIN_W,
+       "layout " .. screen .. "." .. b.id .. ": below minimum size (w=" .. b.w .. " h=" .. b.h .. ")")
+    for j = i + 1, #scr.buttons do
+      local o = scr.buttons[j]
+      local overlap = b.x < o.x + o.w and o.x < b.x + b.w and b.y < o.y + o.h and o.y < b.y + b.h
+      sf(overlap == false, "layout " .. screen .. "." .. b.id .. " overlaps " .. o.id)
+    end
+  end
+end
+do -- registry hit test and ordering (z = reverse insertion)
+  local h = ui_layout.hit("TITLE", 480, 290)
+  sf(h and h.id == "start_box", "layout: TITLE hit at START centre expected start_box, got " .. tostring(h and h.id))
+  sf(ui_layout.hit("TITLE", 480, 290) and ui_layout.hit("TITLE", 480, 290).action == "start",
+     "layout: TITLE start_box hit did not return the start action")
+  sf(ui_layout.hit("TITLE", 0, 0) == nil, "layout: TITLE hit at (0,0) expected nil")
+  sf(ui_layout.hit("COMBOS", 480, 58) and ui_layout.hit("COMBOS", 480, 58).action == "back",
+     "layout: COMBOS back button hit failed")
+  sf(ui_layout.hit("CREDITS", 480, 58) and ui_layout.hit("CREDITS", 480, 58).action == "back",
+     "layout: CREDITS back button hit failed")
+end
+do -- text_width measures the widest line, not the whole multi-line blob
+  local one = ui_layout.text_width("single line", 14)
+  sf(one == #"single line" * 14 * ui_layout.MONO_ADVANCE, "layout text_width: single-line formula changed")
+  local s128 = string.rep("b", 128)
+  local multi = ui_layout.text_width("aaa\n" .. s128 .. "\ncc", 14)
+  sf(multi == 128 * 14 * ui_layout.MONO_ADVANCE, "layout text_width: multi-line returned " .. tostring(multi))
+  sf(ui_layout.text_width("", 14) == 0, "layout text_width: empty string expected 0 width")
+  sf(ui_layout.text_width("l1\nl2\nl3\nliii", 14) == 4 * 14 * ui_layout.MONO_ADVANCE, "layout text_width: widest of 4 lines wrong")
+end
+do -- wrap determinism + no line longer than the limit
+  local a = ui_layout.wrap("one two three four five six seven eight nine ten eleven twelve thirteen fourteen", 20)
+  sf(#a == 5, "layout wrap: expected 5 lines got " .. #a)
+  local longest = 0 for _, l in ipairs(a) do longest = math.max(longest, #l) end
+  sf(longest <= 20, "layout wrap: line longer than limit (" .. longest .. ")")
+  local b1 = ui_layout.wrap("COMBOS PANEL text wraps here", 20)
+  local b2 = ui_layout.wrap("COMBOS PANEL text wraps here", 20)
+  sf(table.concat(b1, "|") == table.concat(b2, "|"), "layout wrap: not deterministic")
+  sf(#ui_layout.wrap("", 20) == 0, "layout wrap: empty text expected empty list")
+end
+do -- button actions match the proven game actions per screen
+  local seen = {}
+  for _, b in ipairs(ui_layout.SCREENS.TITLE.buttons) do seen[b.action] = true end
+  sf(seen.start and seen.combos and seen.credits, "layout TITLE: missing start/combos/credits action")
+  local s = {}
+  for _, b in ipairs(ui_layout.SCREENS.COMBOS.buttons) do s[b.action] = true end
+  sf(s.back == true, "layout COMBOS: missing back action")
+  local s2 = {}
+  for _, b in ipairs(ui_layout.SCREENS.CREDITS.buttons) do s2[b.action] = true end
+  sf(s2.back == true, "layout CREDITS: missing back action")
+end
+do -- the ui_audit binding exists (debug-key row contract)
+  local binding = io.open("input/game.input_binding", "r")
+  local text = binding and binding:read("*a") or ""
+  if binding then binding:close() end
+  sf(text:find('input: KEY_F1', 1, true) ~= nil and text:find('action: "ui_audit"', 1, true) ~= nil,
+     "layout ui_audit: KEY_F1 -> ui_audit binding missing")
+end
+
 -- No gameplay RNG consumed by the reaction path (identical rooms, reaction on/off).
 do
   local PURITY_SEED = 0xB00B1E
@@ -3342,8 +3458,67 @@ for i=1,300 do frame() end
 for _, t in ipairs(timers) do t.fn() end
 timers = {}
 frame()
+
+-- ===== HUD message budget: every state's ui message must fit the 2 KB msg.post limit =====
+-- Force each screen state with the heaviest payload the game can carry, then
+-- check the posted message. ui_seen/ui_worst were recorded by the msg.post stub.
+do
+  local big_inventory = {
+    elements = { fire = 9, water = 9, wind = 9, earth = 9 },
+    shapes = { projectile = 9, puddle = 9, orbit = 9, cone = 9, burst = 9 },
+  }
+  local four_relics = { inferno_heart = true, echoing_crystal = true, ancient_catalyst = true, orbital_crown = true }
+  local function force(state, setup)
+    setup()
+    self.state = state
+    frame()                       -- update() ends in send_ui(), so exactly one message lands
+  end
+  force("TITLE", function() self.flash = 0 end)
+  force("COMBOS", function() end)
+  force("CREDITS", function() end)
+  force("PICK_START", function() self.picks = { "fire", "water" } end)
+  force("ROOM", function()
+    self.inventory = big_inventory
+    self.relics = four_relics
+    self.boss = { hp = 99, max_hp = 120 }
+    self.boss_hp, self.boss_max_hp = 99, 120
+    self.toast_text, self.toast_t = "BURNING MUD", 1.4
+    self.flash = 0.8
+  end)
+  force("REWARD", function()
+    self.inventory = big_inventory
+    self.relics = four_relics
+    self.reward_options = {
+      { kind = "element", id = "fire" },
+      { kind = "shape", id = "puddle" },
+      { kind = "relic", id = "inferno_heart" },
+    }
+  end)
+  force("CAULDRON", function()
+    self.inventory = big_inventory
+    self.relics = four_relics
+    self.cauldron = { ea = "fire", eb = "water", shape = "burst" }
+    self.slot1 = { compound = "Magma", shape = "cone", quirk = "splits in two", power = 9, cooldown = 2.0, statuses = { "burn", "slow" } }
+    self.slot2 = { compound = "Steam", shape = "projectile", quirk = "repeats once", power = 7, cooldown = 1.5, statuses = { "push", "blind" } }
+  end)
+  force("DEAD", function() self.relics = four_relics end)
+  force("WIN", function() self.relics = four_relics end)
+  local ORDER = { "TITLE", "COMBOS", "CREDITS", "PICK_START", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN" }
+  for _, st in ipairs(ORDER) do
+    sf((ui_seen[st] or 0) >= 1, "ui msg: no ui message posted in state " .. st)
+    local w = ui_worst[st] or 0
+    sf(w > 0 and w <= 2048, string.format("ui msg: %s posts a ui message estimated at %d bytes (> 2048 engine limit)", st, w))
+  end
+  sf(ui_seen.REWARD and ui_worst.REWARD and math.floor(ui_worst.REWARD) == ui_worst.REWARD, "ui msg: REWARD worst-case not measured")
+  -- the game's own best frame must be comfortably under the limit
+  sf(ui_msg_max <= 2048, string.format("ui msg: worst ui message anywhere is %d bytes (> 2048 engine limit) [state=%s]", ui_msg_max, ui_msg_max_state))
+end
+
 -- return to the title screen (room 1 tiles) so the object count is comparable with the baseline
 self.state = "WIN"; ui({action="continue"}); for i=1,5 do frame() end
+sf(ui_msg_max > 0, "ui msg: no ui message ever sent (msg-size guards are vacuous)")
+sf(not ui_big_str, "ui msg: >512B string leaked into a non-CREDITS frame: " .. tostring(ui_big_str))
+sf(not ui_field_leak, "ui msg: heavy field attached to the wrong screen: " .. tostring(ui_field_leak))
 local after = count()
 local extras = {} for id,o in pairs(live) do if not base_ids[id] then local inp=false for _,p in ipairs(self.particles) do if p.id==id then inp=true end end extras[#extras+1]=id..' '..o.kind..' pos=('..string.format('%.0f,%.0f',o.pos.x,o.pos.y)..') inParticles='..tostring(inp)..' state='..self.state..' CREATED@'..tostring(o.tb) end end
 local kills, heals = 0, 0
@@ -3355,6 +3530,6 @@ return {
   flip_true = flip_true or 0, flip_false = flip_false or 0,
   path = table.concat(path_report,'\n'), extras = table.concat(extras,' ; '), wall_viol = wall_viol, wall_first = wall_first or 'none', maxlive = stats.maxlive, maxparticles = stats.maxparticles, kills = kills, rooms_cleared = heals,
   fx_missing = fx_missing, fx_report = table.concat(fx_report, " | "), max_anims = max_anims,
-  spell_fail = spell_fail, spell_pass = spell_pass,
+  spell_fail = spell_fail, spell_pass = spell_pass, ui_msg_max = ui_msg_max, ui_worst = ui_worst,
   states = table.concat(state_lines, " | "):sub(1, 900), selfcheck = (function() for _, l in ipairs(logs) do if l:find("SELFCHECK") then return l end end end)(),
 }

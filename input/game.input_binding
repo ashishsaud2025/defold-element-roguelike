@@ -75,6 +75,10 @@ key_trigger {
   action: "t"
 }
 key_trigger {
+  input: KEY_F1
+  action: "ui_audit"
+}
+key_trigger {
   input: KEY_SPACE
   action: "dash"
 }

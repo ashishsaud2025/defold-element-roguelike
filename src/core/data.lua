@@ -2,12 +2,12 @@
 -- All tuning numbers and static game data. See MASTER_PROMPT sections 4 and 7.
 local M = {}
 
--- 4.1 Elements and colors
+-- 4.1 Elements and colors (+ role lines: pick tiles and element cards read these)
 M.ELEMENTS = {
-    fire   = { r = 1.00, g = 0.30, b = 0.15 },
-    water  = { r = 0.20, g = 0.50, b = 1.00 },
-    wind   = { r = 0.85, g = 0.95, b = 0.90 },
-    earth  = { r = 0.65, g = 0.45, b = 0.20 },
+    fire   = { r = 1.00, g = 0.30, b = 0.15, role = "Fire burns: damage over time" },
+    water  = { r = 0.20, g = 0.50, b = 1.00, role = "Water slows and pulls" },
+    wind   = { r = 0.85, g = 0.95, b = 0.90, role = "Wind pushes and carries" },
+    earth  = { r = 0.65, g = 0.45, b = 0.20, role = "Earth stuns and roots" },
 }
 
 -- 4.2 Compounds (key = two element names sorted alphabetically, joined by "+")
@@ -24,13 +24,13 @@ M.COMPOUNDS = {
     ["earth+wind"]  = { name = "Dust",      power = 5,  statuses = { "confuse" } },
 }
 
--- 4.3 Shapes
+-- 4.3 Shapes (+ blurb lines: shape cards read these)
 M.SHAPES = {
-    projectile = { name = "Bolt",   cooldown = 0.6, radius = 10, duration = 0 },
-    puddle     = { name = "Pool",   cooldown = 4.0, radius = 60, duration = 5 },
-    orbit      = { name = "Orbit",  cooldown = 5.0, radius = 14, duration = 6 },
-    cone       = { name = "Spray",  cooldown = 1.5, radius = 90, duration = 0.3 },
-    burst      = { name = "Nova",   cooldown = 2.5, radius = 70, duration = 0 },
+    projectile = { name = "Bolt",   cooldown = 0.6, radius = 10, duration = 0, blurb = "Fast single target" },
+    puddle     = { name = "Pool",   cooldown = 4.0, radius = 60, duration = 5, blurb = "Area denial over time" },
+    orbit      = { name = "Orbit",  cooldown = 5.0, radius = 14, duration = 6, blurb = "Orbs circle you" },
+    cone       = { name = "Spray",  cooldown = 1.5, radius = 90, duration = 0.3, blurb = "Cone in a line" },
+    burst      = { name = "Nova",   cooldown = 2.5, radius = 70, duration = 0, blurb = "Explosion all around" },
 }
 
 -- 4.5 Quirks

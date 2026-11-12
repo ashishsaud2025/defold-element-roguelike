@@ -40,6 +40,19 @@ for m in fxm: print("  - FX:", m)
 print("fx per skill  :", r["fx_report"][:600], "...")
 spell = [r["spell_fail"][i] for i in range(1, len(r["spell_fail"]) + 1)]
 print("spellcraft    : %d check(s) passed, %d failed" % (int(r["spell_pass"]), len(spell)))
+if "ui_msg_max" in r:
+    print("ui msg size   : worst frame = %d bytes (engine limit 2048)" % int(r["ui_msg_max"]))
+if "ui_worst" in r:
+    order = ["TITLE", "COMBOS", "CREDITS", "PICK_START", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN"]
+    parts = []
+    for st in order:
+        try:
+            v = r["ui_worst"][st]
+        except Exception:
+            v = None
+        if v is not None:
+            parts.append("%s=%d" % (st, int(v)))
+    print("ui msg per state: %s (engine limit 2048)" % ", ".join(parts))
 for m in spell: print("  - SPELL:", m)
 print("errors        :", len(errs))
 for e in errs: print("  -", str(e)[:300])
@@ -50,4 +63,24 @@ if os.environ.get("ART_TEST") != "0" and not (r["flip_true"] > 0 and r["flip_fal
     print("FLIP CHECK FAILED: expected the player/enemies to face both ways")
     ok = False
 print("\nRESULT:", "PASS (mock only)" if ok else "FAIL")
-sys.exit(0 if ok else 1)
+if not ok:
+    sys.exit(1)
+
+# ===== HUD harness: gui_script under a stub gui.* API =====
+try:
+    hud_src = open(os.path.join("tools", "hud_test.lua"), encoding="utf-8").read()
+except FileNotFoundError:
+    print("hud harness   : tools/hud_test.lua not found")
+    sys.exit(1)
+lua2 = LuaRuntime(unpack_returned_tuples=True)
+try:
+    h = lua2.execute(hud_src)
+except Exception as e:
+    print("HUD HARNESS CRASHED:", e)
+    sys.exit(1)
+herrs = [h["errors"][i] for i in range(1, len(h["errors"]) + 1)]
+print("hud harness   : %d check(s) passed, %d failed" % (int(h["checks"]), len(herrs)))
+for e in herrs:
+    print("  - HUD:", str(e)[:300])
+print("\nHUD RESULT:", "PASS" if not herrs else "FAIL")
+sys.exit(0 if not herrs else 1)

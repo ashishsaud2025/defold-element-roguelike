@@ -1,0 +1,19 @@
+Cascadia Code
+============
+
+Font:     Cascadia Code (Regular)
+Vendor:   Microsoft Corporation
+Upstream: https://github.com/microsoft/cascadia-code
+Homepage: https://github.com/microsoft/cascadia-code
+File in this project: CascadiaCode.ttf (Regular weight, copied from the system
+          font directory, unmodified)
+Reference: https://raw.githubusercontent.com/microsoft/cascadia-code/main/LICENSE
+
+Licence:  SIL Open Font License, Version 1.1 (see OFL.txt in this folder)
+The Reserved Font Name for this font is "Cascadia Code". This project ships
+the unmodified font; it is bundled into the game, not sold separately.
+
+(info: the .font resource that uses this TTF lives at /assets/fonts/cascadia.font.
+To swap to another font: replace CascadiaCode.ttf with the new file, create a matching
+.font resource if the engine requires one, and change the one `font:` line in
+main/hud.gui.)

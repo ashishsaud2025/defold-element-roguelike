@@ -29,3 +29,5 @@ Element FX sprites in assets/art/fx are whitened to white-on-alpha (tools/whiten
 fx_drop.png is generated for this project (tools/make_drop.py).
 actors/target_dummy.png is generated for this project (tools/make_target.py).
 glow.png, floor.png and vignette.png are generated for this project.
+Cascadia Code by Microsoft (github.com/microsoft/cascadia-code, SIL OFL 1.1; vendored at assets/fonts/, see OFL.txt + NOTICE.txt).
+
