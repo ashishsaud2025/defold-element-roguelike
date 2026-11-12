@@ -24,3 +24,11 @@ Thumbs.db
 /.editor_settings
 /.internal
 /build
+/release/
+
+# Excluded from the public repo (local/owner material, not project source)
+.superpowers/
+Agent Instructions/
+docs/superpowers/
+examples/
+Levels-made/
