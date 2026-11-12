@@ -89,6 +89,23 @@ local ALL_NODES = {
     "craft1_box", "craft1_text", "craft2_box", "craft2_text",
     "done_box", "done_text",
     "relic_title", "relic_1", "relic_2", "relic_3", "relic_4",
+    "paused_title", "resume_box", "resume_text", "paused_settings_box", "paused_settings_text",
+    "quit_box", "quit_text", "quit_main_box", "quit_main_text",
+    "settings_title",
+    "master_label", "master_value", "master_minus_box", "master_minus_text", "master_plus_box", "master_plus_text", "master_bar", "master_fill",
+    "sfx_label", "sfx_value", "sfx_minus_box", "sfx_minus_text", "sfx_plus_box", "sfx_plus_text", "sfx_bar", "sfx_fill",
+    "music_label", "music_value", "music_minus_box", "music_minus_text", "music_plus_box", "music_plus_text", "music_bar", "music_fill",
+    "bindings_title",
+    "row_up_label", "row_up_bind_box", "row_up_bind_text",
+    "row_left_label", "row_left_bind_box", "row_left_bind_text",
+    "row_down_label", "row_down_bind_box", "row_down_bind_text",
+    "row_right_label", "row_right_bind_box", "row_right_bind_text",
+    "row_cast1_label", "row_cast1_bind_box", "row_cast1_bind_text",
+    "row_cast2_label", "row_cast2_bind_box", "row_cast2_bind_text",
+    "row_interact_label", "row_interact_bind_box", "row_interact_bind_text",
+    "row_dash_label", "row_dash_bind_box", "row_dash_bind_text",
+    "capture_note", "settings_back_box", "settings_back_text",
+    "settings_box", "settings_text", "training_box", "training_text", "exit_box", "exit_text",
 }
 
 -- Only ids authored in main/hud.gui may be touched by the uniform text-scale
@@ -230,11 +247,81 @@ local function apply_layout(self)
     pos("version_text", T.version_text.x, T.version_text.y)
     text("version_text", T.version_text.text)
     color("version_text", pv(layout.palette.text_dim))
+    local TITLE_TEXT = { start_box = "start_text", combos_box = "combos_text", credits_box = "credits_text_btn",
+                         settings_box = "settings_text", training_box = "training_text", exit_box = "exit_text" }
     for _, b in ipairs(layout.SCREENS.TITLE.buttons) do
-        local text_id = (b.id == "start_box" and "start_text") or (b.id == "combos_box" and "combos_text") or "credits_text_btn"
+        local text_id = TITLE_TEXT[b.id]
         pos_rect(b.id, b)
         color(b.id, pv(layout.palette.box))
-        if n(text_id) then pos(text_id, b.text.x, b.text.y) end
+        if text_id and n(text_id) then pos(text_id, b.text.x, b.text.y) end
+    end
+
+    -- ===== PAUSED =====
+    local PP = layout.SCREENS.PAUSED
+    pos("paused_title", PP.texts.paused_title.x, PP.texts.paused_title.y)
+    color("paused_title", pv(layout.palette.text))
+    for _, b in ipairs(PP.buttons) do
+        pos_rect(b.id, b)
+        color(b.id, pv(layout.palette.box))
+        local text_id = b.id:gsub("_box$", "_text")
+        pos(text_id, b.text.x, b.text.y)
+        color(text_id, pv(layout.palette.text))
+    end
+
+    -- ===== SETTINGS =====
+    local ST = layout.SCREENS.SETTINGS
+    pos("settings_title", ST.texts.settings_title.x, ST.texts.settings_title.y)
+    color("settings_title", pv(layout.palette.text))
+    pos("bindings_title", ST.texts.bindings_title.x, ST.texts.bindings_title.y)
+    color("bindings_title", pv(layout.palette.text_dim))
+    for _, k in ipairs({ "master", "sfx", "music" }) do
+        local label = ST.texts[k .. "_label"]
+        pos(k .. "_label", label.x, label.y)
+        color(k .. "_label", pv(layout.palette.text))
+        local value = ST.texts[k .. "_value"]
+        pos(k .. "_value", value.x, value.y)
+        color(k .. "_value", pv(layout.palette.text))
+        for _, side in ipairs({ "minus", "plus" }) do
+            local bid = k .. "_" .. side .. "_box"
+            local b = nil
+            for _, btn in ipairs(ST.buttons) do if btn.id == bid then b = btn end end
+            if b then
+                pos_rect(bid, b)
+                color(bid, pv(layout.palette.box))
+                local tid = bid:gsub("_box$", "_text")
+                pos(tid, b.text.x, b.text.y)
+                color(tid, pv(layout.palette.text))
+            end
+        end
+        local bar = ST.bars[k .. "_bar"]
+        pos(k .. "_bar", bar.x + bar.w * 0.5, bar.y + bar.h * 0.5)
+        pos(k .. "_fill", bar.x, bar.y + bar.h * 0.5)   -- left anchor; render scales + shifts x
+        color(k .. "_bar", pv(layout.palette.cd))
+        color(k .. "_fill", pv(layout.palette.accent_gold))
+    end
+    for _, k in ipairs({ "up", "left", "down", "right", "cast1", "cast2", "interact", "dash" }) do
+        local lab = ST.texts["row_" .. k .. "_label"]
+        local val = ST.texts["row_" .. k .. "_bind_text"]
+        pos("row_" .. k .. "_label", lab.x, lab.y)
+        color("row_" .. k .. "_label", pv(layout.palette.text_dim))
+        pos("row_" .. k .. "_bind_text", val.x, val.y)
+        color("row_" .. k .. "_bind_text", pv(layout.palette.text))
+        for _, btn in ipairs(ST.buttons) do
+            if btn.id == "row_" .. k .. "_bind_box" then
+                pos_rect("row_" .. k .. "_bind_box", btn)
+                color("row_" .. k .. "_bind_box", pv(layout.palette.slot_bg))
+            end
+        end
+    end
+    pos("capture_note", ST.texts.capture_note.x, ST.texts.capture_note.y)
+    color("capture_note", pv(layout.palette.text_dim))
+    for _, btn in ipairs(ST.buttons) do
+        if btn.id == "settings_back_box" then
+            pos_rect("settings_back_box", btn)
+            color("settings_back_box", pv(layout.palette.box))
+            pos("settings_back_text", btn.text.x, btn.text.y)
+            color("settings_back_text", pv(layout.palette.text))
+        end
     end
 
     -- COMBOS / CREDITS share the panel component
@@ -426,14 +513,18 @@ local function render(self)
     local reward = (st == "REWARD")
     local cauldron = (st == "CAULDRON")
     local editor = (st == "HOME_EDIT")
+    local paused = (st == "PAUSED")
+    local settings = (st == "SETTINGS")
 
     -- Panel
-    show("panel", st == "TITLE" or st == "COMBOS" or st == "CREDITS" or over or reward or cauldron or editor)
+    show("panel", st == "TITLE" or st == "COMBOS" or st == "CREDITS" or over or reward or cauldron or editor or paused or settings)
     color("panel", over and C.panel_soft or C.panel)
     panel_enabled(self.panel_combos, st == "COMBOS")
     panel_enabled(self.panel_credits, st == "CREDITS")
     panel_enabled(self.panel_cauldron, cauldron)
     panel_enabled(self.panel_home_edit, editor)
+    panel_enabled(self.panel_paused, paused)
+    panel_enabled(self.panel_settings, settings)
 
     -- TITLE
     if st == "TITLE" then
@@ -450,6 +541,61 @@ local function render(self)
         end
     end
 
+    -- PAUSED (buttons highlight on hover)
+    if st == "PAUSED" then
+        local hx, hy = self.hover_x, self.hover_y
+        for _, b in ipairs(layout.SCREENS.PAUSED.buttons) do
+            if hx and point_in_rect(b, hx, hy) then
+                color(b.id, pv(layout.palette.box_hover))
+            else
+                color(b.id, pv(layout.palette.box))
+            end
+        end
+    end
+
+    -- SETTINGS (volume +/- rows and every binding row light up on hover)
+    if st == "SETTINGS" then
+        local hx, hy = self.hover_x, self.hover_y
+        local ST = layout.SCREENS.SETTINGS
+        for _, b in ipairs(ST.buttons) do
+            if hx and point_in_rect(b, hx, hy) then
+                color(b.id, pv(layout.palette.box_hover))
+            else
+                color(b.id, pv(layout.palette.slot_bg))
+            end
+        end
+        -- the back button is the one in palette box land, not slot_bg
+        local hx2, hy2 = self.hover_x, self.hover_y
+        local bb = nil
+        for _, b in ipairs(ST.buttons) do
+            if b.id == "settings_back_box" then bb = b end
+        end
+        if bb then color("settings_back_box", (hx2 and hy2 and point_in_rect(bb, hx2, hy2)) and pv(layout.palette.box_hover) or pv(layout.palette.box)) end
+        -- live volume readout + binding labels
+        if self.volume then
+            for _, k in ipairs({ "master", "sfx", "music" }) do
+                local v = self.volume[k] or 0
+                text(k .. "_value", string.format("%.1f", v))
+                local tbl = ST.bars[k .. "_bar"]
+                bar(k .. "_fill", tbl.x, tbl.w, tbl.y + tbl.h * 0.5, v)
+            end
+        end
+        if self.bindings then
+            for _, k in ipairs({ "up", "left", "down", "right", "cast1", "cast2", "interact", "dash" }) do
+                local label = self.bindings[k] or "?"
+                text("row_" .. k .. "_bind_text", label)
+                color("row_" .. k .. "_bind_text", (self.capture == k) and pv(layout.palette.accent_gold) or pv(layout.palette.text))
+            end
+        end
+        if self.capture then
+            text("capture_note", "PRESS ANY KEY TO BIND  ·  ESC CANCELS")
+            color("capture_note", pv(layout.palette.toast))
+        else
+            text("capture_note", "click a key row to rebind - duplicates reassign the key")
+            color("capture_note", pv(layout.palette.text_dim))
+        end
+    end
+
     -- Title group
     show("title_text", st == "TITLE")
     show("subtitle_text", st == "TITLE")
@@ -460,6 +606,12 @@ local function render(self)
     show("combos_text", st == "TITLE")
     show("credits_box", st == "TITLE")
     show("credits_text_btn", st == "TITLE")
+    show("settings_box", st == "TITLE")
+    show("settings_text", st == "TITLE")
+    show("training_box", st == "TITLE")
+    show("training_text", st == "TITLE")
+    show("exit_box", st == "TITLE")
+    show("exit_text", st == "TITLE")
 
     -- Credits group (also reused for the COMBOS panel)
     show("credits_title", st == "CREDITS" or st == "COMBOS")
@@ -544,6 +696,31 @@ local function render(self)
                           "craft1_box", "craft1_text", "craft2_box", "craft2_text",
                           "relic_title", "relic_1", "relic_2", "relic_3", "relic_4" }) do
         show(id, cauldron)
+    end
+
+    -- PAUSED group
+    for _, id in ipairs({ "paused_title", "resume_box", "resume_text",
+                          "paused_settings_box", "paused_settings_text",
+                          "quit_box", "quit_text", "quit_main_box", "quit_main_text" }) do
+        show(id, paused)
+    end
+
+    -- SETTINGS group
+    for _, id in ipairs({ "settings_title",
+                          "master_label", "master_value", "master_minus_box", "master_minus_text", "master_plus_box", "master_plus_text", "master_bar", "master_fill",
+                          "sfx_label", "sfx_value", "sfx_minus_box", "sfx_minus_text", "sfx_plus_box", "sfx_plus_text", "sfx_bar", "sfx_fill",
+                          "music_label", "music_value", "music_minus_box", "music_minus_text", "music_plus_box", "music_plus_text", "music_bar", "music_fill",
+                          "bindings_title",
+                          "row_up_label", "row_up_bind_box", "row_up_bind_text",
+                          "row_left_label", "row_left_bind_box", "row_left_bind_text",
+                          "row_down_label", "row_down_bind_box", "row_down_bind_text",
+                          "row_right_label", "row_right_bind_box", "row_right_bind_text",
+                          "row_cast1_label", "row_cast1_bind_box", "row_cast1_bind_text",
+                          "row_cast2_label", "row_cast2_bind_box", "row_cast2_bind_text",
+                          "row_interact_label", "row_interact_bind_box", "row_interact_bind_text",
+                          "row_dash_label", "row_dash_bind_box", "row_dash_bind_text",
+                          "capture_note", "settings_back_box", "settings_back_text" }) do
+        show(id, settings)
     end
 
     -- Death / win group
@@ -907,6 +1084,24 @@ local function on_click(self, x, y)
         if b then send(b.action) end
         return
     end
+    if st == "PAUSED" then
+        local b = layout.hit_enabled(st, x, y)
+        if b then send(b.action) end
+        return
+    end
+    if st == "SETTINGS" then
+        local b = layout.hit_enabled(st, x, y)
+        if b then
+            if b.field then
+                send(b.action, { field = b.field })
+            elseif b.bind_id then
+                send("bind", { id = b.bind_id })
+            else
+                send(b.action)
+            end
+        end
+        return
+    end
     if st == "HOME_EDIT" then
         local b = layout.hit_enabled(st, x, y)
         if b then
@@ -982,6 +1177,8 @@ function init(self)
     self.panel_credits = make_panel_nodes(layout.SCREENS.CREDITS.panel, hash("graphics"))
     self.panel_cauldron = make_panel_nodes(layout.SCREENS.CAULDRON.panel, hash("graphics"))
     self.panel_home_edit = make_panel_nodes(layout.SCREENS.HOME_EDIT.panel, hash("graphics"))
+    self.panel_paused = make_panel_nodes(layout.SCREENS.PAUSED.panel, hash("graphics"))
+    self.panel_settings = make_panel_nodes(layout.SCREENS.SETTINGS.panel, hash("graphics"))
     self.editor = nil
     self.prompt = nil
     apply_layout(self)
@@ -998,6 +1195,9 @@ function on_message(self, message_id, message, sender)
         self.s2 = message.s2
         self.s3 = message.s3
         self.dash_cd = message.dash_cd
+        self.volume = message.volume
+        self.bindings = message.bindings
+        self.capture = message.capture
         self.editor = message.editor
         self.prompt = message.prompt
         self.hover_x = message.hover_x or self.hover_x

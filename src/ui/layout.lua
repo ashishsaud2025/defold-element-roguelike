@@ -17,7 +17,7 @@ local M = {}
 
 -- ===== Design space & tuning =====
 M.DESIGN_W, M.DESIGN_H = 960, 640
-M.ALL_SCREENS = { "TITLE", "COMBOS", "CREDITS", "HOME", "HOME_EDIT", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN" }
+M.ALL_SCREENS = { "TITLE", "COMBOS", "CREDITS", "HOME", "HOME_EDIT", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN", "PAUSED", "SETTINGS" }
 -- Full-screen nodes (panel, flash_box) get this explicit rect: centre 480,320.
 M.FULL_SCREEN = { x = 0, y = 0, w = M.DESIGN_W, h = M.DESIGN_H }
 M.MARGIN = 16
@@ -148,14 +148,17 @@ M.VERSION = "v16"
 M.SCREENS = {
     TITLE = {
         buttons = {
-            M.button("start_box",   "start",   340, 262, 280, 56, "START",   true),
-            M.button("combos_box",  "combos",  340, 194, 280, 56, "COMBOS",  true),
-            M.button("credits_box", "credits", 340, 126, 280, 56, "CREDITS", true),
+            M.button("start_box",    "start",    340, 336, 280, 52, "START",         true),
+            M.button("combos_box",   "combos",   340, 276, 280, 52, "COMBOS",        true),
+            M.button("credits_box",  "credits",  340, 216, 280, 52, "CREDITS",       true),
+            M.button("settings_box", "settings_open", 340, 156, 280, 52, "SETTINGS", true),
+            M.button("training_box", "training", 340,  96, 280, 52, "TRAINING HALL", true),
+            M.button("exit_box",     "exit",     340,  36, 280, 52, "QUIT",          true),
         },
         texts = {
             title_text = { x = 480, y = 470, size = 36, color = "text",     text = "ELEMENT ROGUE", max_h = 46 },
-            subtitle_text = { x = 480, y = 380, size = 14, color = "text_dim", text = "Mix two elements. Pick a shape. Survive.", max_h = 24 },
-            version_text = { x = 900, y = 24,  size = 14, color = "text_dim", text = M.VERSION, max_h = 24 },
+            subtitle_text = { x = 480, y = 444, size = 14, color = "text_dim", text = "Mix two elements. Pick a shape. Survive.", max_h = 24 },
+            version_text = { x = 900, y = 10, size = 14, color = "text_dim", text = M.VERSION, max_h = 24 },
         },
         panel = M.panel(0, 0, M.DESIGN_W, M.DESIGN_H, nil),
     },
@@ -348,6 +351,84 @@ M.SCREENS = {
             overlay_hint = { x = 480, y = 180, size = 14, color = "text_dim", max_h = 24 },
         },
     },
+    PAUSED = {
+        panel = M.panel(240, 80, 480, 480, nil),
+        texts = {
+            paused_title = { x = 480, y = 500, size = 28, color = "text", max_h = 38 },
+            resume_text = { x = 480, y = 415, size = 15, color = "text", max_h = 26 },
+            paused_settings_text = { x = 480, y = 331, size = 15, color = "text", max_h = 26 },
+            quit_text = { x = 480, y = 247, size = 15, color = "text", max_h = 26 },
+            quit_main_text = { x = 480, y = 163, size = 15, color = "text_dim", max_h = 26 },
+        },
+        buttons = {
+            { id = "resume_box",     action = "resume",        label = "RESUME",        x = 270, y = 386, w = 420, h = 56, enabled = true, text = { x = 480, y = 414 } },
+            { id = "paused_settings_box", action = "settings_open", label = "SETTINGS", x = 270, y = 302, w = 420, h = 56, enabled = true, text = { x = 480, y = 330 } },
+            { id = "quit_box",       action = "quit",          label = "QUIT",          x = 270, y = 218, w = 420, h = 56, enabled = true, text = { x = 480, y = 246 } },
+            { id = "quit_main_box",  action = "quit_main",     label = "QUIT TO MENU",  x = 270, y = 134, w = 420, h = 56, enabled = true, text = { x = 480, y = 162 } },
+        },
+    },
+    SETTINGS = {
+        panel = M.panel(40, 20, 880, 600, "SETTINGS"),
+        texts = {
+            settings_title = { x = 480, y = 575, size = 24, color = "text", max_h = 30 },
+            master_label = { x = 80, y = 531, size = 14, color = "text", max_w = 100, max_h = 24 },
+            master_value = { x = 315, y = 531, size = 16, color = "text", max_w = 44, max_h = 24 },
+            master_minus_text = { x = 241, y = 531, size = 20, color = "text", max_h = 26 },
+            master_plus_text = { x = 401, y = 531, size = 20, color = "text", max_h = 26 },
+            sfx_label = { x = 80, y = 434, size = 14, color = "text", max_w = 100, max_h = 24 },
+            sfx_value = { x = 315, y = 434, size = 16, color = "text", max_w = 44, max_h = 24 },
+            sfx_minus_text = { x = 241, y = 434, size = 20, color = "text", max_h = 26 },
+            sfx_plus_text = { x = 401, y = 434, size = 20, color = "text", max_h = 26 },
+            music_label = { x = 80, y = 337, size = 14, color = "text", max_w = 100, max_h = 24 },
+            music_value = { x = 315, y = 337, size = 16, color = "text", max_w = 44, max_h = 24 },
+            music_minus_text = { x = 241, y = 337, size = 20, color = "text", max_h = 26 },
+            music_plus_text = { x = 401, y = 337, size = 20, color = "text", max_h = 26 },
+            bindings_title = { x = 480, y = 277, size = 16, color = "text_dim", max_h = 24 },
+            row_up_label = { x = 80, y = 234, size = 13, color = "text_dim", max_w = 130, max_h = 22 },
+            row_left_label = { x = 80, y = 180, size = 13, color = "text_dim", max_w = 130, max_h = 22 },
+            row_down_label = { x = 80, y = 126, size = 13, color = "text_dim", max_w = 130, max_h = 22 },
+            row_right_label = { x = 80, y = 72, size = 13, color = "text_dim", max_w = 130, max_h = 22 },
+            row_cast1_label = { x = 430, y = 234, size = 13, color = "text_dim", max_w = 160, max_h = 22 },
+            row_cast2_label = { x = 430, y = 180, size = 13, color = "text_dim", max_w = 160, max_h = 22 },
+            row_interact_label = { x = 430, y = 126, size = 13, color = "text_dim", max_w = 160, max_h = 22 },
+            row_dash_label = { x = 430, y = 72, size = 13, color = "text_dim", max_w = 160, max_h = 22 },
+            row_up_bind_text = { x = 300, y = 234, size = 15, color = "text", max_w = 120, max_h = 24 },
+            row_left_bind_text = { x = 300, y = 180, size = 15, color = "text", max_w = 120, max_h = 24 },
+            row_down_bind_text = { x = 300, y = 126, size = 15, color = "text", max_w = 120, max_h = 24 },
+            row_right_bind_text = { x = 300, y = 72, size = 15, color = "text", max_w = 120, max_h = 24 },
+            row_cast1_bind_text = { x = 650, y = 234, size = 15, color = "text", max_w = 120, max_h = 24 },
+            row_cast2_bind_text = { x = 650, y = 180, size = 15, color = "text", max_w = 120, max_h = 24 },
+            row_interact_bind_text = { x = 650, y = 126, size = 15, color = "text", max_w = 140, max_h = 24 },
+            row_dash_bind_text = { x = 650, y = 72, size = 15, color = "text", max_w = 160, max_h = 24 },
+            capture_note = { x = 480, y = 16, size = 11, color = "text_dim", max_w = 600, max_h = 16 },
+            settings_back_text = { x = 818, y = 575, size = 16, color = "text", max_h = 24 },
+        },
+        bars = {
+            master_bar = { x = 480, y = 524, w = 220, h = 14 },
+            master_fill = { x = 480, y = 524, w = 220, h = 14 },
+            sfx_bar = { x = 480, y = 427, w = 220, h = 14 },
+            sfx_fill = { x = 480, y = 427, w = 220, h = 14 },
+            music_bar = { x = 480, y = 330, w = 220, h = 14 },
+            music_fill = { x = 480, y = 330, w = 220, h = 14 },
+        },
+        buttons = {
+            { id = "master_minus_box", action = "volume_down", label = "-", x = 190, y = 508, w = 100, h = 48, enabled = true, field = "master", text = { x = 240, y = 532 } },
+            { id = "master_plus_box",  action = "volume_up",   label = "+", x = 350, y = 508, w = 100, h = 48, enabled = true, field = "master", text = { x = 400, y = 532 } },
+            { id = "sfx_minus_box",    action = "volume_down", label = "-", x = 190, y = 411, w = 100, h = 48, enabled = true, field = "sfx",    text = { x = 240, y = 435 } },
+            { id = "sfx_plus_box",     action = "volume_up",   label = "+", x = 350, y = 411, w = 100, h = 48, enabled = true, field = "sfx",    text = { x = 400, y = 435 } },
+            { id = "music_minus_box",  action = "volume_down", label = "-", x = 190, y = 314, w = 100, h = 48, enabled = true, field = "music",  text = { x = 240, y = 338 } },
+            { id = "music_plus_box",   action = "volume_up",   label = "+", x = 350, y = 314, w = 100, h = 48, enabled = true, field = "music",  text = { x = 400, y = 338 } },
+            { id = "row_up_bind_box",        action = "bind", label = "UP",      x = 240, y = 212, w = 140, h = 48, enabled = true, bind_id = "up",       text = { x = 310, y = 236 } },
+            { id = "row_left_bind_box",      action = "bind", label = "LEFT",    x = 240, y = 158, w = 140, h = 48, enabled = true, bind_id = "left",     text = { x = 310, y = 182 } },
+            { id = "row_down_bind_box",      action = "bind", label = "DOWN",    x = 240, y = 104, w = 140, h = 48, enabled = true, bind_id = "down",     text = { x = 310, y = 128 } },
+            { id = "row_right_bind_box",     action = "bind", label = "RIGHT",   x = 240, y = 50,  w = 140, h = 48, enabled = true, bind_id = "right",    text = { x = 310, y = 74 } },
+            { id = "row_cast1_bind_box",     action = "bind", label = "SPELL 1", x = 590, y = 212, w = 140, h = 48, enabled = true, bind_id = "cast1",    text = { x = 660, y = 236 } },
+            { id = "row_cast2_bind_box",     action = "bind", label = "SPELL 2", x = 590, y = 158, w = 140, h = 48, enabled = true, bind_id = "cast2",    text = { x = 660, y = 182 } },
+            { id = "row_interact_bind_box",  action = "bind", label = "USE",     x = 590, y = 104, w = 140, h = 48, enabled = true, bind_id = "interact", text = { x = 660, y = 128 } },
+            { id = "row_dash_bind_box",      action = "bind", label = "DASH",    x = 590, y = 50,  w = 140, h = 48, enabled = true, bind_id = "dash",     text = { x = 660, y = 74 } },
+            { id = "settings_back_box",     action = "back", label = "BACK",    x = 760, y = 550, w = 138, h = 48, enabled = true,                      text = { x = 829, y = 574 } },
+        },
+    },
 }
 -- Everything the screens draw is authored statically in main/hud.gui;
 -- this list is kept for future runtime-created ids (tools/validate_ui.py skips
@@ -529,6 +610,19 @@ end
 put_rect("craft1_box", CD.craft1_box)
 put_rect("craft2_box", CD.craft2_box)
 put_rect("done_box", CD.done_box)
+-- PAUSED: panel is authored; every button + its label are positioned
+local P = M.SCREENS.PAUSED
+for _, b in ipairs(P.buttons) do
+    put_rect(b.id, b)
+    put_center(b.id:gsub("_box$", "_text"), b.text.x, b.text.y)
+end
+-- SETTINGS: panel, volume bars, binding rows
+local S = M.SCREENS.SETTINGS
+for k, v in pairs(S.bars) do put_rect(k, v) end
+for _, b in ipairs(S.buttons) do
+    put_rect(b.id, b)
+    put_center(b.id:gsub("_box$", "_text"), b.text.x, b.text.y)
+end
 -- full-screen nodes
 put_rect("panel", M.FULL_SCREEN)
 put_rect("flash_box", M.FULL_SCREEN)

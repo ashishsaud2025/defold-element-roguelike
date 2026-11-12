@@ -3384,9 +3384,9 @@ for _, screen in ipairs({ "TITLE", "COMBOS", "CREDITS" }) do
   end
 end
 do -- registry hit test and ordering (z = reverse insertion)
-  local h = ui_layout.hit("TITLE", 480, 290)
+  local h = ui_layout.hit("TITLE", 480, 362)
   sf(h and h.id == "start_box", "layout: TITLE hit at START centre expected start_box, got " .. tostring(h and h.id))
-  sf(ui_layout.hit("TITLE", 480, 290) and ui_layout.hit("TITLE", 480, 290).action == "start",
+  sf(ui_layout.hit("TITLE", 480, 362) and ui_layout.hit("TITLE", 480, 362).action == "start",
      "layout: TITLE start_box hit did not return the start action")
   sf(ui_layout.hit("TITLE", 0, 0) == nil, "layout: TITLE hit at (0,0) expected nil")
   sf(ui_layout.hit("COMBOS", 480, 58) and ui_layout.hit("COMBOS", 480, 58).action == "back",

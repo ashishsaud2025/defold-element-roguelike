@@ -197,6 +197,13 @@ local function example_ui(state)
     toast = (state == "ROOM") and "BURNING MUD" or nil,
     hover_x = 480, hover_y = 320,
   }
+  if state == "PAUSED" then end
+  if state == "SETTINGS" then
+    ui.volume = { master = 0.7, sfx = 0.9, music = 0.5 }
+    ui.bindings = { up = "W", left = "A", down = "S", right = "D",
+                    cast1 = "Q", cast2 = "R", interact = "E", dash = "SPACE", basic = "LMB" }
+    ui.capture = nil
+  end
   if state == "HOME" then ui.prompt = "E - BEGIN RUN" end
   if state == "HOME_EDIT" then
     ui.editor = { tab = 1, ea_label = "FIRE", eb_label = "WATER", shape_label = "BOLT",
@@ -327,7 +334,7 @@ local function assert_geometry(state)
   end
 end
 
-local STATES = { "TITLE", "COMBOS", "CREDITS", "HOME", "HOME_EDIT", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN" }
+local STATES = { "TITLE", "COMBOS", "CREDITS", "HOME", "HOME_EDIT", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN", "PAUSED", "SETTINGS" }
 local function send_ui(state)
   on_message(self, hash("ui"), example_ui(state))
 end
@@ -429,6 +436,75 @@ do
      and sent_actions[#sent_actions].dir == 1, "HUD: quirk next payload")
   on_message(self, hash("click"), { x = 480, y = 68 })
   sf(sent_actions[#sent_actions].action == "done", "HUD: DONE click payload")
+end
+-- PAUSED: overlay covers the world; clicking RESUME / SETTINGS / QUIT fires the right actions
+do
+  on_message(self, hash("ui"), { state = "PAUSED", room = 4 })
+  for _, id in ipairs({ "paused_title", "resume_box", "paused_settings_box",
+                        "quit_box", "quit_main_box" }) do
+    sf(enabled(id), "HUD: PAUSED missing " .. id)
+  end
+  for _, x_action in ipairs({ { 480, 414, "resume" }, { 480, 330, "settings_open" },
+                               { 480, 246, "quit" }, { 480, 162, "quit_main" } }) do
+    sent_actions = {}
+    on_message(self, hash("click"), { x = x_action[1], y = x_action[2] })
+    sf(sent_actions[#sent_actions] and sent_actions[#sent_actions].action == x_action[3],
+       "HUD: PAUSED click y=" .. x_action[2] .. " did not fire " .. x_action[3])
+  end
+  sf(not enabled("hp_bg") and not enabled("s1_bg"), "HUD: combat HUD visible in PAUSED")
+end
+-- SETTINGS: volume buttons dispatch with .field, rows dispatch bind with .id, back quits
+do
+  on_message(self, hash("ui"), { state = "SETTINGS", room = 4,
+      volume = { master = 0.7, sfx = 0.9, music = 0.5 },
+      bindings = { up = "W", left = "A", down = "S", right = "D",
+                   cast1 = "Q", cast2 = "R", interact = "E", dash = "SPACE", basic = "LMB" },
+      capture = nil })
+  for _, id in ipairs({ "settings_title", "master_label", "master_value",
+                        "master_minus_box", "master_plus_box", "sfx_label", "music_label",
+                        "bindings_title", "row_up_label", "row_up_bind_box",
+                        "row_up_bind_text", "row_dash_label", "row_dash_bind_box",
+                        "capture_note", "settings_back_box" }) do
+    sf(enabled(id), "HUD: SETTINGS missing " .. id)
+  end
+  -- volume readout
+  sf(text_of("master_value") == "0.7", "HUD: master volume text must show the sent volume")
+  sf(text_of("sfx_value") == "0.9", "HUD: sfx volume text must show the sent volume")
+  sf(text_of("music_value") == "0.5", "HUD: music volume text must show the sent volume")
+  -- plus/minus clicks dispatch with the matching field
+  sent_actions = {}
+  on_message(self, hash("click"), { x = 400, y = 532 })          -- master plus
+  sf(sent_actions[#sent_actions].action == "volume_up" and sent_actions[#sent_actions].field == "master",
+     "HUD: master plus click payload")
+  sent_actions = {}
+  on_message(self, hash("click"), { x = 240, y = 532 })          -- master minus
+  sf(sent_actions[#sent_actions].action == "volume_down" and sent_actions[#sent_actions].field == "master",
+     "HUD: master minus click payload")
+  sent_actions = {}
+  on_message(self, hash("click"), { x = 400, y = 435 })          -- sfx plus
+  sf(sent_actions[#sent_actions].action == "volume_up" and sent_actions[#sent_actions].field == "sfx",
+     "HUD: sfx plus click payload")
+  sent_actions = {}
+  on_message(self, hash("click"), { x = 400, y = 338 })          -- music plus
+  sf(sent_actions[#sent_actions].action == "volume_up" and sent_actions[#sent_actions].field == "music",
+     "HUD: music plus click payload")
+  -- binding rows dispatch bind + id
+  sent_actions = {}
+  on_message(self, hash("click"), { x = 310, y = 236 })          -- row_up_bind_box
+  sf(sent_actions[#sent_actions].action == "bind" and sent_actions[#sent_actions].id == "up",
+     "HUD: row_up click must send bind/up")
+  sent_actions = {}
+  on_message(self, hash("click"), { x = 660, y = 236 })          -- row_cast1_bind_box
+  sf(sent_actions[#sent_actions].action == "bind" and sent_actions[#sent_actions].id == "cast1",
+     "HUD: row_cast1 click must send bind/cast1")
+  sent_actions = {}
+  on_message(self, hash("click"), { x = 660, y = 74 })           -- row_dash_bind_box
+  sf(sent_actions[#sent_actions].action == "bind" and sent_actions[#sent_actions].id == "dash",
+     "HUD: row_dash click must send bind/dash")
+  -- back button quits
+  sent_actions = {}
+  on_message(self, hash("click"), { x = 829, y = 575 })
+  sf(sent_actions[#sent_actions].action == "back", "HUD: settings back did not send back")
 end
 
 -- ===== Content shown comes from data / relics.DEFS =====

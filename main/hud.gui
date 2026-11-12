@@ -52,7 +52,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 280.0 y: 56.0 }
+  size { x: 280.0 y: 52.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "start_box"
@@ -72,7 +72,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 280.0 y: 56.0 }
+  size { x: 280.0 y: 52.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "combos_box"
@@ -92,7 +92,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 280.0 y: 56.0 }
+  size { x: 280.0 y: 52.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "credits_box"
@@ -1547,6 +1547,686 @@ nodes {
   texture: "ui/dash_fill"
   id: "dash_fill"
   layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "PAUSED"
+  font: "text"
+  id: "paused_title"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 420.0 y: 56.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "resume_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "RESUME"
+  font: "text"
+  id: "resume_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 420.0 y: 56.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "paused_settings_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "SETTINGS"
+  font: "text"
+  id: "paused_settings_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 420.0 y: 56.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "quit_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "QUIT"
+  font: "text"
+  id: "quit_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 420.0 y: 56.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "quit_main_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "QUIT TO MENU"
+  font: "text"
+  id: "quit_main_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "SETTINGS"
+  font: "text"
+  id: "settings_title"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "MASTER"
+  font: "text"
+  id: "master_label"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "1.00"
+  font: "text"
+  id: "master_value"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 100.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "master_minus_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "-"
+  font: "text"
+  id: "master_minus_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 100.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "master_plus_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "+"
+  font: "text"
+  id: "master_plus_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 220.0 y: 14.0 }
+  type: TYPE_BOX
+  texture: "ui/dash_bg"
+  id: "master_bar"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 220.0 y: 14.0 }
+  type: TYPE_BOX
+  texture: "ui/dash_fill"
+  id: "master_fill"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "SFX"
+  font: "text"
+  id: "sfx_label"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "1.00"
+  font: "text"
+  id: "sfx_value"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 100.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "sfx_minus_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "-"
+  font: "text"
+  id: "sfx_minus_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 100.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "sfx_plus_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "+"
+  font: "text"
+  id: "sfx_plus_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 220.0 y: 14.0 }
+  type: TYPE_BOX
+  texture: "ui/dash_bg"
+  id: "sfx_bar"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 220.0 y: 14.0 }
+  type: TYPE_BOX
+  texture: "ui/dash_fill"
+  id: "sfx_fill"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "MUSIC"
+  font: "text"
+  id: "music_label"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "0.70"
+  font: "text"
+  id: "music_value"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 100.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "music_minus_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "-"
+  font: "text"
+  id: "music_minus_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 100.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "music_plus_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "+"
+  font: "text"
+  id: "music_plus_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 220.0 y: 14.0 }
+  type: TYPE_BOX
+  texture: "ui/dash_bg"
+  id: "music_bar"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 220.0 y: 14.0 }
+  type: TYPE_BOX
+  texture: "ui/dash_fill"
+  id: "music_fill"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "KEY BINDINGS"
+  font: "text"
+  id: "bindings_title"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "MOVE UP"
+  font: "text"
+  id: "row_up_label"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 140.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "row_up_bind_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "W"
+  font: "text"
+  id: "row_up_bind_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "MOVE LEFT"
+  font: "text"
+  id: "row_left_label"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 140.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "row_left_bind_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "A"
+  font: "text"
+  id: "row_left_bind_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "MOVE DOWN"
+  font: "text"
+  id: "row_down_label"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 140.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "row_down_bind_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "S"
+  font: "text"
+  id: "row_down_bind_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "MOVE RIGHT"
+  font: "text"
+  id: "row_right_label"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 140.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "row_right_bind_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "D"
+  font: "text"
+  id: "row_right_bind_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "SPELL 1"
+  font: "text"
+  id: "row_cast1_label"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 140.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "row_cast1_bind_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "Q"
+  font: "text"
+  id: "row_cast1_bind_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "SPELL 2"
+  font: "text"
+  id: "row_cast2_label"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 140.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "row_cast2_bind_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "R"
+  font: "text"
+  id: "row_cast2_bind_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "INTERACT"
+  font: "text"
+  id: "row_interact_label"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 140.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "row_interact_bind_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "E"
+  font: "text"
+  id: "row_interact_bind_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "DASH"
+  font: "text"
+  id: "row_dash_label"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 140.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "row_dash_bind_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "SPACE"
+  font: "text"
+  id: "row_dash_bind_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "click a key row to rebind - duplicates reassign the key"
+  font: "text"
+  id: "capture_note"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 138.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "settings_back_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "BACK"
+  font: "text"
+  id: "settings_back_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 280.0 y: 52.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "settings_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "SETTINGS"
+  font: "text"
+  id: "settings_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 280.0 y: 52.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "training_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "TRAINING HALL"
+  font: "text"
+  id: "training_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 280.0 y: 52.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "exit_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "QUIT"
+  font: "text"
+  id: "exit_text"
+  layer: "text"
   inherit_alpha: true
 }
 
