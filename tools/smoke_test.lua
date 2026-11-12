@@ -4226,6 +4226,41 @@ do
   sf(self.state ~= "PAUSED", "pause: ESC paused during capture (should only cancel the capture)")
 end
 
+-- ===== Settings: volume rows (live + clamped), binding rows, back, exit =====
+do
+  local sfx = require "src.core.sfx"
+
+  self.state = "TITLE"
+  ui({ action = "settings_open" })
+  sf(self.state == "SETTINGS", "settings: TITLE did not open SETTINGS")
+  ui({ action = "back" })
+  sf(self.state == "TITLE", "settings: back from TITLE did not return to TITLE")
+  ui({ action = "settings_open" })
+  for i = 1, 20 do ui({ action = "volume_up", field = "music" }) end
+  sf(math.abs(sfx.BUS.music - 1.0) < 0.01, "settings: music volume did not clamp at 1.0")
+  for i = 1, 20 do ui({ action = "volume_down", field = "music" }) end
+  sf(math.abs(sfx.BUS.music - 0) < 0.01, "settings: music volume did not clamp at 0")
+  ui({ action = "volume_down", field = "master" })
+  sf(math.abs(sfx.BUS.master - 0.9) < 0.01, "settings: master step is not 0.1")
+  ui({ action = "volume_down", field = "master" })
+  sf(math.abs(sfx.BUS.master - 0.8) < 0.01, "settings: second master step is not 0.1")
+  -- back returns to where we came from
+  ui({ action = "back" })
+  sf(self.state == "TITLE", "settings: back from TITLE returned the wrong state")
+  -- PAUSED route
+  begin_room()
+  act("pause", true, false)
+  ui({ action = "settings_open" })
+  sf(self.state == "SETTINGS", "settings: pause->settings did not open SETTINGS")
+  ui({ action = "back" })
+  sf(self.state == "PAUSED", "settings: back from PAUSED did not return to PAUSED")
+  -- EXIT from TITLE routes to the sys.exit stub, never to reset_run
+  self.state = "TITLE"
+  local exits_before = sys_exit_calls or 0
+  ui({ action = "exit" })
+  sf(sys_exit_calls == exits_before + 1, "exit: TITLE quit did not route to the sys.exit stub")
+end
+
 -- ===== HUD message budget: every state's ui message must fit the 2 KB msg.post limit =====
 -- Force each screen state with the heaviest payload the game can carry, then
 -- check the posted message. ui_seen/ui_worst were recorded by the msg.post stub.

@@ -1509,13 +1509,6 @@ local function handle_ui_action(self, msg)
             self.bind[msg.id], self.bind_hash[msg.id] = msg.key, hash(msg.key)
             self.capture_pending = nil
         end
-    elseif action == "back" then
-        if self.state == "CREDITS" or self.state == "COMBOS" then
-            self.state = "TITLE"
-            sfx.play("state_title")
-            music.set_state("TITLE")
-            print("State: TITLE")
-        end
     elseif action == "reward_pick" then
         if self.state == "REWARD" and type(msg.index) == "number" then
             local opt = self.reward_options and self.reward_options[msg.index]
@@ -1568,11 +1561,31 @@ local function handle_ui_action(self, msg)
     elseif action == "resume" then
         if self.state == "PAUSED" then self.state = "ROOM"; print("State: ROOM") end
     elseif action == "settings_open" then
-        if self.state == "PAUSED" or self.state == "TITLE" then
+        if self.state == "TITLE" or self.state == "PAUSED" then
             self.settings_from = self.state
             self.state = "SETTINGS"
             music.set_state("SETTINGS")
             print("State: SETTINGS")
+        end
+    elseif action == "back" then
+        if self.state == "SETTINGS" then
+            self.state = self.settings_from or "TITLE"
+            print("State: " .. self.state)
+        elseif self.state == "CREDITS" or self.state == "COMBOS" then
+            self.state = "TITLE"
+            sfx.play("state_title")
+            music.set_state("TITLE")
+            print("State: TITLE")
+        end
+    elseif action == "exit" then
+        if self.state == "TITLE" or self.state == "PAUSED" or self.state == "SETTINGS" then
+            sys.exit(0)
+        end
+    elseif action == "volume_down" or action == "volume_up" then
+        local field = msg.field
+        if field == "master" or field == "sfx" or field == "music" then
+            local delta = (action == "volume_up") and 0.1 or -0.1
+            sfx.BUS[field] = math.min(1.0, math.max(0.0, (sfx.BUS[field] or 0) + delta))
         end
     elseif action == "quit" then
         if self.state == "PAUSED" then sys.exit(0) end
