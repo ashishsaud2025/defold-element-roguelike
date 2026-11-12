@@ -82,6 +82,7 @@ msg = { url = function(sock, path, frag) return {path=path, frag=frag} end, post
                   s1        = { ROOM = true, DEAD = true, WIN = true },
                   s2        = { ROOM = true, DEAD = true, WIN = true },
                   s3        = { ROOM = true, DEAD = true, WIN = true },
+                  prompt    = { HOME = true },
                   credits   = { CREDITS = true } }
   for field, ok_states in pairs(gated) do
     if message[field] ~= nil and not ok_states[st] then
@@ -203,9 +204,13 @@ local function check_walls()
     if e.alive and e.active and level_mod.blocked(self.level, e.x, e.y, e.radius*0.4) then wall_viol = wall_viol + 1; wall_first = wall_first or (e.type.." at "..math.floor(e.x)..","..math.floor(e.y).." room "..self.room_number) end
   end
 end
+local function start_run()
+  ui({ action = "start" })      -- TITLE -> HOME (through the menu flow)
+  ui({ action = "begin_run" })  -- door -> ROOM 1
+end
 local stats = { rooms=0, wins=0, deaths=0, maxlive=0, maxparticles=0, casts=0 }
 local function play_run(allow_death, label)
-  ui({action="start"}); ui({action="pick", element="fire"}); ui({action="pick", element=ELEM[math.random(4)]}); ui({action="enter"})
+  start_run()
   local guard = 0
   while guard < 60*60*10 do
     guard = guard + 1
@@ -255,7 +260,7 @@ results[#results+1] = play_run(false)
 results[#results+1] = play_run(false)
 -- death path: make the player fragile
 for i = 1, 3 do
-  ui({action="start"}); ui({action="pick", element="fire"}); ui({action="pick", element="fire"}); ui({action="enter"})
+  start_run()
   self.player.hp = 1; self.player.max_hp = 1
   local g=0 while self.state ~= "DEAD" and g < 60*60 do g=g+1 frame() end
   results[#results+1] = self.state
@@ -269,7 +274,7 @@ for k = 1, 9 do
   -- Pathing must measure a stationary dummy, so reset input inherited from the fuzz.
   self.keys = { up = false, left = false, down = false, right = false }
   self.dash_t, self.dash_cd = 0, 0
-  ui({action="start"}); ui({action="pick", element="fire"}); ui({action="pick", element="fire"}); ui({action="enter"})
+  start_run()
   self.room_number = k - 1; self.state = "CAULDRON"
   ui({action="done"})
   local seen, total, unreached = {}, 0, {}
@@ -338,7 +343,7 @@ local function expect_for(skill)
   return want
 end
 for ri, r in ipairs(recipes) do
-  ui({action="start"}); ui({action="pick", element="fire"}); ui({action="pick", element="fire"}); ui({action="enter"})
+  start_run()
   self.player.hp = self.player.max_hp
   local sk = skillgen.makeSkill(r[1], r[2], r[3])
   self.slot1 = sk; self.slot1_cooldown = 0; self.slot1_cd_max = sk.cooldown
@@ -392,10 +397,7 @@ local function begin_room(seed)
   if seed then math.randomseed(seed) end
   self.state = "DEAD"                        -- force reset_run from any prior state
   ui({ action = "continue" })
-  ui({ action = "start" })
-  ui({ action = "pick", element = "fire" })
-  ui({ action = "pick", element = "fire" })
-  ui({ action = "enter" })
+  start_run()
   self.player.hp, self.player.max_hp = 100, 100
   self.player.alive, self.player.invuln = true, 0
   -- The fuzz play_run leaves movement keys randomly pressed; nothing releases them.
@@ -3633,7 +3635,7 @@ do
   do
     begin_room()
     self.room_flags = { heart = true, echo = true }
-    ui({ action = "pick", element = "fire" })   -- begin_room already picked; harmless extra
+    -- (begin_room no longer picks elements; the slot-1 skill comes from the default loadout)
     begin_room()
     sf((self.room_flags or {}).heart == nil and (self.room_flags or {}).echo == nil,
       "reset: per-room announced flags cleared on room transition")
@@ -3971,20 +3973,20 @@ do
      "input: LMB is not the basic action")
   sf(bind:find("MOUSE_BUTTON_2", 1, true) == nil,
      "input: RMB must stay unbound")
-  -- Q and R cast their slots in ROOM
+  -- Q and R cast their slots in ROOM (split_in_two fires two bolts, so compare relatively)
   if begin_room() then
     local b0 = #self.bolts
     self.slot1_cooldown = 0
     act("cast1", true, false); act("cast1", false, true)
-    sf(#self.bolts == b0 + 1, "input: cast1 (Q) did not cast slot 1")
+    sf(#self.bolts > b0, "input: cast1 (Q) did not cast slot 1")
     local b1 = #self.bolts
     self.slot2_cooldown = 0
     act("cast2", true, false); act("cast2", false, true)
-    sf(#self.bolts == b1 + 1, "input: cast2 (R) did not cast slot 2")
+    sf(#self.bolts > b1, "input: cast2 (R) did not cast slot 2")
     local b2 = #self.bolts
     self.slot3_cooldown = 0
     act("basic", true, false); act("basic", false, true)
-    sf(#self.bolts == b2 + 1, "input: basic (LMB) did not cast slot 3")
+    sf(#self.bolts > b2, "input: basic (LMB) did not cast slot 3")
   end
   -- LMB outside ROOM forwards a click instead of casting
   self.state = "TITLE"
@@ -4007,6 +4009,73 @@ do
   sf(self.slot1.compound == c2, "input: cast1 acted outside ROOM")
 end
 
+-- ===== Home: TITLE -> HOME, stations, door starts the run =====
+do
+  local home_mod = require "src.levels.home"
+  self.loadout = nil
+  self.state = "DEAD"
+  ui({ action = "continue" })                      -- clean reset; clears world, back to TITLE
+  sf(self.state == "TITLE", "home: continue did not return to TITLE")
+  self.state = "TITLE"
+  ui({ action = "start" })
+  sf(self.state == "HOME", "home: start did not enter HOME (got " .. tostring(self.state) .. ")")
+  sf(self.level and self.level.name == "Lantern Hall", "home: wrong level loaded")
+  sf(self.home_altar_pos and self.home_door_pos, "home: station positions missing")
+  sf(self.level_tiles and #self.level_tiles > 0, "home: no tiles were built")
+  sf(self.home_level == self.level, "home: level handle not recorded")
+  sf(self.home_focus == nil, "home: focus should start unset")
+  local function stand_at(c, r)
+    local px, py = level_mod.cell_center(c, r)
+    self.player_pos.x, self.player_pos.y = px, py
+  end
+  stand_at(home_mod.altar.c, home_mod.altar.r + 1)
+  frame()
+  sf(self.home_focus == "altar", "home: altar focus not detected")
+  sf((self.home_prompt or ""):find("EDIT") ~= nil, "home: altar prompt lacks EDIT")
+  stand_at(home_mod.door.c, home_mod.door.r + 1)
+  frame()
+  sf(self.home_focus == "door", "home: door focus not detected")
+  sf((self.home_prompt or ""):find("BEGIN") ~= nil, "home: door prompt lacks BEGIN")
+  stand_at(home_mod.altar.c, home_mod.altar.r + 3)
+  frame()
+  sf(self.home_focus == nil, "home: focus radius is too wide")
+  -- the door starts the run
+  stand_at(home_mod.door.c, home_mod.door.r + 1)
+  frame()
+  act("interact", true, false); act("interact", false, true)
+  sf(self.state == "ROOM", "home: door did not start the run")
+  sf(self.room_number == 1, "home: door did not enter room 1")
+  sf(self.slot3.quirk_id == self.loadout[3].quirk_id, "home: slot 3 quirk not applied")
+  sf(self.slot1.quirk_id == self.loadout[1].quirk_id, "home: slot 1 quirk not applied")
+  sf(self.slot2.quirk_id == self.loadout[2].quirk_id, "home: slot 2 quirk not applied")
+  local ea, eb = self.loadout[3].ea, self.loadout[3].eb
+  if ea == eb then
+    sf(self.inventory.elements[ea] == 2, "home: starter element doubled (same element twice), got " .. tostring(self.inventory.elements[ea]))
+  else
+    sf(self.inventory.elements[ea] == 1, "home: starter element A missing")
+    sf(self.inventory.elements[eb] == 1, "home: starter element B missing")
+  end
+  sf(self.inventory.shapes.projectile == 1, "home: starter Bolt missing")
+  -- no casting in HOME
+  self.state = "HOME"
+  local b = #self.bolts
+  act("basic", true, false); act("basic", false, true)
+  sf(#self.bolts == b, "home: LMB cast a spell in HOME")
+  -- the loadout survives death -> TITLE -> HOME -> door
+  local chosen = self.loadout[2].quirk_id
+  self.state = "DEAD"; ui({ action = "continue" })
+  sf(self.state == "TITLE", "home: continue did not return to TITLE")
+  sf(self.loadout[2].quirk_id == chosen, "home: reset_run cleared the loadout")
+  ui({ action = "start" })
+  sf(self.state == "HOME", "home: start did not re-enter HOME")
+  ui({ action = "begin_run" })
+  sf(self.state == "ROOM", "home: begin_run did not enter ROOM")
+  sf(self.slot2.quirk_id == chosen, "home: replayed run lost the slot quirk")
+  frame()                          -- flush a ROOM ui message
+  sf((ui_seen.HOME or 0) >= 1, "ui msg: no ui message posted in state HOME")
+  sf(last_ui and last_ui.prompt == nil, "ui msg: prompt leaked outside HOME")
+end
+
 -- ===== HUD message budget: every state's ui message must fit the 2 KB msg.post limit =====
 -- Force each screen state with the heaviest payload the game can carry, then
 -- check the posted message. ui_seen/ui_worst were recorded by the msg.post stub.
@@ -4024,7 +4093,7 @@ do
   force("TITLE", function() self.flash = 0 end)
   force("COMBOS", function() end)
   force("CREDITS", function() end)
-  force("PICK_START", function() self.picks = { "fire", "water" } end)
+  force("HOME", function() self.loadout_tab = 1 end)
   force("ROOM", function()
     self.inventory = big_inventory
     self.relics = four_relics
@@ -4051,7 +4120,7 @@ do
   end)
   force("DEAD", function() self.relics = four_relics end)
   force("WIN", function() self.relics = four_relics end)
-  local ORDER = { "TITLE", "COMBOS", "CREDITS", "PICK_START", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN" }
+  local ORDER = { "TITLE", "COMBOS", "CREDITS", "HOME", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN" }
   for _, st in ipairs(ORDER) do
     sf((ui_seen[st] or 0) >= 1, "ui msg: no ui message posted in state " .. st)
     local w = ui_worst[st] or 0
