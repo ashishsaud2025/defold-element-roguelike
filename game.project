@@ -39,3 +39,27 @@ max_sound_data = 128
 max_sound_buffers = 64
 max_sound_instances = 64
 max_component_count = 128
+
+[windows]
+app_icon = /assets/icons/app.ico
+
+[osx]
+app_icon = /assets/icons/app.icns
+
+[android]
+package = com.elementroguelike.game
+version_code = 1
+min_sdk_version = 21
+target_sdk_version = 34
+app_icon_36 = /assets/icons/android_36.png
+app_icon_48 = /assets/icons/android_48.png
+app_icon_72 = /assets/icons/android_72.png
+app_icon_96 = /assets/icons/android_96.png
+app_icon_144 = /assets/icons/android_144.png
+app_icon_192 = /assets/icons/android_192.png
+immersive_mode = 1
+debuggable = 1
+
+[html5]
+splash_image = /assets/icons/splash.png
+max_pixel_ratio = 1.5

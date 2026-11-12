@@ -47,9 +47,6 @@ images {
   image: "/assets/art/particles/particle_trace.png"
 }
 images {
-  image: "/assets/art/icons/icon_player.png"
-}
-images {
   image: "/assets/art/icons/icon_rune.png"
 }
 images {

@@ -366,3 +366,7 @@ key_trigger {
   input: KEY_LALT
   action: "k_lalt"
 }
+key_trigger {
+  input: KEY_SPACE
+  action: "k_space"
+}

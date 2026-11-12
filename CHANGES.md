@@ -1,3 +1,67 @@
+# Unreleased - floating damage numbers, element colors, status labels, TUTORIAL screen (v20 candidate), release packaging
+
+Working tree on `settings-pause-training`; nothing here has been verified on screen until the user confirms. `TUNING.DEBUG` is now `false` in the shipped source (the smoke harness forces it back on for its own checks).
+
+- **Credits audit + app icon**: CREDITS entries cross-checked against the atlas/code (every entry was in use). `icon_player.png` (credited as lorc/wizard-staff) was unused — removed from the atlas and from credits (file kept on disk). `bed.png`/`chest.png` (16x16, Tiny Dungeon style) attributed to Tiny Dungeon (CC0, style match only — not byte-verified; see CREDITS.md). Name line is now "Code and game design: Ashish Saud and Avinash Joshi" in both CREDITS.md and `src/core/credits.lua`.
+- **App icon is AI-generated**: the bundled icon art (`downloads/ai_gen_icon.png`) is AI-generated pixel art — noted in CREDITS.md and on the in-game CREDITS screen. All platform icons rebuilt from it (1024 master, Windows BMP `app.ico`, macOS `app.icns` ic07-ic10, Android 36-192 PNGs, HTML5 splash).
+
+- **Floating damage numbers near enemies, fade away** (`game.script` posts
+  `msg.post("/hud#gui", "damage_number", {x, y, amount, r, g, b})`; HUD creates a dynamic text node
+  in the `"text"` layer, rises 80 px/s, fades, deletes after 1.2 s). Earlier bug: node was created
+  with `z = 10`, outside the GUI ortho projection's `-1..1` clip range — verbs outside it are clipped
+  by the GPU regardless of depth/stencil state. `z = 0` fixes it; draw order rides the layer like
+  authored nodes.
+- **Element-colored damage numbers**: color comes from `skill.color` (the same two-element average
+  `skillgen` tints spells with). Burn ticks post their own fire-colored numbers every second.
+- **Floating status labels** (`status_label` message, shared `spawn_floater` with damage numbers):
+  fresh applications only — `PUSH →`, `PULL ←`, `STUN!`, `CONFUSED`, `BURN!`, `SLOWED`,
+  `ROOTED!`, `BLINDED!`, `SPREAD!`, colored from `STATUS_DATA`. Wall-slam stun (charger)
+  goes through the same `apply_statuses` funnel now. `hide_self` is player-side and not labeled.
+- **Enemy bolts are no longer a red circle**: core FX.core sprite tinted magenta
+  (`1.0, 0.4, 0.72`), an additive magenta halo from `#fx_factory` (FX.glow, scale 0.85),
+  and a violet ember trail (`spark`, 0.3 life, cosmetic RNG only, every 0.12 s).
+  Glow follows the bolt each frame and is deleted on all four exit paths.
+- **TUTORIAL button on TITLE** — new full-screen reference panel (same `back_box`/`credits_*` nodes
+  as CREDITS/COMBOS) listing the four elements + every status effect with exact numbers from
+  `STATUS_DATA` (`src/core/tutorial.lua` — pure, checked by validate_ui/hud harness). TITLE buttons
+  re-spaced to 7. `hud.gui` 222 → 256 nodes, `ALL_NODES` matches, `hud_test` exercises the state.
+- Dash: `input/game.input_binding` gained `KEY_SPACE → k_space` (required by the rebind engine).
+- **Spell slot icons were permanently stale** (bottom-left S1/S2/S3): (a) the HUD looked up
+  `SHAPE_ICON[d.shape]` with the display name ("Bolt"/"Pool"...), but `SHAPE_ICON` is keyed by
+  shape key — always fell back to `particle_flare`; (b) `craft_skill` re-equipped the skill but
+  never refreshed the `slotN_elem_a/…_b/_shape` mirrors the HUD reads, so elements/icons never
+  changed after cauldron crafts. Both fixed; smoke asserts the mirrors. All 5 bundles rebuilt.
+- **Cauldron crash fixed**: `loop_flipbook` passed an explicit `nil` as the optional 4th argument
+  (`play_properties`) to `gui.play_flipbook`; the engine binding rejects it ("table expected, got
+  nil") and aborts `render()` mid-way every cauldron entry (the ERROR fired once per room clear at
+  the preview headflame). Playback props are now only passed when set. The HUD harness stub
+  (`tools/hud_test.lua`) now mirrors the engine's rejection, proven to FAIL on the old pattern.
+- All known-failing items unchanged: pathing section vacuous, golden `WIN,WIN,DEAD,DEAD,DEAD`.
+
+- **Installer assets** (original art, drawn by `tools/make_icon.py` with flat shapes — no
+  third-party artwork): `app_master.png` (1024), `app.ico` (16..256), `app.icns` (128/256/512/1024),
+  Android 36..192 PNGs, `splash.png` for HTML5 (cauldron + four element orbs on deep indigo).
+  `game.project` gained `[windows]`/`[macos]`/`[android]`/`[html5]` sections: app icons,
+  `com.elementroguelike.game`, version_code 1, min_sdk 21, target_sdk 34, immersive mode,
+  debuggable 1 (debug APK), `html5.splash_image`, `html5.max_pixel_ratio = 1.5`.
+  `html5.scale_mode` left unset (no verified spelling for the enum; the manual documents it as an
+  editor dropdown — check the editor's HTML5 section). `[project] version` still 0.1.
+- **TUNING.DEBUG = false** (`src/core/data.lua`) for all bundles; the smoke harness forces it back
+  on for its own programme-driven checks (`tools/smoke_test.lua`). All tools green.
+- **Five platform bundles built with Bob 1.14.1** (same engine sha as the editor):
+  Windows `ElementRoguelike.exe` (release, symbols, ~8.1 MB exe), Linux `.x86_64` (release,
+  symbols ~6 MB), macOS universal `.app` (x86_64 + arm64, universal lipo merge; signed NOTHING —
+  Gatekeeper will ask for right-click-Open), Android debug APK `com.elementroguelike.game` (21.4 MB,
+  self-signed debug cert; landscape; NOT for Play), HTML5 wasm (verified loading at
+  localhost:8123: zero console errors, canvas 1200×800 @ CSS 960×640). iOS skipped (needs a Mac +
+  Apple Developer account). Output `bundles/` (gitignored). Every Bob exit code was 1 with only the
+  `Failed to clean up temp directory` warning — Bob's own scratch dir; bundles themselves are
+  complete. Windows `.ico` needed classic BMP entries (PIL's PNG-compressed icons were rejected:
+  "8 icon(s) not replaced" — fixed by `tools/make_ico.py`); macOS icon key is `[osx] app_icon`
+  (manual: `osx.bundle_name`/`osx.bundle_version`), not `[macos]`.
+  Not runtime-verified: exe/.app/.apk not launched on device; user must verify each by hand.
+  `[android]` manifest: userLandscape locked, appCategory game, targetSdk 34.
+
 # Pause, Settings, Rebind and Training Hall in the menu (v19)
 
 Plan: `docs/superpowers/plans/2026-11-12-pause-settings-training.md` (spec: design doc, approved).

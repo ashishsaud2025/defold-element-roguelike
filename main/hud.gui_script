@@ -8,6 +8,7 @@
 local data = require "src.core.data"
 local art_mod = require "src.core.art"
 local combos = require "src.core.combos"
+local tutorial = require "src.core.tutorial"
 local credits_mod = require "src.core.credits"
 local relics_mod = require "src.core.relics"
 local layout = require "src.ui.layout"
@@ -49,6 +50,7 @@ local C = {
 local ALL_NODES = {
     "panel", "title_text", "subtitle_text", "start_box", "start_text",
     "combos_box", "combos_text",
+    "tutorial_box", "tutorial_text",
     "credits_box", "credits_text_btn", "credits_title", "credits_body",
     "back_box", "back_text", "version_text",
     "loadout_title", "loadout_preview", "loadout_quirk_desc",
@@ -188,9 +190,12 @@ end
 local function loop_flipbook(id, anim, offset)
     local node = n(id)
     if not node then return end
-    gui.play_flipbook(node, hash(anim), function(_, nd)
-        gui.play_flipbook(nd, hash(anim), function() end)
-    end, offset and { offset = offset } or nil)
+    local restart = function(_, nd) gui.play_flipbook(nd, hash(anim), function() end) end
+    if offset then
+        gui.play_flipbook(node, hash(anim), restart, { offset = offset })
+    else
+        gui.play_flipbook(node, hash(anim), restart)
+    end
 end
 
 local CD_GOLD  = vmath.vector4(1.00, 0.82, 0.30, 1.0)
@@ -284,7 +289,7 @@ local function apply_layout(self)
     pos("version_text", T.version_text.x, T.version_text.y)
     text("version_text", T.version_text.text)
     color("version_text", pv(layout.palette.text_dim))
-    local TITLE_TEXT = { start_box = "start_text", combos_box = "combos_text", credits_box = "credits_text_btn",
+    local TITLE_TEXT = { start_box = "start_text", tutorial_box = "tutorial_text", combos_box = "combos_text", credits_box = "credits_text_btn",
                          settings_box = "settings_text", training_box = "training_text", exit_box = "exit_text" }
     for _, b in ipairs(layout.SCREENS.TITLE.buttons) do
         local text_id = TITLE_TEXT[b.id]
@@ -361,8 +366,8 @@ local function apply_layout(self)
         end
     end
 
-    -- COMBOS / CREDITS share the panel component
-    for _, screen in ipairs({ "COMBOS", "CREDITS" }) do
+    -- COMBOS / CREDITS / TUTORIAL share the panel component
+    for _, screen in ipairs({ "COMBOS", "CREDITS", "TUTORIAL" }) do
         local S = layout.SCREENS[screen]
         pos("credits_title", S.texts.credits_title.x, S.texts.credits_title.y)
         color("credits_title", pv(layout.palette.text))
@@ -554,7 +559,7 @@ local function render(self)
     local name_input = (st == "NAME_INPUT")
 
     -- Panel
-    show("panel", st == "TITLE" or st == "COMBOS" or st == "CREDITS" or over or reward or editor or paused or settings or story or roll or name_input)
+    show("panel", st == "TITLE" or st == "COMBOS" or st == "CREDITS" or st == "TUTORIAL" or over or reward or editor or paused or settings or story or roll or name_input)
     color("panel", over and C.panel_soft or C.panel)
     -- STORY: the panel becomes a dialogue box along the bottom of the window
     if story then
@@ -575,7 +580,7 @@ local function render(self)
         gui.set_pivot(n("credits_body"), gui.PIVOT_CENTER)
         gui.set_pivot(n("overlay_hint"), gui.PIVOT_CENTER)
     end
-    panel_enabled(self.panel_combos, st == "COMBOS")
+    panel_enabled(self.panel_combos, st == "COMBOS" or st == "TUTORIAL")
     panel_enabled(self.panel_credits, st == "CREDITS")
     panel_enabled(self.panel_cauldron, false)   -- the CAULDRON screen is drawn by the cd_* art nodes
     panel_enabled(self.panel_home_edit, editor)
@@ -658,6 +663,8 @@ local function render(self)
     show("version_text", st == "TITLE")
     show("start_box", st == "TITLE")
     show("start_text", st == "TITLE")
+    show("tutorial_box", st == "TITLE")
+    show("tutorial_text", st == "TITLE")
     show("combos_box", st == "TITLE")
     show("combos_text", st == "TITLE")
     show("credits_box", st == "TITLE")
@@ -669,11 +676,11 @@ local function render(self)
     show("exit_box", st == "TITLE")
     show("exit_text", st == "TITLE")
 
-    -- Credits group (also reused for the COMBOS panel)
-    show("credits_title", st == "CREDITS" or st == "COMBOS")
-    show("credits_body", st == "CREDITS" or st == "COMBOS")
-    show("back_box", st == "CREDITS" or st == "COMBOS")
-    show("back_text", st == "CREDITS" or st == "COMBOS")
+    -- Credits group (also reused for the COMBOS / TUTORIAL panels)
+    show("credits_title", st == "CREDITS" or st == "COMBOS" or st == "TUTORIAL")
+    show("credits_body", st == "CREDITS" or st == "COMBOS" or st == "TUTORIAL")
+    show("back_box", st == "CREDITS" or st == "COMBOS" or st == "TUTORIAL")
+    show("back_text", st == "CREDITS" or st == "COMBOS" or st == "TUTORIAL")
     if st == "COMBOS" then
         text("credits_title", "COMBOS")
         text("credits_body", combos.panel_text())
@@ -688,6 +695,16 @@ local function render(self)
         text("credits_title", "CREDITS")
         text("credits_body", table.concat(credits_mod, "\n"))
         local bb = layout.SCREENS.CREDITS.buttons[1]
+        local hx, hy = self.hover_x, self.hover_y
+        if hx and point_in_rect(bb, hx, hy) then
+            color("back_box", pv(layout.palette.box_hover))
+        else
+            color("back_box", pv(layout.palette.box))
+        end
+    elseif st == "TUTORIAL" then
+        text("credits_title", "TUTORIAL")
+        text("credits_body", tutorial.panel_text())
+        local bb = layout.SCREENS.TUTORIAL.buttons[1]
         local hx, hy = self.hover_x, self.hover_y
         if hx and point_in_rect(bb, hx, hy) then
             color("back_box", pv(layout.palette.box_hover))
@@ -1195,7 +1212,7 @@ local function render(self)
     end
 
     -- STORY: dialogue / chest / ending pages (reuses the overlay title + the credits body node)
-    if not (st == "CREDITS" or st == "COMBOS") then show("credits_title", false) end
+    if not (st == "CREDITS" or st == "COMBOS" or st == "TUTORIAL") then show("credits_title", false) end
     if not story then gui.set_scale(n("overlay_title"), vmath.vector3(40 / 14, 40 / 14, 1)) end
     if story then
         -- left-aligned dialogue: speaker on top, text below, hint bottom-right.
@@ -1255,6 +1272,9 @@ local function render(self)
         if st == "CREDITS" or st == "COMBOS" then
             gui.set_scale(n("credits_body"), vmath.vector3(1, 1, 1))
             gui.set_position(n("credits_body"), vmath.vector3(480, 330, 0))
+        elseif st == "TUTORIAL" then
+            gui.set_scale(n("credits_body"), vmath.vector3(1, 1, 1))
+            gui.set_position(n("credits_body"), vmath.vector3(480, 322, 0))
         else
             show("credits_body", false)
         end
@@ -1268,8 +1288,8 @@ local function render(self)
         dn.y = dn.y + (dn.vy or 60) * dt
         local alpha = math.max(0, dn.life / (dn.max_life or 0.8))
         if dn.node then
-            gui.set_position(dn.node, vmath.vector3(dn.x, dn.y, 10))
-            gui.set_color(dn.node, vmath.vector4(1, 1, 1, alpha))
+            gui.set_position(dn.node, vmath.vector3(dn.x, dn.y, 0))
+            gui.set_color(dn.node, vmath.vector4(dn.r or 1.0, dn.g or 0.85, dn.b or 0.3, alpha))
         end
         if dn.life <= 0 then
             if dn.node then gui.delete_node(dn.node) end
@@ -1288,7 +1308,7 @@ end
 
 local function on_click(self, x, y)
     local st = self.state
-    if st == "TITLE" or st == "COMBOS" or st == "CREDITS" then
+    if st == "TITLE" or st == "COMBOS" or st == "CREDITS" or st == "TUTORIAL" then
         local b = layout.hit_enabled(st, x, y)
         if b then send(b.action) end
         return
@@ -1397,6 +1417,25 @@ function init(self)
     render(self)
 end
 
+-- Floating labels: damage numbers and status effect callouts share one rise/fade pool.
+local function spawn_floater(self, x, y, text, r, g, b, scale, life, vy)
+    local node = gui.new_text_node(vmath.vector3(x, y, 0), tostring(text))
+    gui.set_size(node, vmath.vector3(160, 40, 0))
+    gui.set_scale(node, vmath.vector3(scale, scale, 1))
+    gui.set_font(node, hash("text"))
+    gui.set_color(node, vmath.vector4(r, g, b, 1))
+    gui.set_layer(node, "text")
+    gui.set_enabled(node, true)
+    self.damage_numbers[#self.damage_numbers + 1] = {
+        node = node, id = "__dn" .. (#self.damage_numbers + 1),
+        x = x, y = y, amount = text,
+        r = r, g = g, b = b,
+        life = life, max_life = life,
+        vy = vy,
+    }
+    return node
+end
+
 function on_message(self, message_id, message, sender)
     if message_id == hash("ui") then
         self.state = message.state or self.state
@@ -1438,18 +1477,13 @@ function on_message(self, message_id, message, sender)
         render(self)
     elseif message_id == hash("damage_number") then
         local dn = message
-        local node = gui.new_text_node(vmath.vector3(dn.x, dn.y, 10), tostring(dn.amount))
-        gui.set_scale(node, vmath.vector3(1, 1, 1))
-        gui.set_font(node, "text")
-        gui.set_color(node, vmath.vector4(1, 1, 1, 1))
-        gui.set_layer(node, "text")
-        gui.set_enabled(node, true)
-        self.damage_numbers[#self.damage_numbers + 1] = {
-            node = node, id = "__dn" .. (#self.damage_numbers + 1),
-            x = dn.x, y = dn.y, amount = dn.amount,
-            life = 0.8, max_life = 0.8,
-            vy = 60,
-        }
+        local r, g, b = dn.r or 1.0, dn.g or 0.85, dn.b or 0.3
+        spawn_floater(self, dn.x, dn.y, dn.amount, r, g, b, 2.5, 1.2, 80)
+        render(self)
+    elseif message_id == hash("status_label") then
+        local dn = message
+        local r, g, b = dn.r or 1.0, dn.g or 0.95, dn.b or 0.3
+        spawn_floater(self, dn.x, dn.y, dn.text, r, g, b, 1.7, 1.0, 55)
         render(self)
     elseif message_id == hash("click") then
         on_click(self, message.x or 0, message.y or 0)

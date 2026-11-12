@@ -166,8 +166,6 @@ end
 -- `hit_art` (optional) overrides the central star with element B's hit sprite (spec 6.3).
 local anim_fx   -- forward declaration (defined below the particle helpers)
 
--- (removed: label-based damage numbers; using GUI-based instead)
-
 local function fx_hit(self, x, y, c, hit_art, skill)
     if skill and skill.elements then
         -- Animated impact in element B's colours; the family is chosen per compound.
@@ -682,7 +680,6 @@ function init(self)
     self.mouse_pos = { x = -1, y = -1 }
     self.particles = {}
     self.anims = {}
-    self.damage_numbers = {}
     build_environment(self)
     local lv0 = set_room_visuals(self, 1)
     self.player_glow = fx_make(ARENA_W * 0.5, ARENA_H * 0.5, 0.05, FX.glow, 1, 1, 1, 0.6, 1.1)
@@ -746,7 +743,6 @@ function init(self)
     self.enemy_bolts = {}
     self.bolts = {}
     self.particles = {}
-    self.damage_numbers = {}
     self.anims = {}
     self.screen_flash = 0
     self.puddles = {}
@@ -991,7 +987,7 @@ local function skill_view(skill, cd, cd_max, ea, eb)
         cd_max = cd_max or skill.cooldown,
         ea = ea,
         eb = eb,
-        shape = skill.shape,
+        shape = skill.shape_key or skill.shape,  -- the HUD's shape icons are keyed by shape key
     }
 end
 
@@ -1133,6 +1129,7 @@ clear_world = function(self)
     end
     for _, b in ipairs(self.enemy_bolts or {}) do
         if b.id then go.delete(b.id) end
+        if b.glow then go.delete(b.glow) end
     end
     self.enemy_bolts = {}
     for _, e in ipairs(self.enemies) do
@@ -1157,10 +1154,6 @@ clear_world = function(self)
         if p.id then go.delete(p.id) end
     end
     self.particles = {}
-    for _, d in ipairs(self.damage_numbers or {}) do
-        if d.id then go.delete(d.id) end
-    end
-    self.damage_numbers = {}
     for _, a in ipairs(self.anims or {}) do
         if a.id then go.delete(a.id) end
     end
@@ -1263,11 +1256,15 @@ local function fire_enemy_bolt(self, x, y, tx, ty, speed, damage)
         vy = dy * (speed or 200),
         life = 3.0,
         damage = damage or 6,
-        id = factory.create("#visual_factory", vmath.vector3(x, y, 0)),
+        id = factory.create("#visual_factory", vmath.vector3(x, y, 0.02)),
+        trail_t = 0,
     }
-    go.set_scale(vmath.vector3(0.15, 0.15, 1), b.id)
-    go.set(msg.url(nil, b.id, "sprite"), "tint", vmath.vector4(1.0, 0.4, 0.4, 1.0))
+    go.set_scale(vmath.vector3(0.2, 0.2, 1), b.id)
+    go.set(msg.url(nil, b.id, "sprite"), "tint", vmath.vector4(1.0, 0.4, 0.72, 1.0))
     sprite.play_flipbook(msg.url(nil, b.id, "sprite"), hash(FX.core))
+    -- Additive magenta halo, like the player's spell bolts: a hostile projectile should read
+    -- as a projectile, not a red dot.
+    b.glow = fx_make(x, y, 0.1, FX.glow, 0.9, 0.15, 0.8, 0.9, 0.85)
     table.insert(self.enemy_bolts, b)
 end
 
@@ -1599,6 +1596,15 @@ local function craft_skill(self, slot, ea, eb, shape)
     local qid = (self.loadout and self.loadout[slot] and self.loadout[slot].quirk_id) or nil
     local skill = skillgen.makeSkill(ea, eb, shape, nil, qid)
     equip_skill(self, slot, skill, qid)
+    -- Keep the HUD-facing element/shape mirrors in sync (apply_loadout does the same on load);
+    -- without this the slot dots/icons keep showing the pre-craft elements forever.
+    if slot == 1 then
+        self.slot1_elem_a, self.slot1_elem_b, self.slot1_shape = ea, eb, shape
+    elseif slot == 2 then
+        self.slot2_elem_a, self.slot2_elem_b, self.slot2_shape = ea, eb, shape
+    else
+        self.slot3_elem_a, self.slot3_elem_b, self.slot3_shape = ea, eb, shape
+    end
     print("Crafted " .. skill.compound .. " " .. skill.shape .. " -> Slot " .. slot)
     sfx.play("ui_craft")
     local compound = tostring(skill.compound or ""):lower():gsub("%s+", "_")
@@ -1670,6 +1676,12 @@ local function handle_ui_action(self, msg)
         if self.state == "TITLE" then
             self.state = "CREDITS"
             print("State: CREDITS")
+        end
+    elseif action == "tutorial" then
+        if self.state == "TITLE" then
+            self.state = "TUTORIAL"
+            sfx.play("ui_click")
+            print("State: TUTORIAL")
         end
     elseif action == "tab" then
         if self.state == "HOME_EDIT" and type(msg.slot) == "number" and msg.slot >= 1 and msg.slot <= 3 then
@@ -1772,7 +1784,7 @@ local function handle_ui_action(self, msg)
         if self.state == "SETTINGS" then
             self.state = self.settings_from or "TITLE"
             print("State: " .. self.state)
-        elseif self.state == "CREDITS" or self.state == "COMBOS" then
+        elseif self.state == "CREDITS" or self.state == "COMBOS" or self.state == "TUTORIAL" then
             self.state = "TITLE"
             sfx.play("state_title")
             music.set_state("TITLE")
@@ -1825,6 +1837,20 @@ local function is_fire_pool(pud)
     return pud ~= nil and (has_element(pud.elements, "fire") or pud.burning_mud == true)
 end
 
+-- Floating status labels above the target (fresh applications only). Damage labels are
+-- handled by the damage_number path; these say WHAT the enemy is suffering.
+local STATUS_LABELS = {
+    push    = "PUSH →",
+    pull    = "PULL ←",
+    stun    = "STUN!",
+    confuse = "CONFUSED",
+    burn    = "BURN!",
+    slow    = "SLOWED",
+    root    = "ROOTED!",
+    blind   = "BLINDED!",
+    spread  = "SPREAD!",
+}
+
 -- Forward declaration (used by paths defined before the implementation, e.g. apply_statuses).
 local announce
 
@@ -1843,8 +1869,15 @@ local function apply_statuses(self, target, names)
     end
     local fresh = status_mod.apply(target, names, 0, self.status_dur_mul or 1)
     if fresh then
-        for _, name in ipairs(fresh) do
+        for i, name in ipairs(fresh) do
             events.emit("status", { self = self, enemy = target, name = name, x = target.x, y = target.y })
+            local label = STATUS_LABELS[name]
+            local def = status_mod.STATUS_DATA[name]
+            if label and def and target and target.x and target.y then
+                local c = def.color or { r = 1, g = 1, b = 1 }
+                msg.post("/hud#gui", "status_label", { x = target.x, y = target.y + 36 + (i - 1) * 20,
+                                                       text = label, r = c.r, g = c.g, b = c.b })
+            end
         end
     end
 end
@@ -1878,8 +1911,10 @@ local function apply_hit(self, enemy, damage, statuses, sx, sy, infusion, shape,
         end
     end
     local died = combat_mod.apply_damage(enemy, damage)
-    -- Damage number near the enemy
-    msg.post("/hud#gui", "damage_number", { x = enemy.x, y = enemy.y, amount = damage })
+    -- Damage number near the enemy, tinted with the skill's (blended) element colors
+    local col = (skill and skill.color) or { r = 1.0, g = 0.85, b = 0.3 }
+    msg.post("/hud#gui", "damage_number", { x = enemy.x, y = enemy.y, amount = damage,
+                                            r = col.r, g = col.g, b = col.b })
     apply_statuses(self, enemy, statuses)
     if has_status(statuses, "push") then
         enemy.vx, enemy.vy = combat_mod.knockback(enemy.x, enemy.y, sx, sy, 260, false)
@@ -2492,9 +2527,14 @@ function update(self, dt)
             e.burn_timer = (e.burn_timer or 0) + dt
             while e.burn_timer >= 1.0 do
                 e.burn_timer = e.burn_timer - 1.0
-                if combat_mod.apply_damage(e, status_mod.burn_damage(e)) then
+                local burn_dmg = status_mod.burn_damage(e)
+                if combat_mod.apply_damage(e, burn_dmg) then
                     e.alive = false
                 end
+                -- Burn damage number (fire-colored; burn is a fire-sourced status)
+                local c = data.ELEMENTS.fire
+                msg.post("/hud#gui", "damage_number", { x = e.x, y = e.y, amount = burn_dmg,
+                                                        r = c.r, g = c.g, b = c.b })
             end
         end
     end
@@ -2600,7 +2640,7 @@ function update(self, dt)
                         if moved < 320 * dt * 0.3 and (e.charge_time or 0) > 0.05 then
                             -- slammed into a wall: stunned and vulnerable
                             e.charge_time = 0
-                            status_mod.apply(e, { "stun" }, 0)
+                            apply_statuses(self, e, { "stun" })
                             spawn_particle(self, e.x, e.y, 1, 0.9, 0.4, 1, 0.6, 0.35, 0, 0, data.ART.particle.scorch, 1.4)
                         end
                         if (e.charge_time or 0) <= 0 then e.charging = false; e.charge_timer = 2.0 end
@@ -3076,11 +3116,20 @@ function update(self, dt)
             b.life = b.life - dt
             b.x = b.x + b.vx * dt
             b.y = b.y + b.vy * dt
+            -- Short violet ember trail (cosmetic RNG only)
+            b.trail_t = (b.trail_t or 0) + dt
+            if b.trail_t >= 0.12 then
+                b.trail_t = 0
+                spawn_particle(self, b.x, b.y, 0.9, 0.3, 0.85, 0.65, 0.3, 0.35,
+                               (crand() - 0.5) * 40, (crand() - 0.5) * 40, data.ART.particle.spark, 0.06)
+            end
             if b.life <= 0 or b.x < 0 or b.x > ARENA_W or b.y < 0 or b.y > ARENA_H or level_mod.is_solid(self.level, b.x, b.y) then
                 if b.id then go.delete(b.id) end
+                if b.glow then go.delete(b.glow) end
                 table.remove(self.enemy_bolts, i)
             else
-                go.set_position(vmath.vector3(b.x, b.y, 0), b.id)
+                go.set_position(vmath.vector3(b.x, b.y, 0.02), b.id)
+                if b.glow then go.set_position(vmath.vector3(b.x, b.y, 0.1), b.glow) end
                 -- collision with player
                 local dx = b.x - self.player_pos.x
                 local dy = b.y - self.player_pos.y
@@ -3100,6 +3149,7 @@ function update(self, dt)
                         fx_player_hit(self)
                     end
                     if b.id then go.delete(b.id) end
+                    if b.glow then go.delete(b.glow) end
                     table.remove(self.enemy_bolts, i)
                 end
             end

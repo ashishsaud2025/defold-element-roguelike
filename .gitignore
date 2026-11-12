@@ -1,6 +1,9 @@
 # Defold build output and editor cache
 build/
+/bundles/
 .internal/
+/debug.keystore
+/debug.keystore.pass.txt
 
 # Editor log
 log.txt

@@ -30,8 +30,8 @@ if L is None:
     print("validate_ui: layout.lua failed to load")
     sys.exit(1)
 
-ALL_SCREENS = ("TITLE", "COMBOS", "CREDITS", "HOME", "HOME_EDIT", "ROOM", "REWARD",
-                "CAULDRON", "DEAD", "WIN")
+ALL_SCREENS = ("TITLE", "COMBOS", "CREDITS", "TUTORIAL", "HOME", "HOME_EDIT", "ROOM",
+                "REWARD", "CAULDRON", "DEAD", "WIN")
 
 # Runtime-built bodies for the static audit (COMBOS/CREDITS panels): built INSIDE
 # Lua (real Lua table, not a Python dict) so missing keys return nil as the audit
@@ -39,11 +39,12 @@ ALL_SCREENS = ("TITLE", "COMBOS", "CREDITS", "HOME", "HOME_EDIT", "ROOM", "REWAR
 audit_bodies = None
 lua.execute('package.path = package.path .. ";./?.lua;./src/?.lua"')
 try:
-    lua.execute('_bodies = { ["COMBOS:credits_body"] = require("src.core.combos").panel_text(), ["CREDITS:credits_body"] = table.concat(require("src.core.credits"), "\\n") }')
+    lua.execute('_bodies = { ["COMBOS:credits_body"] = require("src.core.combos").panel_text(), ["CREDITS:credits_body"] = table.concat(require("src.core.credits"), "\\n"), ["TUTORIAL:credits_body"] = require("src.core.tutorial").panel_text() }')
     audit_bodies = lua.globals()._bodies
     cb = audit_bodies["COMBOS:credits_body"]
     cr = audit_bodies["CREDITS:credits_body"]
-    print("bodies   : COMBOS (%d chars), CREDITS (%d chars)" % (len(cb), len(cr)))
+    tut = audit_bodies["TUTORIAL:credits_body"]
+    print("bodies   : COMBOS (%d chars), CREDITS (%d chars), TUTORIAL (%d chars)" % (len(cb), len(cr), len(tut)))
 except Exception as e:
     problems.append("validate_ui: failed to build combos/credits bodies: %s" % e)
     audit_bodies = lua.eval("return {}")
@@ -196,8 +197,8 @@ print("ALL_NODES: %d id(s)" % len(re.findall(r'"([a-z0-9_]+)"', m.group(1))))
 if len(gui_set) != len(re.findall(r'"([a-z0-9_]+)"', m.group(1))):
     problems.append("node count mismatch: hud.gui has %d, ALL_NODES has %d" % (
         len(gui_set), len(re.findall(r'"([a-z0-9_]+)"', m.group(1)))))
-if len(gui_set) != 254:
-    problems.append("hud.gui node count changed: expected 254, got %d (update this constant with the change)" % len(gui_set))
+if len(gui_set) != 256:
+    problems.append("hud.gui node count changed: expected 256, got %d (update this constant with the change)" % len(gui_set))
 
 if problems:
     for p in problems:

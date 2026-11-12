@@ -1,17 +1,16 @@
 # Credits
 
-Code and game design: Ash
+Code and game design: Ashish Saud and Avinash Joshi
 
 Icon "fire" by sbed (game-icons.net, CC BY 3.0)
 Icon "drop" by lorc (game-icons.net, CC BY 3.0)
 Icon "air-zigzag" by lorc (game-icons.net, CC BY 3.0)
 Icon "rock" by lorc (game-icons.net, CC BY 3.0)
-Icon "wizard-staff" by lorc (game-icons.net, CC BY 3.0)
 Icon "rune-stone" by lorc (game-icons.net, CC BY 3.0)
 Icon "cauldron" by lorc (game-icons.net, CC BY 3.0)
 
 Kenney Particle Pack by Kenney (kenney.nl, CC0)
-Tiny Dungeon by Kenney (kenney.nl, CC0)
+Tiny Dungeon by Kenney (kenney.nl, CC0); the floor/wall/pillar/torch tiles come from this pack. bed.png and chest.png (home-room props) are 16x16 in Tiny Dungeon's style and are attributed to this pack, but provenance could not be byte-verified against the pack copy before release (the pack zip is not in downloads/; style match only).
 Tiny Creatures by Clint Bellanger (clintbellanger.net, CC0)
 
 Pixel fire asset pack by devkidd (devkidd.itch.io) — free for personal/commercial use, attribution appreciated.
@@ -30,6 +29,7 @@ fx_drop.png is generated for this project (tools/make_drop.py).
 actors/target_dummy.png is generated for this project (tools/make_target.py).
 glow.png, floor.png and vignette.png are generated for this project.
 Cascadia Code by Microsoft (github.com/microsoft/cascadia-code, SIL OFL 1.1; vendored at assets/fonts/, see OFL.txt + NOTICE.txt).
+App icon: AI-generated artwork (downloads/ai_gen_icon.png); used for the Windows/macOS/Linux/Android/HTML5 application icons. No third-party asset.
 All audio in assets/sfx and assets/music is generated for this project by tools/make_sfx.py (original synthesis, no third-party samples). Replace any file with a same-named .ogg/.wav and run tools/add_sounds.py.
 
 UI frames, keycaps, portrait, health/dash bars, altar and door sprites in assets/art/ui/ are generated for this project by tools/make_ui.py (original work, CC0).

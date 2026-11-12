@@ -17,7 +17,7 @@ local M = {}
 
 -- ===== Design space & tuning =====
 M.DESIGN_W, M.DESIGN_H = 960, 640
-M.ALL_SCREENS = { "TITLE", "COMBOS", "CREDITS", "HOME", "HOME_EDIT", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN", "PAUSED", "SETTINGS" }
+M.ALL_SCREENS = { "TITLE", "COMBOS", "CREDITS", "TUTORIAL", "HOME", "HOME_EDIT", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN", "PAUSED", "SETTINGS" }
 -- Full-screen nodes (panel, flash_box) get this explicit rect: centre 480,320.
 M.FULL_SCREEN = { x = 0, y = 0, w = M.DESIGN_W, h = M.DESIGN_H }
 M.MARGIN = 16
@@ -148,12 +148,13 @@ M.VERSION = "v16"
 M.SCREENS = {
     TITLE = {
         buttons = {
-            M.button("start_box",    "start",    340, 336, 280, 52, "START",         true),
-            M.button("combos_box",   "combos",   340, 276, 280, 52, "COMBOS",        true),
-            M.button("credits_box",  "credits",  340, 216, 280, 52, "CREDITS",       true),
-            M.button("settings_box", "settings_open", 340, 156, 280, 52, "SETTINGS", true),
-            M.button("training_box", "training", 340,  96, 280, 52, "TRAINING HALL", true),
-            M.button("exit_box",     "exit",     340,  36, 280, 52, "QUIT",          true),
+            M.button("start_box",    "start",    340, 372, 280, 52, "START",         true),
+            M.button("tutorial_box", "tutorial", 340, 312, 280, 52, "TUTORIAL",      true),
+            M.button("combos_box",   "combos",   340, 252, 280, 52, "COMBOS",        true),
+            M.button("credits_box",  "credits",  340, 192, 280, 52, "CREDITS",       true),
+            M.button("settings_box", "settings_open", 340, 132, 280, 52, "SETTINGS", true),
+            M.button("training_box", "training", 340,  72, 280, 52, "TRAINING HALL", true),
+            M.button("exit_box",     "exit",     340,  12, 280, 52, "QUIT",          true),
         },
         texts = {
             title_text = { x = 480, y = 470, size = 36, color = "text",     text = "ELEMENT ROGUE", max_h = 46 },
@@ -178,6 +179,17 @@ M.SCREENS = {
         texts = {
             credits_title = { x = 480, y = 576, size = 24, color = "text", max_h = 34 },
             credits_body = { x = 480, y = 330, size = 14, color = "text", max_h = 400 },
+        },
+        buttons = {
+            M.button("back_box", "back", 420, 34, 120, 48, "BACK", true),
+        },
+        back_rect = { x = 420, y = 34, w = 120, h = 48 },
+    },
+    TUTORIAL = {
+        panel = M.panel(40, 20, 880, 600, "TUTORIAL"),
+        texts = {
+            credits_title = { x = 480, y = 576, size = 24, color = "text", max_h = 34 },
+            credits_body = { x = 480, y = 322, size = 14, color = "text", max_h = 460 },
         },
         buttons = {
             M.button("back_box", "back", 420, 34, 120, 48, "BACK", true),

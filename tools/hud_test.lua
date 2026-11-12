@@ -128,8 +128,14 @@ gui = {
   get_scale = function(node) return node and node.scale or vmath.vector3(1, 1, 1) end,
   set_layer = function(node, layer) end,
   set_font = function(node, font) if node then node.font = font end end,
-  play_flipbook = function(node, id)
+  play_flipbook = function(node, id, ...)
+    local extra = select('#', ...)
     if id == nil or id == "" then err("gui.play_flipbook: empty animation id") end
+    -- The engine binding rejects an explicit nil for the optional play_properties
+    -- argument ("table expected, got nil"); mirror that so the harness catches it.
+    if extra >= 2 and select(2, ...) == nil then
+      err("gui.play_flipbook: 4th argument (play_properties) must be a table, got nil")
+    end
     if node then node.flipbook = id end
   end,
   PIVOT_CENTER = "PIVOT_CENTER", PIVOT_N = "PIVOT_N", PIVOT_NE = "PIVOT_NE", PIVOT_E = "PIVOT_E",
@@ -352,7 +358,7 @@ local function assert_geometry(state)
   end
 end
 
-local STATES = { "TITLE", "COMBOS", "CREDITS", "HOME", "HOME_EDIT", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN", "PAUSED", "SETTINGS" }
+local STATES = { "TITLE", "COMBOS", "CREDITS", "TUTORIAL", "HOME", "HOME_EDIT", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN", "PAUSED", "SETTINGS" }
 local function send_ui(state)
   on_message(self, hash("ui"), example_ui(state))
 end

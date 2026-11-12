@@ -124,7 +124,7 @@ M.REACTIONS = {
 
 -- 3. Locked tuning numbers (all in one place)
 M.TUNING = {
-    DEBUG = true,               -- M3 debug key row (1-5 shape, Q/E compound). Turn off for release.
+    DEBUG = false,              -- release builds ship this off; the smoke harness forces it on for its own checks (tools/smoke_test.lua).
     USE_PLAYER_NAME = false,
     PLAYER_HP = 100,
     PLAYER_SPEED = 220,

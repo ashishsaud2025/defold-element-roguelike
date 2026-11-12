@@ -181,6 +181,10 @@ local chunk = assert(loadfile(ROOT.."main/game.script"))
 chunk()
 local skillgen = require "src.core.skillgen"
 local data = require "src.core.data"
+-- Release builds ship TUNING.DEBUG = false (src/core/data.lua). The suite drives the
+-- debug row (1-5/6-0 shape swap, [/] compound cycle) programmatically, so force it on
+-- here rather than keeping the flag on in shipping code.
+data.TUNING.DEBUG = true
 
 local self = {}
 init(self)
@@ -2873,6 +2877,14 @@ if begin_room() then
   ui({ action = "back" })
   sf(self.state == "TITLE", "credits: back did not return to TITLE (state=" .. tostring(self.state) .. ")")
 end
+if begin_room() then
+  -- C9b. TUTORIAL opens from TITLE and back returns to TITLE.
+  self.state = "TITLE"
+  ui({ action = "tutorial" })
+  sf(self.state == "TUTORIAL", "tutorial: action from TITLE did not open TUTORIAL (state=" .. tostring(self.state) .. ")")
+  ui({ action = "back" })
+  sf(self.state == "TITLE", "tutorial: back did not return to TITLE (state=" .. tostring(self.state) .. ")")
+end
 
 -- ===== Pool reactions (addendum): six combos, one generic rule ==================
 -- Per-cell source puddle pairs. skillgen sorts each pair's elements alphabetically,
@@ -3377,7 +3389,7 @@ end
 
 -- ===== Phase B: UI layout (pure Lua; the harness never runs gui.*) ===========
 local ui_layout = require "src.ui.layout"
-for _, screen in ipairs({ "TITLE", "COMBOS", "CREDITS" }) do
+for _, screen in ipairs({ "TITLE", "COMBOS", "CREDITS", "TUTORIAL" }) do
   local scr = ui_layout.SCREENS[screen]
   for i, b in ipairs(scr.buttons) do
     sf(b.x >= 0 and b.y >= 0 and b.x + b.w <= ui_layout.DESIGN_W and b.y + b.h <= ui_layout.DESIGN_H,
@@ -3392,15 +3404,17 @@ for _, screen in ipairs({ "TITLE", "COMBOS", "CREDITS" }) do
   end
 end
 do -- registry hit test and ordering (z = reverse insertion)
-  local h = ui_layout.hit("TITLE", 480, 362)
+  local h = ui_layout.hit("TITLE", 480, 398)
   sf(h and h.id == "start_box", "layout: TITLE hit at START centre expected start_box, got " .. tostring(h and h.id))
-  sf(ui_layout.hit("TITLE", 480, 362) and ui_layout.hit("TITLE", 480, 362).action == "start",
+  sf(ui_layout.hit("TITLE", 480, 398) and ui_layout.hit("TITLE", 480, 398).action == "start",
      "layout: TITLE start_box hit did not return the start action")
   sf(ui_layout.hit("TITLE", 0, 0) == nil, "layout: TITLE hit at (0,0) expected nil")
   sf(ui_layout.hit("COMBOS", 480, 58) and ui_layout.hit("COMBOS", 480, 58).action == "back",
      "layout: COMBOS back button hit failed")
   sf(ui_layout.hit("CREDITS", 480, 58) and ui_layout.hit("CREDITS", 480, 58).action == "back",
      "layout: CREDITS back button hit failed")
+  sf(ui_layout.hit("TUTORIAL", 480, 58) and ui_layout.hit("TUTORIAL", 480, 58).action == "back",
+     "layout: TUTORIAL back button hit failed")
 end
 do -- text_width measures the widest line, not the whole multi-line blob
   local one = ui_layout.text_width("single line", 14)
@@ -3961,6 +3975,10 @@ if begin_room() then
   ui({ action = "craft", slot = 1 })
   sf(self.slot1.quirk_id == "split_in_two", "craft: recipe quirk overwrote the slot quirk")
   sf(self.slot1.compound == "Steam", "craft: slot skill was not replaced")
+  -- the HUD mirrors must follow the craft (icons read these, not the skill table)
+  sf(self.slot1_elem_a == "fire" and self.slot1_elem_b == "water",
+     "craft: slot 1 element mirror not updated (ea=" .. tostring(self.slot1_elem_a) .. " eb=" .. tostring(self.slot1_elem_b) .. ")")
+  sf(self.slot1_shape == "puddle", "craft: slot 1 shape mirror not updated (" .. tostring(self.slot1_shape) .. ")")
   -- cauldron payload carries each target slot's quirk short form
   self.state = "CAULDRON"
   frame()
@@ -4351,6 +4369,7 @@ do
   force("TITLE", function() self.flash = 0 end)
   force("COMBOS", function() end)
   force("CREDITS", function() end)
+  force("TUTORIAL", function() end)
   force("HOME", function() self.loadout_tab = 1 end)
   force("HOME_EDIT", function() self.loadout_tab = 1 end)
   force("PAUSED", function() self.dash_cd = 0.5 end)
@@ -4381,7 +4400,7 @@ do
   end)
   force("DEAD", function() self.relics = four_relics end)
   force("WIN", function() self.relics = four_relics end)
-  local ORDER = { "TITLE", "COMBOS", "CREDITS", "HOME", "HOME_EDIT", "PAUSED", "SETTINGS", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN" }
+  local ORDER = { "TITLE", "COMBOS", "CREDITS", "TUTORIAL", "HOME", "HOME_EDIT", "PAUSED", "SETTINGS", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN" }
   for _, st in ipairs(ORDER) do
     sf((ui_seen[st] or 0) >= 1, "ui msg: no ui message posted in state " .. st)
     local w = ui_worst[st] or 0
