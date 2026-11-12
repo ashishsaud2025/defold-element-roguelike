@@ -152,7 +152,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 280.0 y: 22.0 }
+  size { x: 240.0 y: 24.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "hp_bg"
@@ -162,7 +162,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 280.0 y: 22.0 }
+  size { x: 240.0 y: 24.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "hp_fill"
@@ -182,7 +182,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 290.0 y: 88.0 }
+  size { x: 64.0 y: 64.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "s1_bg"
@@ -192,7 +192,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 290.0 y: 88.0 }
+  size { x: 64.0 y: 64.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "s1_cd"
@@ -212,7 +212,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 28.0 y: 28.0 }
+  size { x: 16.0 y: 16.0 }
   type: TYPE_BOX
   texture: "ui/circle"
   id: "s1_dot1"
@@ -222,7 +222,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 28.0 y: 28.0 }
+  size { x: 16.0 y: 16.0 }
   type: TYPE_BOX
   texture: "ui/circle"
   id: "s1_dot2"
@@ -232,7 +232,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 290.0 y: 88.0 }
+  size { x: 64.0 y: 64.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "s2_bg"
@@ -242,7 +242,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 290.0 y: 88.0 }
+  size { x: 64.0 y: 64.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "s2_cd"
@@ -262,7 +262,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 28.0 y: 28.0 }
+  size { x: 16.0 y: 16.0 }
   type: TYPE_BOX
   texture: "ui/circle"
   id: "s2_dot1"
@@ -272,7 +272,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 28.0 y: 28.0 }
+  size { x: 16.0 y: 16.0 }
   type: TYPE_BOX
   texture: "ui/circle"
   id: "s2_dot2"
@@ -622,7 +622,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 46.0 y: 46.0 }
+  size { x: 28.0 y: 28.0 }
   type: TYPE_BOX
   texture: "ui/particle_flare"
   id: "s1_shape_icon"
@@ -632,7 +632,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 46.0 y: 46.0 }
+  size { x: 28.0 y: 28.0 }
   type: TYPE_BOX
   texture: "ui/particle_flare"
   id: "s2_shape_icon"
@@ -1396,6 +1396,156 @@ nodes {
   type: TYPE_BOX
   texture: "ui/square"
   id: "row_quirk_next_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 64.0 y: 64.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "s3_bg"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 64.0 y: 64.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "s3_cd"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "s3_quirk"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 16.0 y: 16.0 }
+  type: TYPE_BOX
+  texture: "ui/circle"
+  id: "s3_dot1"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 16.0 y: 16.0 }
+  type: TYPE_BOX
+  texture: "ui/circle"
+  id: "s3_dot2"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 28.0 y: 28.0 }
+  type: TYPE_BOX
+  texture: "ui/particle_flare"
+  id: "s3_shape_icon"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 64.0 y: 64.0 }
+  type: TYPE_BOX
+  texture: "ui/slot_frame"
+  id: "s1_frame"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 64.0 y: 64.0 }
+  type: TYPE_BOX
+  texture: "ui/slot_frame"
+  id: "s2_frame"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 64.0 y: 64.0 }
+  type: TYPE_BOX
+  texture: "ui/slot_frame"
+  id: "s3_frame"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 24.0 y: 24.0 }
+  type: TYPE_BOX
+  texture: "ui/keycap_Q"
+  id: "s1_key"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 24.0 y: 24.0 }
+  type: TYPE_BOX
+  texture: "ui/keycap_R"
+  id: "s2_key"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 24.0 y: 24.0 }
+  type: TYPE_BOX
+  texture: "ui/keycap_mouse"
+  id: "s3_key"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 56.0 y: 56.0 }
+  type: TYPE_BOX
+  texture: "ui/portrait"
+  id: "portrait"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 240.0 y: 6.0 }
+  type: TYPE_BOX
+  texture: "ui/dash_bg"
+  id: "dash_bg"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 240.0 y: 6.0 }
+  type: TYPE_BOX
+  texture: "ui/dash_fill"
+  id: "dash_fill"
   layer: "graphics"
   inherit_alpha: true
 }

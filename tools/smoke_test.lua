@@ -82,6 +82,7 @@ msg = { url = function(sock, path, frag) return {path=path, frag=frag} end, post
                   s1        = { ROOM = true, DEAD = true, WIN = true },
                   s2        = { ROOM = true, DEAD = true, WIN = true },
                   s3        = { ROOM = true, DEAD = true, WIN = true },
+                  dash_cd   = { ROOM = true },
                   prompt    = { HOME = true },
                   editor    = { HOME_EDIT = true },
                   credits   = { CREDITS = true } }

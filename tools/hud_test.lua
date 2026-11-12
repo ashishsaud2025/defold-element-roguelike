@@ -163,6 +163,18 @@ local function text_of(id)
   end
   return found
 end
+local function size_of(id)
+  local nd = nodes[id]
+  return nd and nd.size or nil
+end
+local function pos_of(id)
+  local nd = nodes[id]
+  return nd and nd.pos or nil
+end
+local function scale_of(id)
+  local nd = nodes[id]
+  return nd and nd.scale or nil
+end
 
 local data = require "src.core.data"
 local layout = require "src.ui.layout"
@@ -192,8 +204,10 @@ local function example_ui(state)
                   preview_name = "Steam Bolt", preview_detail = "Power 7", basic = false }
   end
   if state == "ROOM" or state == "DEAD" or state == "WIN" then
-    ui.s1 = { name = "Inferno Nova", quirk = "splits in two", cd = 0.2, cd_max = 2.5, ea = "fire", eb = "wind" }
-    ui.s2 = { name = "Tide Pool",   quirk = "repeats once",  cd = 0,   cd_max = 4.0, ea = "water", eb = "water" }
+    ui.s1 = { name = "Inferno Nova", quirk = "splits in two", quirk_short = "splits", cd = 0.2, cd_max = 2.5, ea = "fire", eb = "wind" }
+    ui.s2 = { name = "Tide Pool",   quirk = "repeats once",  quirk_short = "repeats", cd = 0,   cd_max = 4.0, ea = "water", eb = "water" }
+    ui.s3 = { name = "Inferno Bolt", quirk = "bigger but slower", quirk_short = "bigger", cd = 0, cd_max = 0.6, ea = "fire", eb = "fire" }
+    ui.dash_cd = 0.3
   end
   if state == "ROOM" or state == "REWARD" or state == "CAULDRON" or state == "DEAD" or state == "WIN" then
     ui.relics = { inferno_heart = true, echoing_crystal = true, ancient_catalyst = true, orbital_crown = true }
@@ -658,6 +672,54 @@ for _, state in ipairs(STATES) do
       state .. ": expected 'UI AUDIT: 0 problems', got: " .. tostring(last))
   end
 end
+
+-- ===== Task 10: hotbar, keycaps, portrait and bars =====
+local ROOM_EXAMPLE = {
+  state = "ROOM", hp = 50, max_hp = 100, room = 3, dash_cd = 0.5,
+  s1 = { name = "Tide Bolt", quirk = "splits in two", quirk_short = "splits",
+         cd = 0, cd_max = 0.6, ea = "water", eb = "water", shape = "projectile" },
+  s2 = { name = "Inferno Pool", quirk = "bigger but slower", quirk_short = "bigger",
+         cd = 2.0, cd_max = 4.0, ea = "fire", eb = "fire", shape = "puddle" },
+  s3 = { name = "Inferno Bolt", quirk = "repeats once", quirk_short = "repeats",
+         cd = 0, cd_max = 0.6, ea = "fire", eb = "fire", shape = "projectile" },
+}
+on_message(self, hash("ui"), ROOM_EXAMPLE)
+for _, id in ipairs({ "s1_bg", "s2_bg", "s3_bg", "s1_key", "s2_key", "s3_key",
+                      "s1_frame", "s2_frame", "s3_frame", "portrait",
+                      "dash_bg", "dash_fill", "s3_quirk", "s3_shape_icon", "s3_dot1", "s3_dot2" }) do
+  sf(enabled(id), "HUD: hotbar node " .. id .. " not shown in ROOM")
+end
+sf(not enabled("s1_name") and not enabled("s2_name"), "HUD: removed name nodes still enabled")
+sf(text_of("s1_quirk") == "splits" and text_of("s3_quirk") == "repeats", "HUD: quirk short labels")
+sf(scale_of("s2_cd") and math.abs(scale_of("s2_cd").y - 0.5) < 0.01,
+   "HUD: s2 cooldown overlay scale at 50%")
+sf(pos_of("s2_cd") and math.abs(pos_of("s2_cd").y - 34) < 0.01,
+   "HUD: s2 cooldown overlay not bottom-anchored (slot y=18 + 64/4)")
+sf(size_of("s2_cd") and math.abs(size_of("s2_cd").x - 64) < 0.01 and math.abs(size_of("s2_cd").y - 64) < 0.01,
+   "HUD: cooldown overlay node size changed")
+sf(scale_of("hp_fill") and math.abs(scale_of("hp_fill").x - 0.5) < 0.01,
+   "HUD: hp fill scale at 50%")
+sf(pos_of("hp_fill") and math.abs(pos_of("hp_fill").x - 140) < 0.01,
+   "HUD: hp fill left anchor at 50%")
+sf(text_of("hp_text") == "50 / 100", "HUD: hp text")
+-- ready frame flip: s1 and s3 show the GOLD frame; s2 (on cooldown) the plain one
+sf(nodes["s1_frame"] and nodes["s1_frame"].flipbook == hash("slot_frame_ready"), "HUD: s1 ready frame flipbook")
+sf(nodes["s3_frame"] and nodes["s3_frame"].flipbook == hash("slot_frame_ready"), "HUD: s3 ready frame flipbook")
+sf(nodes["s2_frame"] and nodes["s2_frame"].flipbook == hash("slot_frame"), "HUD: s2 plain frame flipbook")
+-- dash bar: full at dash_cd 0, empty at dash_cd = DASH_COOLDOWN (1.0s)
+local function dash_example(cd)
+  local e = {}
+  for k, v in pairs(ROOM_EXAMPLE) do e[k] = v end
+  e.dash_cd = cd
+  e.s2 = nil
+  on_message(self, hash("ui"), e)
+end
+dash_example(0)
+sf(scale_of("dash_fill") and math.abs(scale_of("dash_fill").x - 1.0) < 0.01,
+   "HUD: dash bar not full when ready")
+dash_example(1.0)
+sf(scale_of("dash_fill") and math.abs(scale_of("dash_fill").x - 0.001) < 0.01,
+   "HUD: dash bar not empty at full cooldown")
 
 -- ===== HUD survives a hostile message (almost everything absent) =====
 for _, state in ipairs(STATES) do

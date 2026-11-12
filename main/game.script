@@ -884,9 +884,12 @@ end
 
 local function skill_view(skill, cd, cd_max, ea, eb)
     if not skill then return nil end
+    local def = (skill.quirk_id and quirks_mod.get(skill.quirk_id))
+        or (skill.quirk and quirks_mod.by_label(skill.quirk)) or nil
     return {
         name = skill.compound .. " " .. (SHAPE_DISPLAY[skill.shape] or skill.shape),
         quirk = skill.quirk,
+        quirk_short = (def and def.short) or skill.quirk,
         cd = cd or 0,
         cd_max = cd_max or skill.cooldown,
         ea = ea,
@@ -962,6 +965,7 @@ local function send_ui(self)
                            self.slot2_elem_a, self.slot2_elem_b)
         ui.s3 = skill_view(self.slot3, self.slot3_cooldown, self.slot3_cd_max,
                            self.slot3_elem_a, self.slot3_elem_b)
+        if st == "ROOM" then ui.dash_cd = self.dash_cd or 0 end
         ui.casts = self.cast_count or 0
     end
     if st == "ROOM" or st == "REWARD" or st == "CAULDRON" or st == "DEAD" or st == "WIN" then

@@ -26,6 +26,8 @@ M.TILES = {
     wall_top  = { anim = "td_wall_top",  scale = 3, tint = true },
     pillar    = { anim = "td_pillar",    scale = 3, tint = true },
     torch     = { anim = "td_torch",     scale = 3, tint = false },   -- coloured art
+    altar     = { anim = "altar",        scale = 1, tint = false },   -- Lantern Hall stations
+    door      = { anim = "door",         scale = 1, tint = false },
 }
 
 -- Player + enemies. Static 16 px sprites brought to life in code (src/game/anim.lua):

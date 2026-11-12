@@ -217,21 +217,31 @@ M.SCREENS = {
     ROOM = {
         -- no panel: this is the in-combat HUD, not a menu screen
         texts = {
-            hp_text = { x = 164, y = 601, size = 13, color = "text", max_w = 280, max_h = 22 },
-            room_text = { x = 480, y = 601, size = 16, color = "text", max_w = 340, max_h = 26 },
-            s1_quirk = { x = 169, y = 78,  size = 11, color = "text_dim", max_w = 258, max_h = 20 },
-            s2_quirk = { x = 791, y = 78,  size = 11, color = "text_dim", max_w = 258, max_h = 20 },
-            help_text = { x = 480, y = 14,  size = 13, color = "text_dim", max_w = 900, max_h = 24 },
+            hp_text = { x = 200, y = 596, size = 13, color = "text", max_w = 120, max_h = 22 },
+            room_text = { x = 480, y = 601, size = 14, color = "text", max_w = 340, max_h = 26 },
+            s1_quirk = { x = 480, y = 10, size = 10, color = "text_dim", max_w = 88, max_h = 16 },
+            s2_quirk = { x = 556, y = 10, size = 10, color = "text_dim", max_w = 88, max_h = 16 },
+            s3_quirk = { x = 404, y = 10, size = 10, color = "text_dim", max_w = 88, max_h = 16 },
+            help_text = { x = 480, y = 128, size = 13, color = "text_dim", max_w = 900, max_h = 24 },
         },
-        hp_bar    = { x = 24, y = 590, w = 280, h = 22 },
-        slot_s1   = { x = 24,  y = 24, w = 290, h = 88 },
-        slot_s2   = { x = 646, y = 24, w = 290, h = 88 },
-        shape_icon_s1 = { x = 40,  y = 42, w = 46, h = 46 },
-        shape_icon_s2 = { x = 662, y = 42, w = 46, h = 46 },
-        dot1_s1 = { x = 96,  y = 44, w = 28, h = 28 },
-        dot2_s1 = { x = 132, y = 44, w = 28, h = 28 },
-        dot1_s2 = { x = 718, y = 44, w = 28, h = 28 },
-        dot2_s2 = { x = 754, y = 44, w = 28, h = 28 },
+        hp_bar    = { x = 80, y = 584, w = 240, h = 24 },
+        dash_bar  = { x = 80, y = 572, w = 240, h = 6 },
+        portrait  = { x = 16, y = 568, w = 56, h = 56 },
+        slot_s1   = { x = 448, y = 18, w = 64, h = 64 },
+        slot_s2   = { x = 524, y = 18, w = 64, h = 64 },
+        slot_s3   = { x = 372, y = 18, w = 64, h = 64 },
+        shape_icon_s1 = { x = 450, y = 32, w = 28, h = 28 },
+        shape_icon_s2 = { x = 526, y = 32, w = 28, h = 28 },
+        shape_icon_s3 = { x = 374, y = 32, w = 28, h = 28 },
+        dot1_s1 = { x = 480, y = 56, w = 16, h = 16 },
+        dot2_s1 = { x = 480, y = 38, w = 16, h = 16 },
+        dot1_s2 = { x = 556, y = 56, w = 16, h = 16 },
+        dot2_s2 = { x = 556, y = 38, w = 16, h = 16 },
+        dot1_s3 = { x = 404, y = 56, w = 16, h = 16 },
+        dot2_s3 = { x = 404, y = 38, w = 16, h = 16 },
+        key_s1 = { x = 468, y = 86, w = 24, h = 24 },
+        key_s2 = { x = 544, y = 86, w = 24, h = 24 },
+        key_s3 = { x = 392, y = 86, w = 24, h = 24 },
         relic_bar = { x = 776, y = 590, slot = 34, gap = 8 },
         relic_slots = { "relic1", "relic2", "relic3", "relic4" },
         pips = { x = 776, y = 566, size = 14, gap = 8 },
@@ -486,10 +496,15 @@ end
 local R = M.SCREENS.ROOM
 put_rect("hp_bg", R.hp_bar)
 put_rect("hp_fill", R.hp_bar)
-for i = 1, 2 do
+put_rect("dash_bg", R.dash_bar)
+put_rect("dash_fill", R.dash_bar)
+put_rect("portrait", R.portrait)
+for i = 1, 3 do
     local prefix = "s" .. i
     put_rect(prefix .. "_bg", R["slot_" .. prefix])
     put_rect(prefix .. "_cd", R["slot_" .. prefix])
+    put_rect(prefix .. "_frame", R["slot_" .. prefix])
+    put_rect(prefix .. "_key", R["key_" .. prefix])
     put_rect(prefix .. "_shape_icon", R["shape_icon_" .. prefix])
     put_rect(prefix .. "_dot1", R["dot1_" .. prefix])
     put_rect(prefix .. "_dot2", R["dot2_" .. prefix])
