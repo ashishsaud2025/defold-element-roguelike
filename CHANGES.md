@@ -16,7 +16,7 @@ Branch `settings-pause-training`; never touched `main` and never built a zip.
   `sfx.BUS`; live-rebindable rows for WASD / Q / R / E / SPACE / LMB↔RMB toggle.
   Master, SFX and Music values show as numbers next to the bar.
 - **Live key rebinding**: every physical key in the binding file now has a static `k_*` id
-  (`k_a`..`k_z`, `k_0`..`k_9`, `k_f1`..`k_f12`, arrows, `k_space`, `k_tab`, `k_enter`, `k_escape`,
+  (`k_a`..`k_z`, `k_0`..`k_9`, `k_f1`..`k_f12`, arrows, `k_space`, `k_tab`, `k_enter`,
   brackets, minus, equals, shift/ctrl/alt). The game reads
   `self.bind = { up, left, down, right, cast1, cast2, interact, dash, basic }` and `self.bind_hash`
   (hash map rebuilt only on rebind). Capture mode: click a bind row → next static key becomes
