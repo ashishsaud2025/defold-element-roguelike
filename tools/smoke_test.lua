@@ -3750,6 +3750,7 @@ end
 sf(quirks.default_id(0) == "split_in_two", "quirks: default_id(0)")
 sf(quirks.default_id(0.521085) == "repeat_once", "quirks: default_id(golden r2)")
 sf(quirks.default_id(0.999999) == "health_cost", "quirks: default_id(high r2)")
+sf(quirks.default_id(1.0) == "health_cost", "quirks: default_id(1.0) must clamp, not return nil")
 sf(quirks.get("nope") == nil, "quirks: get(unknown) must be nil")
 sf(quirks.by_label("bigger but slower").id == "bigger_slower", "quirks: by_label failed")
 sf(quirks.by_label("nope") == nil, "quirks: by_label(unknown) must be nil")
@@ -3759,8 +3760,19 @@ local fake = { id = "test_extra", label = "test only", short = "test",
                flags = { test_only = true }, data = {} }
 sf(quirks.register(fake) == true, "quirks: register(fake) failed")
 sf(quirks.register(fake) == false, "quirks: register must reject a duplicate id")
-sf(quirks.register({ id = "split_in_two" }) == false, "quirks: register must reject a DEFAULT_IDS id")
+-- Complete def, so only the frozen-id guard can reject it.
+sf(quirks.register({ id = "split_in_two", label = "x", short = "x", desc = "x",
+                     flags = {}, data = {} }) == false,
+   "quirks: register must reject a DEFAULT_IDS id")
+sf(quirks.register({ id = "test_dup_label", label = "test only", short = "dup",
+                     desc = "duplicate label", flags = {}, data = {} }) == false,
+   "quirks: register must reject a duplicate label")
+sf(quirks.register({ id = "test_incomplete" }) == false,
+   "quirks: register must reject an incomplete def")
+local bad_kind_ok = pcall(function() return quirks.list_for_slot("nope") end)
+sf(bad_kind_ok == false, "quirks: list_for_slot(bad kind) must fail loudly")
 sf(#quirks.list() == 6, "quirks: registered quirk missing from list()")
+sf(#quirks.list_for_slot("spell") == 6, "quirks: registered quirk missing from the spell slot")
 sf(quirks.get("test_extra") ~= nil, "quirks: registered quirk missing from get()")
 sf(quirks.default_id(0.521085) == "repeat_once", "quirks: register moved default_id")
 sf(quirks.unregister("split_in_two") == false, "quirks: unregister must refuse a DEFAULT_IDS id")

@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""Syntax-check every Lua file under main/, src/ and tools/ with LuaJIT's loadstring.
+"""Syntax-check every Lua source file under main/, src/ and tools/ with LuaJIT.
 
     python tools/check_lua.py     # exit 0 when every file compiles, 1 otherwise
 
-This is DoD step 1 in AGENTS.md: Defold runs LuaJIT (Lua 5.1), so `goto`, `//`,
-`math.type` and the 5.3 bitwise operators are all syntax/compile errors in the
-game even though a modern Lua would accept them. Compiling with LuaJIT is
-therefore the check that matters — checking with Lua 5.3+ would pass code the
+Defold's Lua source is not all `*.lua`: the engine parses `.script`,
+`.gui_script` and `.render_script` files as plain Lua, so all four extensions are
+compiled here (loadstring does not care about the file name). Compiling with
+LuaJIT is the check that matters — Defold runs LuaJIT (Lua 5.1), so `goto`, `//`,
+`math.type` and the 5.3 bitwise operators are all compile errors in the game even
+though a modern Lua would accept them; checking with Lua 5.3+ would pass code the
 editor rejects.
 
-It only compiles (loadstring); it never runs the files.
+This is DoD step 1 in AGENTS.md. It only compiles (loadstring); it never runs the files.
 """
 import os
 import sys
@@ -25,6 +27,7 @@ except Exception:
         sys.exit(2)
 
 ROOTS = ("main", "src", "tools")
+LUA_EXTS = (".lua", ".script", ".gui_script", ".render_script")
 
 
 def find_lua_files(root):
@@ -32,7 +35,7 @@ def find_lua_files(root):
     for base, dirs, files in os.walk(root):
         dirs.sort()
         for name in sorted(files):
-            if name.endswith(".lua"):
+            if name.endswith(LUA_EXTS):
                 found.append(os.path.join(base, name))
     return found
 

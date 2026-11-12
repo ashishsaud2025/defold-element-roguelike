@@ -114,12 +114,12 @@ function M.list()
     return out
 end
 
--- Quirks legal for one loadout slot. `kind` is "spell" or "basic"; an unknown
--- kind yields an empty list rather than a guessed offer.
+-- Quirks legal for one loadout slot. `kind` is "spell" or "basic". A bad kind is a
+-- call-site bug, so it asserts instead of silently rendering an empty editor.
 function M.list_for_slot(kind)
+    assert(kind == "spell" or kind == "basic", "list_for_slot: bad kind " .. tostring(kind))
     local all = M.list()
     if kind == "spell" then return all end
-    if kind ~= "basic" then return {} end
     local out = {}
     for _, def in ipairs(all) do
         if def.basic_ok then out[#out + 1] = def end
@@ -131,8 +131,9 @@ end
 -- so registering a quirk can never move the mapping. r2 == 1.0 (a producer that
 -- rounds up) clamps to the last entry instead of returning nil.
 function M.default_id(r2)
-    local i = math.floor((r2 or 0) * 5) + 1
-    if i < 1 then i = 1 elseif i > 5 then i = 5 end
+    local n = #M.DEFAULT_IDS
+    local i = math.floor((r2 or 0) * n) + 1
+    if i < 1 then i = 1 elseif i > n then i = n end
     return M.DEFAULT_IDS[i]
 end
 
@@ -146,12 +147,15 @@ end
 
 -- Add an extra quirk. False (never a crash) when the def is incomplete, the id is
 -- already taken (built-in or registered) or the label is already used (by_label
--- must stay unambiguous). The stored def is a normalized copy, so a caller that
--- mutates its own table afterwards cannot corrupt the registry.
+-- must stay unambiguous). Scalar fields and `flags` are copied (a shallow copy), so
+-- a caller that mutates its own table afterwards cannot corrupt the registry.
+-- `data` is deliberately stored by reference: it is the shared tuning table.
 function M.register(def)
     if not valid_def(def) then return false end
     if DEFAULT_SET[def.id] or extra_defs[def.id] then return false end
     if M.by_label(def.label) then return false end
+    local flags = {}
+    for k, v in pairs(def.flags or {}) do flags[k] = v end
     local entry = {
         id = def.id,
         label = def.label,
@@ -159,7 +163,7 @@ function M.register(def)
         desc = def.desc,
         basic_ok = def.basic_ok == true,
         default_pool = def.default_pool == true,
-        flags = def.flags or {},
+        flags = flags,
         data = def.data or {},
     }
     extras[#extras + 1] = entry
