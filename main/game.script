@@ -3246,14 +3246,21 @@ function on_input(self, action_id, action)
 
     -- NAME_INPUT: type a name, backspace to delete, ENTER to confirm
     if self.state == "NAME_INPUT" then
-        -- Handle text input from individual key presses
+        -- Try text event first (from TEXT trigger), then fall back to manual key mapping
+        if action.text and type(action.text) == "string" and #action.text > 0 then
+            if #self.name_buffer < 12 then
+                self.name_buffer = self.name_buffer .. action.text
+            end
+            return
+        end
+        -- Manual key mapping
         if action.pressed then
             -- Letters A-Z
             for i = 0, 25 do
-                local key = string.char(97 + i):upper()
-                if action_id == hash("k_" .. string.char(97 + i)) then
+                local lc = string.char(97 + i)
+                if action_id == hash("k_" .. lc) then
                     if #self.name_buffer < 12 then
-                        self.name_buffer = self.name_buffer .. key
+                        self.name_buffer = self.name_buffer .. lc:upper()
                     end
                     return
                 end

@@ -366,3 +366,7 @@ key_trigger {
   input: KEY_LALT
   action: "k_lalt"
 }
+text_trigger {
+  input: TEXT
+  action: "text"
+}
