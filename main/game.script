@@ -288,9 +288,11 @@ local PALETTES = {
 -- higher than the old values; the palette still decides the hue.
 local KIND_TINT = { floor = 0.90, wall_face = 0.75, wall_top = 0.50, pillar = 1.00 }
 
-local function apply_palette(self, room)
-    local pal = PALETTES[math.max(1, math.min(room or 1, #PALETTES))]
-    local f, a = pal.floor, pal.accent
+local HOME_PALETTE = { floor = { 0.26, 0.28, 0.34 }, accent = { 1.00, 0.78, 0.25 } }
+
+local function apply_palette(self, pal)
+    local p = pal or PALETTES[1]
+    local f, a = p.floor, p.accent
     self.accent = a
     for _, t in ipairs(self.level_tiles or {}) do
         if t.accent then
@@ -311,9 +313,9 @@ local function clear_level_visuals(self)
     self.level_tiles, self.torches = {}, {}
 end
 
--- Build (or rebuild) the tile sprites for room `idx` and make it the active level.
-local function set_room_visuals(self, idx)
-    local def = rooms_mod[math.max(1, math.min(idx, #rooms_mod))]
+-- Build (or rebuild) the tile sprites for `def` and make it the active level.
+-- `pal` picks the palette; nothing in here consumes gameplay RNG.
+local function build_level_visuals(self, def, pal)
     local lv = level_mod.parse(def.rows)
     lv.name = def.name
     self.level = lv
@@ -358,8 +360,14 @@ local function set_room_visuals(self, idx)
             end
         end
     end
-    apply_palette(self, idx)
+    apply_palette(self, pal)
     return lv
+end
+
+-- Same signature as before; room loads behave exactly as they did.
+local function set_room_visuals(self, idx)
+    local i = math.max(1, math.min(idx, #rooms_mod))
+    return build_level_visuals(self, rooms_mod[i], PALETTES[i])
 end
 
 -- Sigil, motes, vignette. The tile floor/walls are built per room by set_room_visuals.
