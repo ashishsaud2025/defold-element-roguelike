@@ -1,3 +1,80 @@
+# Pool Reactions (v15)
+
+Plan: `pool_reactions_addendum.md` — one generic, data-driven rule giving six new named combos:
+STEAM VENT, MOLTEN GROUND, FIRESTORM, SQUALL, QUAGMIRE, DUST DEVIL. Delivered on top of the v12 checkpoint.
+Supersedes the v14 zip (built with the pre-fix FIRESTORM `short` and before the three §6 checks landed);
+v13 was likewise superseded for the pre-fix `short` wording.
+Mechanism name everywhere: **Pool Reaction** (never "infusion" / "fusion" — Pool Infusion is the separate feature).
+
+## What shipped
+
+- **`src/game/reaction.lua`** (new): pool-reaction resolver and lifecycle — `eligible`, `reaction_for`,
+  `start`, `revert`, `live`. Reactions are data-driven: statuses come from the existing `data.COMPOUNDS`
+  entry for the pair, filtered to what exists in `STATUS_DATA`, is not `on_player`, and is not already on
+  the pool. No status list is hand-written.
+- **Targets**: only pure pools (`elements[1] == elements[2]`), alive, `duration > 0`, not `is_trail`,
+  `skill_ref ~= nil`. Mixed pools never react (Mud + fire stays Burning Mud). Sources: any spell area
+  including pools' own areas, orbit areas, and the bolt pseudo-area in `bolt_interactions`. A pool's own
+  area never reacts with itself; at most one reaction per pool per tick; at most one banner per ticker tick.
+- **Latch**: a pool reacts at most once per pair per lifetime (`pud.reacted[pair_key]`, never cleared);
+  one reaction active per pool; after revert a *different* pair may react. Nothing "to add" = skip silently
+  (no latch, no banner).
+- **Duration/revert**: `INTERACT.REACTION_TIME = 3.0` s, then `reaction_restore` removes **only** the
+  statuses this reaction added and restores the exact base tint of `vis` and `ring` (`==` comparisons, not
+  approximate).
+- **Banner priority fix**: a reaction banner announces only when no other toast is up
+  (`(self.toast_t or 0) == 0`), so Burning Mud / Fire Cyclone / Dense Cloud banners win on conflict —
+  Gale over Inferno shows FIRE CYCLONE, not FIRESTORM. The reaction itself (statuses, tint, sparks) still
+  fires regardless.
+- **Excluded cell**: pool `fire` + spell element `wind` is Fire Cyclone and never fires a reaction. A fire
+  Bolt over a pure Gale pool fires FIRESTORM with no cyclone competing (the bolt has no spell area).
+- **Visuals**: pool `vis`/`ring` tinted 50 % toward the source element's colour while the reaction lasts;
+  deterministic fixed-angle sparks (no `math.random`).
+- **COMBO_DATA**: ten entries, all with a ≤ 48-char `short`. The Combos panel now shows all ten as one
+  line each (`NAME: short`). Ten short lines are fewer than the previous 14-line body. **Panel fit is not
+  verified** - needs the human in Defold. FIRESTORM's `short` is "Fire on a wind pool: it burns."
+(the mechanic and its `description` are governed by the `fire+wind` compound's on-pool statuses)
+- **Infusion unchanged**: `infusion.lua` untouched; a pool carrying reaction statuses contributes them live
+  to infused spells as normal.
+
+## Harness
+
+- `begin_room` and the pathing room loop reset `self.keys` and `self.dash_t, self.dash_cd` (the fuzz
+  `play_run` leaves them pressed; targeted tests assume a stationary actor).
+- New reaction suite: 11 puddle-path cells × 13 checks each (banner special-cased for wind+fire → expects
+  FIRE CYCLONE, the one cell where the cyclone toast wins), `reaction_cells_done == 11`, wind+fire cell keeps
+  its statuses/tint/revert/latch/different-pair checks, a fire-Bolt-over-pure-Gale cell (FIRESTORM, no cyclone),
+  a fire+wind exclusion check, a listed-order check, and a decay-resume check that only asserts no second
+  FIRE CYCLONE banner re-appears.
+
+- Reaction suite additions: control Pool with no overlap never reacts; QUAGMIRE root infusion is live
+  DURING the reaction (fresh bolt through the Quake pool) and gone AFTER the revert (the Mud source pool
+  gets `duration = 2` in this test, which is what makes "absent after" falsifiable — its native root would
+  otherwise infuse forever); room/run reset leaves no `pud.reaction` records and returns the live-object
+  count to the like-for-like pristine baseline.
+- `FIRESTORM`'s `description` no longer mentions spread; the `fire+wind` compound keeps its engine
+  statuses unchanged.
+
+## Verification
+
+- `python tools/run_smoke_test.py` (default / `ART_TEST=1` / `ART_TEST=0`): **1093 checks, 0 failed**, all
+  three modes; `RESULT: PASS (mock only)`. Pathing `8/8` (Twin Lanes) and `14/12` (Gauntlet).
+- Editor HTTP API (the way earlier phases compile): `POST /command/compile` on the human's open editor →
+  `{"success": true, "issues": []}` (re-run twice, including after the description/short edit).
+- `python tools/validate_rooms.py`: 10 rooms, 0 problems. `python tools/run_anim_test.py`: 0 failures, PASS.
+  Syntax check OK (15 files); BOM check clean; `git branch --show-current` = `pool-reactions`.
+- **Note:** the Phase-B-accepted smoke harness was accidentally overwritten by a diagnostic copy during
+  Phase-C diagnostics; it was reconstructed from a Temp snapshot and unified-diff-audited (AGENTS.md #68).
+
+## Not verified (needs you in Defold)
+
+- Tint and sparks appearance, whether the banners are readable in a fight, whether ten lines fit the Combos
+  panel, and the cyclone/reaction two-banner behaviour on screen.
+
+## Deliveries
+
+- v14 and earlier zips untouched. This entry is **v15** (`Defold Games v15.zip`, next to v10-v14).
+
 # Fire Cyclone (v12)
 
 Plan: `fire_cyclone_combos_addendum.md` — pool-to-pool Fire Cyclone (Phase B) +

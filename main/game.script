@@ -36,6 +36,7 @@ local function crand_angle()
 end
 local combat_mod = require "src.game.combat"
 local infusion_mod = require "src.game.infusion"
+local reaction_mod = require "src.game.reaction"
 local status_mod = require "src.core.status"
 local relics_mod = require "src.core.relics"
 local credits_lines = require "src.core.credits"
@@ -393,6 +394,9 @@ local function make_puddle(self, x, y, radius, duration, power, statuses, skill,
     pud.compound = opts.compound or (skill and skill.compound)
     pud.style = opts.style
     pud.is_trail = opts.is_trail == true
+    pud.base_tint_vis  = { r = sc.r, g = sc.g, b = sc.b, a = 0.55 }
+    pud.base_tint_ring = { r = sc.r, g = sc.g, b = sc.b, a = 0.8 }
+    pud.reacted = {}                                    -- pool reaction latch, per pair key; never cleared
     table.insert(self.puddles, pud)
     return pud
 end
@@ -1321,6 +1325,58 @@ local function cyclone_touch(self, pud, until_time)
     return "started"
 end
 
+-- Pool reaction: tint the pool's glow/ring 50% toward the source element's colour, paint a
+-- deterministic sparks fan, announce the combo name. The statuses themselves are appended by
+-- reaction_mod.start. Caller decides whether this call may announce (the ticker caps at one
+-- banner per tick; bolts announce per call, bolts are rare).
+local function reaction_touch(self, pud, elements, allow_banner)
+    local r = reaction_mod.reaction_for(pud, elements)
+    if not r then return false end
+    local rec = reaction_mod.start(pud, r, self.clock)
+    local ec = data.ELEMENTS[rec.source] or { r = 1, g = 1, b = 1 }
+    local c = { r = ec.r, g = ec.g, b = ec.b }
+    local mix = 0.5
+    local bv = pud.base_tint_vis  or { r = 1, g = 1, b = 1, a = 0.55 }
+    local br = pud.base_tint_ring or { r = 1, g = 1, b = 1, a = 0.8 }
+    local function tint(url, base)
+        if url then go.set(url, "tint", vmath.vector4(
+            base.r * (1 - mix) + c.r * mix,
+            base.g * (1 - mix) + c.g * mix,
+            base.b * (1 - mix) + c.b * mix,
+            base.a)) end
+    end
+    tint(pud.vis  and msg.url(nil, pud.vis,  "sprite"), bv)
+    tint(pud.ring and msg.url(nil, pud.ring, "sprite"), br)
+    for k = 1, 7 do
+        local a = (k / 7) * math.pi * 2
+        local rx = math.cos(a) * pud.radius * 0.65
+        local ry = math.sin(a) * pud.radius * 0.65
+        spawn_particle(self, pud.x + rx, pud.y + ry, c.r, c.g, c.b, 0.9, 0.45, 0.4,
+            0, 55, element_fx({ rec.source }, 1, "rise"), 0.08)
+    end
+    -- Banner only wins the tick if no other toast is already up (infusion toast already
+    -- defers to a live interaction banner; reactions do the same here). The reaction's
+    -- statuses, tint and sparks still apply regardless of the banner.
+    if allow_banner and (self.toast_t or 0) == 0 then announce(self, data.COMBO_BY_ID[rec.id].name, pud.x, pud.y, c, pud.radius) end
+    print(data.COMBO_BY_ID[rec.id].name)
+    return true
+end
+
+-- Restore the pool's base tints and drop the reaction record (colour bookkeeping lives here
+-- so reaction_mod stays pure). Called only when the reaction expires.
+local function reaction_restore(self, pud)
+    if pud.reaction == nil then return end
+    reaction_mod.revert(pud)
+    if pud.base_tint_vis and pud.vis then
+        local b = pud.base_tint_vis
+        go.set(msg.url(nil, pud.vis,  "sprite"), "tint", vmath.vector4(b.r, b.g, b.b, b.a))
+    end
+    if pud.base_tint_ring and pud.ring then
+        local b = pud.base_tint_ring
+        go.set(msg.url(nil, pud.ring, "sprite"), "tint", vmath.vector4(b.r, b.g, b.b, b.a))
+    end
+end
+
 local function update_cyclones(self, dt)
     for _, pud in ipairs(self.puddles) do
         local rec = pud.cyclone
@@ -1437,6 +1493,22 @@ local function update_interactions(self, dt)
             end
         end
     end
+
+    -- D. Pool reactions: a pure Pool over a different-element area gains that compound's
+    -- statuses for REACTION_TIME. At most one banner per ticker tick across all pairs.
+    local reaction_banner = false
+    for _, a in ipairs(areas) do
+        for _, pud in ipairs(self.puddles) do
+            if a.source ~= pud then                                -- a pool never reacts through its own area
+                local dx, dy = pud.x - a.x, pud.y - a.y
+                local r = (a.radius or 0) + pud.radius
+                if dx * dx + dy * dy <= r * r then
+                    local fired = reaction_touch(self, pud, a.elements, not reaction_banner)
+                    if fired then reaction_banner = true end
+                end
+            end
+        end
+    end
 end
 
 -- A flying bolt is also a spell effect: fire ignites Mud, wind spreads a lingering fire pool.
@@ -1454,6 +1526,9 @@ local function bolt_interactions(self, p)
             elseif has_element(els, "wind") then
                 cyclone_touch(self, pud, self.clock + data.INTERACT.CYCLONE_BOLT_WIND_TIME)
             end
+            -- Pool reaction: the bolt's element can react a pure pool on the line.
+            -- One shot per pool per bolt-call; bolts are rare (at most one banner per call).
+            reaction_touch(self, pud, els, true)
         end
     end
 end
@@ -2093,6 +2168,8 @@ function update(self, dt)
                     if not has_status(pud.statuses, "burn") then table.insert(pud.statuses, "burn") end
                 end
             end
+            -- Pool reaction: revert once it expires (cheap check; no per-frame work while live)
+            if pud.reaction and self.clock >= pud.reaction.until_time then reaction_restore(self, pud) end
             local hits = combat_mod.update_puddle(pud, dt, self.enemies)
             for _, h in ipairs(hits) do
                 local died = apply_hit(self, h.enemy, h.damage, h.statuses, pud.x, pud.y)

@@ -388,6 +388,31 @@ Format: **what happened / why / rule for agents.** These are the assistant's own
 - **What:** three different "fit" claims about the COMBOS panel text circulated before anyone could render it: an initial count of ~12 lines without measuring, a trust-me-it-fits, and (finally) a wrong screen-y value for `credits_title` (770 vs the correct 510). None was derived from the actual `panel_text()` output.
 - **Rule:** when asked to assess visual fit from inside a sandbox where you cannot render, count lines with the exact function that renders (`src.core.combos.panel_text()` via lupa, count `\n` + 1), report the number, state the geometry assumptions, and *do not* say it fits — say "unverified; the one-number change that fixes it if it clips." Never quote an unverified fit as a fact.
 
+
+### 64. Compare RESULT and pathing lines, not raw check counts
+- **What:** repeated cycle of arguing from counts ("855 vs 878 vs 1064") that moved with unrelated data-table and harness-content edits and meant nothing on their own. The user asked for a single sane history and for pathing to be reported separately.
+- **Rule:** when validating a change, report the `RESULT` line and the two pathing lines (room 6 = 8/8, room 8 = 14/12). Counts are still recorded, but never argued from. When a diff in counts appears, find out *which* sections moved by per-section recount, not by impressions.
+
+### 65. Failure claims measured on a dirty tree, not a clean baseline
+- **What:** I reported "HEAD fails the pathing rooms" from a tree that was not HEAD, and the claim did not reproduce on a clean worktree (`wt_bf1f02d` passed 3/3 runs). The user had to call it out and force the ablation.
+- **Rule:** before claiming a baseline failure, create a clean `git worktree` of the baseline ref, run it there (same engine state, same lockstep RNG), then either reproduce or retract. Never reason from "it failed earlier somewhere". Delete the worktree after the comparison.
+
+### 66. Test the hypothesis before repeating the experiment
+- **What:** the stream-shift hypothesis was pronounced dead only after repeating the reseed experiment and watching it change nothing twice; the conclusion had been written before the data.
+- **Rule:** never write the conclusion, then investigate. Run the reseed / toggle / ablation FIRST, read both outcomes, then state what they showed. And state the RESULT and pathing lines, not just pass counts (see #64).
+
+### 67. Keys/dash reset is mandatory harness hygiene
+- **What:** the fuzz `play_run` leaves `self.keys` randomly pressed and `dash_t` set; targeted tests that assume a stationary dummy or player (accent, infusion, pathing) failed layout-dependent until both `begin_room` AND the pathing room loop reset `self.keys = { up/left/down/right = false }` and `self.dash_t, self.dash_cd = 0`.
+- **Rule:** every harness entry point that resets state must reset both. Both copies must stay identical, byte for byte, or sections diverge for the same engine (see #58, "both `calm_enemy` copies must be identical").
+
+### 68. Never overwrite the repo's shared harness with a diagnostic copy
+- **What:** to "back up" before re-running an experiment I copied `bf_unlock.lua` (a bf1f02d-derived diagnostic) onto `tools/smoke_test.lua`, and then "cleaned the status" by copying the diagnostic over the dev harness - destroying the accepted Phase-B 1064/0 state. Reconstructed from the 5:20 AM Temp snapshot `dev_now.lua` by re-applying the session's edits and audited by unified diff (7 hunks, all accounted for); rebuilt harness runs 1081/0.
+- **Rule:** a diagnostic copy must never share the repo-path filename. Snapshot the repo file to a NEW dated backup before anything destructive, and verify after every restore with `git diff --stat` plus a marker grep (`reaction_cells_done == 11`, etc.). If a restore is unavoidable, announce it and re-verify before claiming the tree is good.
+
+### 69. `toast_text` is never cleared; the timer is the source of truth
+- **What:** Phase-B checks `self.toast_text ~= "FIRE CYCLONE"` swore blindly at the text and kept flagging "banner re-shown" for a banner that had already expired - the field stays set forever; only `toast_t` counts down.
+- **Rule:** tests asserting "no banner announced" must check `(self.toast_t or 0) == 0`, or compare both (`toast_text ~= NAME or toast_t == 0`). The field is a display convenience, not state.
+
 ---
 ## Definition of Done (run before telling the human a change is finished)
 1. Syntax-check every Lua file you touched (`loadstring` in LuaJIT or `luac -p` for 5.1). No `goto`, `//`, bit operators.

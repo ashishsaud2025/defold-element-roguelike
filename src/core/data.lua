@@ -57,15 +57,38 @@ M.QUIRK_DATA = {
 -- 4.6b Combos reference (Phase C): the single source for the COMBOS panel and every
 -- interaction banner name. Names are upper case so the existing banner lines
 -- (FIRE CYCLONE, BURNING MUD, DENSE CLOUD) match byte for byte.
+-- Each entry carries `short` (one line) used by the Combos panel.
 M.COMBO_DATA = {
-    { id = "fire_cyclone", name = "FIRE CYCLONE",
+    { id = "fire_cyclone",  name = "FIRE CYCLONE",
+      short = "Wind makes a fire pool grow.",
       description = "Wind over a fire pool makes it grow into a cyclone. It shrinks back when the wind ends." },
     { id = "burning_mud",  name = "BURNING MUD",
+      short = "Fire makes a mud pool burn.",
       description = "Fire over a Mud pool: it burns for 3 s, then reverts to mud." },
     { id = "dense_cloud",  name = "DENSE CLOUD",
+      short = "Steam + Dust blinds and confuses.",
       description = "Steam meeting Dust makes a cloud that blinds and confuses." },
     { id = "pool_infusion", name = "POOL INFUSION",
+      short = "Spells absorb a pool's effects.",
       description = "Bolt, Orbit, Spray and Nova can absorb an active Pool. The spell keeps its own effects and also applies the Pool's." },
+    { id = "steam_vent",    name = "STEAM VENT",
+      short = "Fire meets water: pool pushes and blinds.",
+      description = "Fire meets water, or water meets fire: a pure pool pushes and blinds for 3 s." },
+    { id = "molten_ground", name = "MOLTEN GROUND",
+      short = "Fire meets earth: pool burns and slows.",
+      description = "Fire meets earth, or earth meets fire: a pure pool burns and slows for 3 s." },
+    { id = "firestorm",     name = "FIRESTORM",
+      short = "Fire on a wind pool: it burns.",
+      description = "Fire meets a gale-pure pool: the pool burns for 3 s." },
+    { id = "squall",        name = "SQUALL",
+      short = "Water meets wind: pool blinds.",
+      description = "Water meets wind, or wind meets water: a pure pool blinds for 3 s." },
+    { id = "quagmire",      name = "QUAGMIRE",
+      short = "Water meets earth: pool roots.",
+      description = "Water meets earth, or earth meets water: a pure pool roots for 3 s." },
+    { id = "dust_devil",    name = "DUST DEVIL",
+      short = "Earth meets wind: pool confuses.",
+      description = "Earth meets wind, or wind meets earth: a pure pool confuses for 3 s." },
 }
 M.COMBO_BY_ID = {}
 for _, c in ipairs(M.COMBO_DATA) do M.COMBO_BY_ID[c.id] = c end
@@ -86,6 +109,20 @@ M.INTERACT = {
     MAX_CLOUDS = 6,
     INFUSE_DAMAGE_MUL = 1.25,   -- infused spell hit/tick damage multiplier (once, never stacks)
     INFUSE_GRACE = 1.0,         -- seconds a Bolt/Orbit orb stays infused after leaving a Pool
+    REACTION_TIME = 3.0,        -- seconds a Pool carries the reaction statuses
+}
+
+-- 4.7b Pool reactions (Phase B): pair key (as in COMPOUNDS, sorted alphabetically joined
+-- with "+") -> combo id. Only when the Pool is *pure* (elements[1] == elements[2]) and the
+-- overlapping spell element differs. The fire-Pool + wind-spell cell is Fire Cyclone's;
+-- the reaction code never takes it.
+M.REACTIONS = {
+    ["fire+water"]  = "steam_vent",
+    ["earth+fire"]  = "molten_ground",
+    ["fire+wind"]   = "firestorm",     -- only when the Pool is wind (fire-Pool cell = Fire Cyclone)
+    ["water+wind"]  = "squall",
+    ["earth+water"] = "quagmire",
+    ["earth+wind"]  = "dust_devil",
 }
 
 -- 3. Locked tuning numbers (all in one place)

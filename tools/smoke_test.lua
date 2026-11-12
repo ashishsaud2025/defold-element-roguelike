@@ -49,6 +49,7 @@ go = {
     if type(url)~="table" or not chk(url.path, "go.set "..tostring(prop)) then return end
     if prop ~= "tint" then err("go.set unexpected property "..tostring(prop)) end
     if url.frag ~= "sprite" then err("go.set on non-sprite component") end
+    live[url.path].tint_val = { r = val.x, g = val.y, b = val.z, a = val.w }
   end,
   set_position = function(p, id) if chk(id,"set_position") then if not (isnum(p.x) and isnum(p.y)) then err("NaN position") end live[id].pos = p end end,
   set_scale = function(s, id)
@@ -197,8 +198,13 @@ end
 -- ===== Pathing test: stationary player, does every enemy find a way to them? =====
 local path_report = {}
 for k = 1, 9 do
+  -- the fuzz play_run leaves movement keys randomly pressed; nothing releases them.
+  -- Pathing must measure a stationary dummy, so reset input inherited from the fuzz.
+  self.keys = { up = false, left = false, down = false, right = false }
+  self.dash_t, self.dash_cd = 0, 0
   ui({action="start"}); ui({action="pick", element="fire"}); ui({action="pick", element="fire"}); ui({action="enter"})
-  self.room_number = k - 1; self.state = "CAULDRON"; ui({action="done"})
+  self.room_number = k - 1; self.state = "CAULDRON"
+  ui({action="done"})
   local seen, total, unreached = {}, 0, {}
   local waves_seen = 0
   for f = 1, 60*60 do
@@ -325,6 +331,11 @@ local function begin_room(seed)
   ui({ action = "enter" })
   self.player.hp, self.player.max_hp = 100, 100
   self.player.alive, self.player.invuln = true, 0
+  -- The fuzz play_run leaves movement keys randomly pressed; nothing releases them.
+  -- Targeted tests assume a static player, so reset input (AGENTS #58 family: freeze
+  -- every channel that could nudge a "stationary" player or orbit).
+  self.keys = { up = false, left = false, down = false, right = false }
+  self.dash_t, self.dash_cd = 0, 0
   self.aim.x, self.aim.y = self.player_pos.x + 120, self.player_pos.y
   self.slot1_cooldown, self.slot2_cooldown = 0, 0
   self.relics, self.cast_count, self.status_dur_mul = {}, 0, 1
@@ -790,6 +801,9 @@ if begin_room() then
   equip(mk("puddle", nil, "earth", "water")); cast1()
   local mud = self.puddles[1]
   sf(mud ~= nil and mud.compound == "Mud", "burning mud: no Mud pool")
+  -- Inferno (pure fire) pool over the Mud pool: the Inferno pool also reacts to the Mud
+  -- area (MOLTEN GROUND statuses) but the BURNING MUD banner was announced first in section
+  -- A, so the reaction banner must not overwrite it.
   equip(mk("puddle", nil, "fire", "fire")); cast1()
   frames(15)
   sf(mud ~= nil and mud.burning_mud == true, "burning mud: not ignited")
@@ -797,10 +811,13 @@ if begin_room() then
      "burning mud: no readable banner")
   if mud then
     sf(list_has(mud.statuses, "burn"), "burning mud: no burn status")
-    frames(200)
-    sf(mud.burning_mud == false, "burning mud: did not revert")
+    frames(150)                                     -- ~2.5 s: before Burning Mud reverts (3 s)
+    sf(mud.burning_mud == true, "burning mud: did not revert early")
+    sf((self.toast_t or 0) == 0,
+       "burning mud: banner expired (the MOLTEN GROUND reaction on the Inferno pool was suppressed by the banner)")
+    frames(90)                                       -- cross the 3 s revert
+    sf(mud.burning_mud == false, "burning mud: did not revert after 3 s")
     sf(not list_has(mud.statuses, "burn"), "burning mud: burn was not removed on revert")
-    sf((self.toast_t or 0) == 0, "burning mud: banner never expired")
     frames(30)
     sf(mud.burning_mud == false, "burning mud: re-ignited forever while the fire area lived")
   end
@@ -983,8 +1000,12 @@ if begin_room() then
     for _, want in ipairs({ "burn", "root", "push", "spread" }) do
       sf(e.statuses and e.statuses[want] ~= nil, "infusion 3 pools: missing " .. want)
     end
+    -- Pool reactions (DUST DEVIL on the Gale pool vs the Mud area, FIRESTORM vs the Ember
+    -- area) add confuse/burn/spread to the Gale pool since the reactions addendum; the
+    -- merged union is 5 keys. Duplicates still merge to one application.
+    sf(e.statuses and e.statuses.confuse ~= nil, "infusion 3 pools: missing confuse (DUST DEVIL reaction)")
     local keys = 0 for _ in pairs(e.statuses or {}) do keys = keys + 1 end
-    sf(keys == 4, "infusion 3 pools: keys=" .. keys .. " (duplicates must merge)")
+    sf(keys == 5, "infusion 3 pools: keys=" .. keys .. " (duplicates must merge, expected 5 incl. reaction)")
     sf(near(hp0 - e.hp, exp4, 0.001),
        "infusion 3 pools: damage " .. (hp0 - e.hp) .. " (multiplier must not stack)")
   end
@@ -1561,8 +1582,14 @@ if begin_room() then
   local e = self.enemies[1]
   if e then
     calm_enemy(e)
-    place_at(e, 0, 70)
-    self.aim.x, self.aim.y = self.player_pos.x + 70, self.player_pos.y
+    local p = self.player_pos
+    local lane = nil
+    for L = 88, 44, -4 do
+      if level_mod.los(self.level, p.x, p.y, p.x + L, p.y, 4) then lane = L break end
+    end
+    if not lane then sf(false, "orbit d3: no clear east lane in room 1") end
+    e.x, e.y = p.x + (lane or 70), p.y
+    self.aim.x, self.aim.y = e.x, e.y
     equip(mk("puddle", nil, "earth", "water")); cast1()
     local pool = self.puddles[#self.puddles]
     if pool then pool.radius = 40 end
@@ -1773,6 +1800,19 @@ local POOL_PAIRS = {
   { "fire", "water" }, { "fire", "wind" }, { "earth", "fire" }, { "water", "wind" },
   { "earth", "water" }, { "earth", "wind" },
 }
+local reaction_mod = require "src.game.reaction"
+
+-- The engine's reaction rule applied to a fresh pool: statuses the pool GAINS when it
+-- overlaps the spell's area (pure pools only; the fire-pool+wind cell is Cyclone's).
+-- Mirrors reaction_mod.reaction_for — call the module under test rather than duplicate it.
+local function reaction_adds(pa, pb, sa, sb)
+  local fresh = mk("puddle", nil, pa, pb)
+  local fake = { alive = true, duration = 5, is_trail = false, skill_ref = fresh,
+                 elements = { pa, pb }, statuses = fresh.statuses, reacted = {} }
+  local r = reaction_mod.reaction_for(fake, { sa, sb })
+  if r then return r.added end
+  return {}
+end
 local STAT = status_mod.STATUS_DATA
 local DIST = { projectile = 150, orbit = 70, cone = 50, burst = 30 }
 local matrix_cells = 0
@@ -1803,6 +1843,15 @@ for _, pp in ipairs(POOL_PAIRS) do
           if not control then
             local psk = mk("puddle", nil, pa, pb)     -- fresh skill, same statuses as the cast pool
             for _, n in ipairs(psk.statuses) do if STAT[n] and not STAT[n].on_player then want[n] = true end end
+            -- the pool also gains its reaction over the spell's area — but only bolts live
+            -- past the first 0.2 s interaction tick before hitting; cone/burst hits land on
+            -- the cast frame and frozen-orb orbits strike within a frame or two, so their
+            -- merged union has no reaction statuses yet.
+            if shape == "projectile" then
+              for _, n in ipairs(reaction_adds(pa, pb, sa, sb)) do
+                if STAT[n] and not STAT[n].on_player then want[n] = true end
+              end
+            end
           end
           local want_n = 0 for _ in pairs(want) do want_n = want_n + 1 end
           self.aim.x, self.aim.y = e.x, e.y
@@ -2084,12 +2133,16 @@ end
 -- Kill the wind: drop Gale areas' remaining to 0 (they vanish and stop extending), set
 -- every Gale pool's duration near-zero so its own tick passes, and collapse every live
 -- cyclone's until_time so decay begins immediately.
+local function has_element(list, want)
+  for _, v in ipairs(list or {}) do if v == want then return true end end
+  return false
+end
 local function force_wind_gone(self)
   for _, a in ipairs(self.spell_areas) do
-    if a.compound == "Gale" then a.remaining = 0 end
+    if has_element(a.elements, "wind") then a.remaining = 0 end
   end
   for _, p in ipairs(self.puddles) do
-    if p.compound == "Gale" then p.duration = math.min(p.duration or 0, 0.05) end
+    if has_element(p.elements, "wind") then p.duration = math.min(p.duration or 0, 0.05) end
     if p.cyclone then p.cyclone.until_time = 0 end
   end
 end
@@ -2118,7 +2171,7 @@ if begin_room() then
   equip(mk("puddle", nil, "earth", "fire")); cast1()      -- Magma pool at (60,0)
   local pool = self.puddles[1]
   local base_r = pool and pool.radius
-  equip(mk("puddle", nil, "wind", "wind")); cast1()      -- Gale pool on the same spot
+  equip(mk("puddle", nil, "wind", "water")); cast1()  -- pure wind pool: cyclone only needs wind; may react (banner suppressed by banner fix)      -- Gale pool on the same spot
   frames(130)                                             -- ~2.2 s: enough to hit the cap
   sf(pool and pool.radius == data.INTERACT.CYCLONE_MAX_RADIUS,
      "cyclone: did not reach the cap (" .. tostring(pool and pool.radius) .. ")")
@@ -2140,10 +2193,10 @@ if begin_room() then
   self.aim.x, self.aim.y = p.x + 60, p.y
   equip(mk("puddle", nil, "earth", "fire")); cast1()
   local pool = self.puddles[1]
-  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  equip(mk("puddle", nil, "wind", "water")); cast1()  -- pure wind pool: cyclone only needs wind; may react (banner suppressed by banner fix)
   frames(15)
   local until1 = pool.cyclone and pool.cyclone.until_time
-  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  equip(mk("puddle", nil, "wind", "water")); cast1()  -- pure wind pool: cyclone only needs wind; may react (banner suppressed by banner fix)
   frames(15)
   local until2 = pool.cyclone and pool.cyclone.until_time
   sf(until1 and until2 and until2 > until1,
@@ -2159,7 +2212,7 @@ if begin_room() then
   equip(mk("puddle", nil, "earth", "fire")); cast1()
   local pool = self.puddles[1]
   local base_r = pool and pool.radius
-  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  equip(mk("puddle", nil, "wind", "water")); cast1()  -- pure wind pool: cyclone only needs wind; may react (banner suppressed by banner fix)
   frames(30)                                              -- cyclone started, some growth done
   force_wind_gone(self)
   frames(90)                                              -- decay into base
@@ -2178,7 +2231,7 @@ if begin_room() then
   local p = self.player_pos
   self.aim.x, self.aim.y = p.x + 60, p.y
   equip(mk("puddle", nil, "earth", "fire")); cast1()
-  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  equip(mk("puddle", nil, "wind", "water")); cast1()  -- pure wind pool: cyclone only needs wind; may react (banner suppressed by banner fix)
   frames(10)
   local pool = self.puddles[1]
   local errs_before = #errors
@@ -2233,7 +2286,7 @@ if begin_room() then
   for _, pp in ipairs(self.puddles) do if pp.is_trail then first = pp break end end
   if first then
     local base_r = first.radius
-    equip(mk("puddle", nil, "wind", "wind")); cast1()                   -- Gale wind over the trail patches
+    equip(mk("puddle", nil, "wind", "water")); cast1()  -- pure wind pool: cyclone only needs wind; may react (banner suppressed by banner fix)                   -- Gale wind over the trail patches
     frames(60)
     sf(first.cyclone == nil, "cyclone: trail patch started a cyclone")
     sf(near(first.radius, base_r, 0.001), "cyclone: trail patch grew a cyclone (" .. tostring(first.radius) .. ")")
@@ -2286,7 +2339,7 @@ if begin_room() then
   local pool = self.puddles[1]
   pool.radius = data.INTERACT.CYCLONE_MAX_RADIUS            -- the cap
   self.toast_text = nil
-  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  equip(mk("puddle", nil, "wind", "water")); cast1()  -- pure wind pool: cyclone only needs wind; may react (banner suppressed by banner fix)
   frames(20)
   sf(pool.cyclone == nil, "cyclone: cap-sized pool started a cyclone")
   sf((self.toast_t or 0) == 0, "cyclone: cap-sized pool showed a banner")
@@ -2301,7 +2354,7 @@ if begin_room() then
   equip(mk("puddle", "bigger_slower", "earth", "fire")); cast1()
   local pool = self.puddles[1]
   sf(near(pool.radius, 78, 0.01), "cyclone: bigger_slower pool is not 78 (" .. tostring(pool.radius) .. ")")
-  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  equip(mk("puddle", nil, "wind", "water")); cast1()  -- pure wind pool: cyclone only needs wind; may react (banner suppressed by banner fix)
   force_wind_gone(self)
   frames(90)
   sf(pool.cyclone == nil, "cyclone: grew but never returned to 78")
@@ -2315,13 +2368,13 @@ if begin_room() then
   self.aim.x, self.aim.y = p.x + 60, p.y
   equip(mk("puddle", nil, "earth", "fire")); cast1()
   local pool = self.puddles[1]
-  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  equip(mk("puddle", nil, "wind", "water")); cast1()  -- pure wind pool: cyclone only needs wind; may react (banner suppressed by banner fix)
   frames(15)
   sf(self.toast_text == "FIRE CYCLONE" and (self.toast_t or 0) > 0,
      "cyclone: no readable banner on start")
   local until1 = pool.cyclone and pool.cyclone.until_time
   self.toast_text, self.toast_t = nil, 0
-  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  equip(mk("puddle", nil, "wind", "water")); cast1()  -- pure wind pool: cyclone only needs wind; may react (banner suppressed by banner fix)
   frames(15)
   sf(pool.cyclone and pool.cyclone.until_time > until1, "cyclone: second wind did not extend")
   sf((self.toast_t or 0) == 0, "cyclone: second wind re-showed the banner")
@@ -2335,7 +2388,7 @@ if begin_room() then
   equip(mk("puddle", nil, "earth", "fire")); cast1()
   local pool = self.puddles[1]
   local base_r = pool.radius
-  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  equip(mk("puddle", nil, "wind", "water")); cast1()  -- pure wind pool: cyclone only needs wind; may react (banner suppressed by banner fix)
   frames(5)
   local sc = pool.radius / 64 * 2
   sf(live[pool.vis] and live[pool.vis].scale and near(live[pool.vis].scale.x, sc * 0.85, 0.001),
@@ -2381,7 +2434,7 @@ if begin_room() then
   self.aim.x, self.aim.y = p.x + 60, p.y + 80
   equip(mk("puddle", nil, "earth", "fire")); cast1()          -- Magma pool at (60, 80)
   sf(self.puddles[1] ~= nil, "cyclone: magma pool not placed")
-  equip(mk("puddle", nil, "wind", "wind")); cast1()          -- Gale over it
+  equip(mk("puddle", nil, "wind", "water")); cast1()  -- pure wind pool: cyclone only needs wind; may react (banner suppressed by banner fix)          -- Gale over it
   frames(120)                                                -- grow toward the cap
   local e = self.enemies[1]
   if e then
@@ -2405,7 +2458,7 @@ if begin_room() then
   local p = self.player_pos
   self.aim.x, self.aim.y = p.x + 60, p.y + 80
   equip(mk("puddle", nil, "earth", "fire")); cast1()          -- Magma pool
-  equip(mk("puddle", nil, "wind", "wind")); cast1()          -- Gale over it
+  equip(mk("puddle", nil, "wind", "water")); cast1()  -- pure wind pool: cyclone only needs wind; may react (banner suppressed by banner fix)          -- Gale over it
   frames(120)                                                -- grown
   force_wind_gone(self)
   frames(90)                                                 -- decay back
@@ -2427,17 +2480,17 @@ if begin_room() then
   self.aim.x, self.aim.y = p.x + 60, p.y
   equip(mk("puddle", nil, "earth", "fire")); cast1()
   local pool = self.puddles[1]
-  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  equip(mk("puddle", nil, "wind", "water")); cast1()  -- pure wind pool: cyclone only needs wind; may react (banner suppressed by banner fix)
   frames(130)                                                -- grow to (cap)
   force_wind_gone(self)
   frames(30)                                                 -- decay begins
   local mid = pool.radius
   sf(mid < data.INTERACT.CYCLONE_MAX_RADIUS and mid > 60, "decay resume: pool not mid-decay (" .. tostring(mid) .. ")")
-  sf((self.toast_t or 0) == 0, "decay resume: banner lingered into decay")
-  equip(mk("puddle", nil, "wind", "wind")); cast1()            -- fresh wind mid-decay
+  sf(self.toast_text ~= "FIRE CYCLONE" or (self.toast_t or 0) == 0, "decay resume: FIRE CYCLONE banner lingered into decay")
+  equip(mk("puddle", nil, "wind", "water")); cast1()  -- pure wind pool: cyclone only needs wind; may react (banner suppressed by banner fix)            -- fresh wind mid-decay
   frames(10)
   sf(pool.radius > mid, "decay resume: fresh wind did not resume growth (" .. tostring(pool.radius) .. " vs " .. tostring(mid) .. ")")
-  sf((self.toast_t or 0) == 0, "decay resume: re-extended, banner re-shown")
+  sf(self.toast_text ~= "FIRE CYCLONE" or (self.toast_t or 0) == 0, "decay resume: second FIRE CYCLONE banner re-shown")
 end
 
 if begin_room() then
@@ -2446,7 +2499,7 @@ if begin_room() then
   local p = self.player_pos
   self.aim.x, self.aim.y = p.x + 60, p.y
   equip(mk("puddle", nil, "earth", "fire")); cast1()      -- Magma
-  equip(mk("puddle", nil, "wind", "wind")); cast1()       -- Gale over it
+  equip(mk("puddle", nil, "wind", "water")); cast1()  -- pure wind pool: cyclone only needs wind; may react (banner suppressed by banner fix)       -- Gale over it
   local n_before = #self.puddles
   frames(130)                                             -- cap it out, checking no extra pools
   sf(#self.puddles == n_before, "cyclone: pool count changed during growth (" .. #self.puddles .. " vs " .. n_before .. ")")
@@ -2464,7 +2517,7 @@ if begin_room() then
   sf(mud and mud.burning_mud == true, "ticker: mud was never ignited")
   for _, pd in ipairs(self.puddles) do if pd ~= mud then pd.duration = 0.05 end end   -- let the fire pool die (bolt path only tests the bolt)
   frames(3)
-  equip(mk("puddle", nil, "wind", "wind")); cast1()        -- Gale pool over the burning mud (ticker route)
+  equip(mk("puddle", nil, "wind", "water")); cast1()  -- pure wind pool: cyclone only needs wind; may react (banner suppressed by banner fix)        -- Gale pool over the burning mud (ticker route)
   frames(60)                                              -- several interaction ticks
   sf(mud and mud.cyclone ~= nil, "ticker: Burning Mud did not cyclone via the ticker path")
   sf(mud and mud.radius > 60, "ticker: Burning Mud pool did not grow via the ticker path (" .. tostring(mud and mud.radius) .. ")")
@@ -2481,7 +2534,7 @@ if begin_room() then
   local p = self.player_pos
   self.aim.x, self.aim.y = p.x + 60, p.y
   equip(mk("puddle", nil, "earth", "fire")); cast1()
-  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  equip(mk("puddle", nil, "wind", "water")); cast1()  -- pure wind pool: cyclone only needs wind; may react (banner suppressed by banner fix)
   frames(5)
   local after = clean_reset()
   sf(#self.puddles == 0, "cyclone reset: pools survived a room reset")
@@ -2494,7 +2547,7 @@ if begin_room() then
   local p = self.player_pos
   self.aim.x, self.aim.y = p.x + 60, p.y
   equip(mk("puddle", nil, "earth", "fire")); cast1()
-  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  equip(mk("puddle", nil, "wind", "water")); cast1()  -- pure wind pool: cyclone only needs wind; may react (banner suppressed by banner fix)
   frames(5)
   local errs_before = #errors
   self.state = "DEAD"; ui({ action = "continue" })
@@ -2543,7 +2596,7 @@ do
     equip(mk("puddle", nil, "earth", "fire")); cast1()
     local pool = self.puddles[1]
     if pool then pool.color = nil end
-    equip(mk("puddle", nil, "wind", "wind")); cast1()
+    equip(mk("puddle", nil, "fire", "wind")); cast1()  -- mixed: never reacts; wind present; burn+spread never blind (no wander-RNG)
     for _, pp in ipairs(self.puddles) do pp.color = nil end
     frames(40)
   end
@@ -2608,7 +2661,7 @@ if begin_room() then
     self.aim.x, self.aim.y = wx, wy
     equip(mk("puddle", nil, "earth", "water")); cast1()
     equip(mk("puddle", nil, "fire", "fire")); cast1()
-    equip(mk("puddle", nil, "wind", "wind")); cast1()
+    equip(mk("puddle", nil, "wind", "water")); cast1()  -- pure wind pool: cyclone only needs wind; may react (banner suppressed by banner fix)
     frames(20)
     local inside = 0
     for _, p in ipairs(self.puddles) do
@@ -2638,8 +2691,8 @@ end
 local combos_mod = require "src.core.combos"
 
 if begin_room() then
-  -- C1. COMBO_DATA: exactly four entries; names unique and upper-case.
-  sf(#data.COMBO_DATA == 4, "combos: expected 4 COMBO_DATA entries (got " .. #data.COMBO_DATA .. ")")
+  -- C1. COMBO_DATA: exactly ten entries; names unique and upper-case.
+  sf(#data.COMBO_DATA == 10, "combos: expected 10 COMBO_DATA entries (got " .. #data.COMBO_DATA .. ")")
   local seen = {}
   for _, c in ipairs(data.COMBO_DATA) do
     sf(type(c.name) == "string" and c.name == string.upper(c.name),
@@ -2648,29 +2701,41 @@ if begin_room() then
     seen[c.name] = true
     sf(type(c.description) == "string" and #c.description > 0,
        "combos: empty description for " .. c.name)
+    sf(type(c.short) == "string" and #c.short > 0 and #c.short <= 48,
+       "combos: short missing or > 48 chars for " .. tostring(c.name))
   end
 end
 if begin_room() then
-  -- C2. The panel body marks every combo name (from the shared builder the HUD uses).
+  -- C2. The panel body is exactly ten "NAME: short" lines, one per COMBO_DATA entry,
+  -- in COMBO_DATA order (the shared builder the HUD uses).
   local body = combos_mod.panel_text()
-  for _, c in ipairs(data.COMBO_DATA) do
-    sf(body:find(c.name, 1, true) ~= nil, "combos: panel missing " .. c.name)
+  local lines = {}
+  for line in body:gmatch("[^\n]+") do lines[#lines + 1] = line end
+  sf(#lines == #data.COMBO_DATA,
+     "combos: panel has " .. #lines .. " line(s) for " .. #data.COMBO_DATA .. " entries")
+  for i, c in ipairs(data.COMBO_DATA) do
+    sf(lines[i] == c.name .. ": " .. c.short,
+       "combos: panel line " .. i .. " is \"" .. tostring(lines[i]) .. "\" expected \"" .. c.name .. ": " .. c.short .. "\"")
   end
 end
 if begin_room() then
-  -- C3. FIRE CYCLONE banner reads from COMBO_DATA.
+  -- C3. FIRE CYCLONE banner reads from COMBO_DATA. Gale pool over an Inferno pool: the
+  -- Inferno pool also reacts to the Gale area (FIRESTORM statuses) but the FIRE CYCLONE
+  -- banner was announced first in section B, so the reaction banner must not overwrite it.
   for _, en in ipairs(self.enemies) do en.active = false end
   local p = self.player_pos
   self.aim.x, self.aim.y = p.x + 60, p.y
-  equip(mk("puddle", nil, "earth", "fire")); cast1()
-  equip(mk("puddle", nil, "wind", "wind")); cast1()
+  equip(mk("puddle", nil, "fire", "fire")); cast1()   -- Inferno pool
+  equip(mk("puddle", nil, "wind", "wind")); cast1()   -- Gale pool over it
   frames(15)
   sf(self.toast_text == data.COMBO_DATA[1].name, "combos: fire cyclone banner=" .. tostring(self.toast_text))
 end
 if begin_room() then
-  -- C4. BURNING MUD banner reads from COMBO_DATA.
+  -- C4. BURNING MUD banner reads from COMBO_DATA. Inferno pool over Mud: the Inferno pool
+  -- also reacts to the Mud area (MOLTEN GROUND statuses) but the BURNING MUD banner was
+  -- announced first in section A, so the reaction banner must not overwrite it.
   equip(mk("puddle", nil, "earth", "water")); cast1()
-  equip(mk("puddle", nil, "fire", "fire")); cast1()
+  equip(mk("puddle", nil, "fire", "fire")); cast1()   -- Inferno pool over Mud
   frames(25)
   sf(self.toast_text == data.COMBO_DATA[2].name, "combos: burning mud banner=" .. tostring(self.toast_text))
 end
@@ -2699,7 +2764,7 @@ if begin_room() then
 end
 if begin_room() then
   -- C8a. combos ignored in ROOM.
-  equip(mk("puddle", nil, "fire", "fire")); cast1()
+  equip(mk("puddle", nil, "fire", "water")); cast1()  -- mixed pool: never reacts; banner only needs fire
   self.state = "ROOM"
   ui({ action = "combos" })
   sf(self.state == "ROOM", "combos: action leaked into ROOM (state=" .. tostring(self.state) .. ")")
@@ -2723,6 +2788,553 @@ if begin_room() then
   sf(self.state == "CREDITS", "credits: action from TITLE did not open CREDITS (state=" .. tostring(self.state) .. ")")
   ui({ action = "back" })
   sf(self.state == "TITLE", "credits: back did not return to TITLE (state=" .. tostring(self.state) .. ")")
+end
+
+-- ===== Pool reactions (addendum): six combos, one generic rule ==================
+-- Per-cell source puddle pairs. skillgen sorts each pair's elements alphabetically,
+-- so the "listed order" rule picks elements[1] first. The source is mixed
+-- {pool_element, spell_element} so the source pool itself is never eligible to react
+-- (only pure pools react), its own element is skipped, and it carries no wind element
+-- that could start a Fire Cyclone on a fire pool. spell_areas are cleared below so
+-- cells never leak into each other (pool spell areas live 5 s).
+local RXN_SRC = {
+  ["fire>water"]  = { "fire", "water" },
+  ["fire>earth"]  = { "fire", "earth" },
+  ["water>fire"]  = { "water", "fire" },
+  ["water>wind"]  = { "water", "wind" },
+  ["water>earth"] = { "water", "earth" },
+  ["wind>fire"]   = { "wind", "fire" },
+  ["wind>water"]  = { "wind", "water" },
+  ["wind>earth"]  = { "wind", "earth" },
+  ["earth>fire"]  = { "earth", "fire" },
+  ["earth>water"] = { "earth", "water" },
+  ["earth>wind"]  = { "earth", "wind" },
+}
+local RXN_EXPECT = {
+  fire  = { water = "steam_vent", earth = "molten_ground" },
+  water = { fire = "steam_vent", wind = "squall", earth = "quagmire" },
+  wind  = { fire = "firestorm", water = "squall", earth = "dust_devil" },
+  earth = { fire = "molten_ground", water = "quagmire", wind = "dust_devil" },
+}
+local RXN_CELLS = {}
+for p, row in pairs(RXN_EXPECT) do for s, id in pairs(row) do
+  RXN_CELLS[#RXN_CELLS+1] = { p, s, id }
+end end
+table.sort(RXN_CELLS, function(a, b) if a[1] == b[1] then return a[2] < b[2] end return a[1] < b[1] end)
+local function rxn_cast(pool_el, spell_el)
+  local s = RXN_SRC[pool_el .. ">" .. spell_el]
+  equip(mk("puddle", nil, s[1], s[2])); cast1()
+end
+-- Exact expected status adds per cell (pool, spell), pre-filtered against a fresh pure pool.
+local RXN_ADD = {
+  ["fire>water"]  = { "push", "blind" },
+  ["fire>earth"]  = { "slow" },                -- Inferno already burns
+  ["water>fire"]  = { "push", "blind" },
+  ["water>wind"]  = { "blind" },               -- hide_self is never added
+  ["water>earth"] = { "root" },
+  ["wind>fire"]   = { "burn", "spread" },
+  ["wind>water"]  = { "blind" },
+  ["wind>earth"]  = { "confuse" },
+  ["earth>fire"]  = { "burn", "slow" },
+  ["earth>water"] = { "root" },
+  ["earth>wind"]  = { "confuse" },
+}
+local RXN_TICK_WAIT = 35                     -- reaction lands at the first 0.15 s ticker tick
+local RXN_TICK_FRAMES = 30                   -- pool tick interval is 0.5 s
+local RXN_REVERT_FRAMES = 200                -- > REACTION_TIME (180 frames)
+local reaction_cells_done = 0
+
+for _, cell in ipairs(RXN_CELLS) do
+  local pool_el, spell_el, combo_id = cell[1], cell[2], cell[3]
+  local tag = "rx " .. pool_el .. "+" .. spell_el
+  local added = RXN_ADD[pool_el .. ">" .. spell_el]
+  if begin_room() then
+    -- Pool spell areas live 5 s; clear them so reaction cells never leak into each other.
+    self.spell_areas = {}
+    local e = self.enemies[1]
+    if e then
+      calm_enemy(e)
+      place_target(e, 120)                    -- enemy stands in the pool (pool cast at x+120)
+      self.aim.x, self.aim.y = self.player_pos.x + 120, self.player_pos.y
+      equip(mk("puddle", nil, pool_el, pool_el)); cast1()
+      local pud = self.puddles[1]
+      if pud then pud.duration = 30 end          -- outlive the whole test (5 s default would expire mid-suite)
+      local base = {}
+      if pud then for i, s in ipairs(pud.statuses) do base[i] = s end end
+      local base_vis = pud and live[pud.vis] and live[pud.vis].tint_val
+      local base_ring = pud and pud.ring and live[pud.ring] and live[pud.ring].tint_val
+      rxn_cast(pool_el, spell_el)
+      frames(RXN_TICK_WAIT)
+      sf(pud and pud.reaction ~= nil, tag .. ": reaction did not start")
+      sf(pud and pud.reaction and pud.reaction.id == combo_id,
+         tag .. ": combo id " .. tostring(pud and pud.reaction and pud.reaction.id) .. " expected " .. combo_id)
+      if pool_el == "wind" and spell_el == "fire" then
+        -- The source pool (Ember, fire+wind) is a fire pool by is_fire_pool: section B
+        -- cyclones it and announces FIRE CYCLONE in the same tick; section D's reaction
+        -- banner is suppressed by the banner priority fix.
+        sf(pud and self.toast_text == "FIRE CYCLONE",
+           tag .. ": banner " .. tostring(self.toast_text) .. " expected FIRE CYCLONE (cyclone toast wins)")
+      else
+        sf(pud and self.toast_text == data.COMBO_BY_ID[combo_id].name,
+           tag .. ": banner " .. tostring(self.toast_text) .. " expected " .. data.COMBO_BY_ID[combo_id].name)
+      end
+      if pud then
+        local ok_count = 0
+        for _, s in ipairs(added) do if list_has(pud.statuses, s) then ok_count = ok_count + 1 end end
+        sf(ok_count == #added, tag .. ": added only " .. ok_count .. "/" .. #added .. " of the expected statuses")
+        sf(#pud.statuses == #base + #added,
+           tag .. ": statuses=" .. #pud.statuses .. " expected " .. (#base + #added) .. " (base " .. #base .. " + added " .. #added .. ")")
+        if pud.vis and live[pud.vis] and live[pud.vis].tint_val and base_vis then
+          local tv = live[pud.vis].tint_val
+          local shifted = tv.r ~= base_vis.r or tv.g ~= base_vis.g or tv.b ~= base_vis.b
+          sf(shifted, tag .. ": pool tint did not shift toward the source element")
+        end
+      end
+      frames(RXN_TICK_FRAMES)                  -- let the pool tick with the added statuses
+      if e then
+        local missing = {}
+        for _, s in ipairs(added) do
+          if not (e.statuses and e.statuses[s] ~= nil) then missing[#missing + 1] = s end
+        end
+        sf(#missing == 0, tag .. ": enemy missing " .. table.concat(missing, ",") .. " on the pool tick")
+      end
+      frames(RXN_REVERT_FRAMES)               -- past REACTION_TIME
+      if pud then
+        sf(pud.reaction == nil, tag .. ": reaction did not revert")
+        local same = #pud.statuses == #base
+        if same then
+          for i, s in ipairs(base) do if pud.statuses[i] ~= s then same = false break end end
+        end
+        sf(same, tag .. ": statuses not restored to the exact base list (got " .. table.concat(pud.statuses, ",") .. ")")
+        if base_vis and live[pud.vis] and live[pud.vis].tint_val then
+          local tv, bv = live[pud.vis].tint_val, base_vis
+          sf(tv.r == bv.r and tv.g == bv.g and tv.b == bv.b and tv.a == bv.a,
+             tag .. ": pool tint not restored EXACTLY to base (got " .. string.format("%.3f %.3f %.3f %.3f", tv.r, tv.g, tv.b, tv.a) .. ")")
+        end
+        if base_ring and pud.ring and live[pud.ring] and live[pud.ring].tint_val then
+          local tr, br = live[pud.ring].tint_val, base_ring
+          sf(tr.r == br.r and tr.g == br.g and tr.b == br.b and tr.a == br.a,
+             tag .. ": ring tint not restored EXACTLY to base")
+        end
+        -- Latch: the same pair never fires twice on one pool.
+        self.aim.x, self.aim.y = self.player_pos.x + 120, self.player_pos.y
+        rxn_cast(pool_el, spell_el); frames(RXN_TICK_WAIT)
+        sf(pud.reaction == nil, tag .. ": same pair reacted again (latch broken)")
+        -- A different pair can still react after the first reverts.
+        local others = {}
+        for other in pairs(RXN_EXPECT[pool_el]) do if other ~= spell_el then others[#others + 1] = other end end
+        table.sort(others)
+        if #others > 0 then
+          local other_el = others[1]
+          local other_id = RXN_EXPECT[pool_el][other_el]
+          self.aim.x, self.aim.y = self.player_pos.x + 120, self.player_pos.y
+          rxn_cast(pool_el, other_el); frames(RXN_TICK_WAIT)
+          sf(pud.reaction ~= nil and pud.reaction.id == other_id,
+             tag .. ": different pair after revert id=" .. tostring(pud.reaction and pud.reaction.id) .. " expected " .. other_id)
+        end
+      end
+      reaction_cells_done = reaction_cells_done + 1
+    end
+  end
+end
+sf(reaction_cells_done == 11, "reactions: only " .. reaction_cells_done .. "/11 reaction cells ran")
+
+-- The Inferno + wind cell belongs to Fire Cyclone; it never fires a reaction.
+if begin_room() then
+  self.aim.x, self.aim.y = self.player_pos.x + 60, self.player_pos.y
+  equip(mk("puddle", nil, "fire", "fire")); cast1()
+  local pud = self.puddles[1]
+  equip(mk("puddle", nil, "fire", "wind")); cast1()  -- Ember: mixed, never reacts; fire+wind is Cyclone's cell
+  frames(15)
+  sf(pud and pud.reaction == nil, "rx fire+wind: reacted (the Fire Cyclone cell)")
+  sf(pud and pud.cyclone ~= nil, "rx fire+wind: Fire Cyclone did not start")
+  sf(self.toast_text == "FIRE CYCLONE", "rx fire+wind: banner " .. tostring(self.toast_text) .. " expected FIRE CYCLONE")
+end
+
+-- A fire Bolt over a pure Gale pool: firestorm fires on the Gale pool, NO Fire Cyclone
+-- competes (the bolt's element reacts directly through bolt_interactions).
+if begin_room() then
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "wind", "wind")); cast1()   -- pure Gale pool
+  local gale = self.puddles[1]
+  if gale then gale.duration = 30 end
+  self.spell_areas = {}                                -- no spell-area cross-talk from the Gale pool's own area
+  self.aim.x, self.aim.y = gale.x, gale.y              -- fire bolt straight onto the pool
+  equip(mk("projectile", nil, "fire", "fire")); cast1()
+  local b = self.bolts[1]
+  if b then b.x, b.y = gale.x, gale.y; b.vx, b.vy = 0, 0 end   -- park the bolt on the pool
+  frames(4)
+  sf(gale and gale.reaction and gale.reaction.id == "firestorm",
+     "rx fire-bolt-over-gale: combo id " .. tostring(gale and gale.reaction and gale.reaction.id) .. " expected firestorm")
+  sf(self.toast_text == "FIRESTORM",
+     "rx fire-bolt-over-gale: banner " .. tostring(self.toast_text) .. " expected FIRESTORM")
+  sf(gale and gale.cyclone == nil,
+     "rx fire-bolt-over-gale: Fire Cyclone started on the Gale pool (should be absent)")
+end
+
+-- Dedicated test: pure Gale pool over pure Inferno pool.
+-- Fire Cyclone starts on the Inferno pool (wind over fire), Inferno gains NO reaction
+-- statuses (fire+wind is the excluded cell), and the Gale pool gains FIRESTORM statuses
+-- (burn, spread) from the fire area -- the reaction applies but its banner is suppressed
+-- by the Fire Cyclone banner already up (banner priority, requirement 1).
+if begin_room() then
+  settle_pools(self)
+  local p = self.player_pos
+  self.spell_areas = {}                                    -- no leakage from earlier cells
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "fire", "fire")); cast1()        -- Inferno pool (pure fire)
+  local inferno = self.puddles[1]
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "wind", "wind")); cast1()         -- Gale pool over it (pure wind)
+  frames(RXN_TICK_WAIT)
+  sf(inferno and inferno.cyclone ~= nil, "pure gale+inferno: Inferno cyclone did not start")
+  sf(self.toast_text == "FIRE CYCLONE", "pure gale+inferno: banner " .. tostring(self.toast_text) .. " expected FIRE CYCLONE (reaction banner suppressed)")
+  local gale
+  for _, pp in ipairs(self.puddles) do if pp.elements[1] == "wind" then gale = pp end end
+  sf(gale and gale.reaction and gale.reaction.id == "firestorm",
+     "pure gale+inferno: Gale did not gain FIRESTORM (got " .. tostring(gale and gale.reaction and gale.reaction.id) .. ")")
+  -- Inferno pool gains no reaction statuses from the wind (fire+wind is the excluded cell).
+  if inferno then
+    local has_reaction_status = false
+    for _, s in ipairs({ "push", "blind", "slow", "root", "confuse", "spread" }) do
+      if list_has(inferno.statuses, s) then has_reaction_status = true end
+    end
+    sf(not has_reaction_status, "pure gale+inferno: Inferno pool gained reaction statuses from wind (fire+wind cell is excluded)")
+  end
+  -- Gale gained firestorm statuses (burn, spread).
+  if gale then
+    sf(list_has(gale.statuses, "burn"), "pure gale+inferno: Gale missing burn from FIRESTORM")
+    sf(list_has(gale.statuses, "spread"), "pure gale+inferno: Gale missing spread from FIRESTORM")
+  end
+end
+
+-- SQUALL adds blind and never hide_self.
+if begin_room() then
+  local e = self.enemies[1]
+  if e then
+    calm_enemy(e)
+    place_target(e, 120)                     -- enemy stands in the Tide pool
+    self.aim.x, self.aim.y = self.player_pos.x + 120, self.player_pos.y
+    equip(mk("puddle", nil, "water", "water")); cast1()      -- Tide
+    equip(mk("puddle", nil, "water", "wind")); cast1()        -- Mist: water skipped (pool's own element), wind -> SQUALL
+    frames(RXN_TICK_WAIT + RXN_TICK_FRAMES)
+    sf(e.statuses and e.statuses.blind ~= nil, "squall: enemy not blinded by the pool tick")
+    sf(not (e.statuses and e.statuses.hide_self), "squall: hide_self reached the enemy")
+  end
+end
+-- A Steam spell over a Gale pool: listed first (fire) wins deterministically.
+if begin_room() then
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "wind", "wind")); cast1()        -- Gale
+  local gale = self.puddles[#self.puddles]
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "fire", "water")); cast1()       -- Steam: listed fire first
+  frames(RXN_TICK_WAIT)
+  sf(gale and gale.reaction and gale.reaction.id == "firestorm",
+     "rx listed order: expected firestorm (fire first), got " .. tostring(gale and gale.reaction and gale.reaction.id))
+end
+
+-- Mixed pools never react; Burning Mud stays Burning Mud; trail patches never react.
+if begin_room() then
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "earth", "water")); cast1()        -- Mud: mixed
+  equip(mk("puddle", nil, "fire", "water")); cast1()         -- Steam: mixed, has fire
+  frames(RXN_TICK_WAIT)
+  local mud = self.puddles[1]
+  sf(mud and mud.reaction == nil, "mixed: Mud reacted")
+  sf(mud and mud.burning_mud == true, "mixed: Burning Mud did not fire")
+  -- Trail patches never count as pools for reactions.
+  equip(mk("projectile", "leaves_trail", "wind", "wind")); cast1()
+  frames(60)
+  for _, pp in ipairs(self.puddles) do
+    if pp.is_trail then sf(pp.reaction == nil, "trail: patch reacted") end
+  end
+end
+
+-- Two overlapping pure pools of different elements each react, one banner per tick.
+if begin_room() then
+  settle_pools(self)
+  self.aim.x, self.aim.y = self.player_pos.x + 120, self.player_pos.y
+  equip(mk("puddle", nil, "water", "water")); cast1()        -- Tide cast first
+  equip(mk("puddle", nil, "wind", "wind")); cast1()          -- Gale overlapping
+  frames(RXN_TICK_WAIT)
+  local tide, gale
+  for _, pp in ipairs(self.puddles) do
+    if pp.elements[1] == "water" then tide = pp elseif pp.elements[1] == "wind" then gale = pp end
+  end
+  sf(tide and tide.reaction ~= nil, "pair: tide did not react to the gale area")
+  sf(gale and gale.reaction ~= nil, "pair: gale did not react to the tide area")
+  sf(self.toast_text == "SQUALL", "pair: banner " .. tostring(self.toast_text) .. " (expected SQUALL, one banner per tick)")
+end
+
+-- A pool's own area can never react against that same pool (source == pud guard).
+-- Synthetic lookalike: a foreign-element "own" area is injected by hand.
+if begin_room() then
+  settle_pools(self)
+  self.aim.x, self.aim.y = self.player_pos.x + 60, self.player_pos.y
+  equip(mk("puddle", nil, "fire", "fire")); cast1()          -- Inferno pool, one pool only
+  local pud = self.puddles[1]
+  table.insert(self.spell_areas, {
+    elements = { "earth", "earth" },                          -- foreign pair, would be MOLTEN GROUND
+    x = pud.x, y = pud.y, radius = pud.radius + 60,
+    remaining = 5, source = pud, handled = {},
+  })
+  frames(RXN_TICK_WAIT)
+  sf(pud and pud.reaction == nil, "own-area: reaction fired through the pool's own area")
+  sf(self.toast_text ~= "MOLTEN GROUND", "own-area: banner leaked from the pool's own area")
+end
+
+-- A bolt in flight triggers a reaction through bolt_interactions.
+if begin_room() then
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "earth", "earth")); cast1()        -- Quake
+  self.aim.x, self.aim.y = p.x + 400, p.y
+  equip(mk("projectile", nil, "wind", "wind")); cast1()      -- Gale bolt through the pool
+  frames(40)
+  local pud = self.puddles[1]
+  sf(pud and pud.reaction ~= nil and pud.reaction.id == "dust_devil",
+     "bolt: Quake did not react through bolt_interactions (got " .. tostring(pud and pud.reaction and pud.reaction.id) .. ")")
+end
+
+-- A cyclone-grown pool still reacts; both can be active on the same pool.
+if begin_room() then
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "fire", "fire")); cast1()          -- Inferno
+  local pud = self.puddles[1]
+  equip(mk("puddle", nil, "wind", "water")); cast1()         -- mixed wind source: cyclone only, never reacts
+  frames(60)
+  equip(mk("puddle", nil, "fire", "water")); cast1()         -- Steam source: fire + water
+  frames(RXN_TICK_WAIT)
+  sf(pud and pud.cyclone ~= nil, "cyclone+reaction: Fire Cyclone not active on the Inferno pool")
+  sf(pud and pud.reaction ~= nil and pud.reaction.id == "steam_vent",
+     "cyclone+reaction: steam_vent not active alongside the cyclone (got " .. tostring(pud and pud.reaction and pud.reaction.id) .. ")")
+end
+
+-- Infusion carries the reaction-scoped statuses into hits while the reaction is live.
+if begin_room() then
+  settle_pools(self)
+  local p = self.player_pos
+  local e = self.enemies[1]
+  if e then
+    calm_enemy(e)
+    place_target(e, 180)                 -- on the bolt path, beyond both pools; never in a pool
+    self.aim.x, self.aim.y = p.x + 60, p.y
+    equip(mk("puddle", nil, "earth", "earth")); cast1()     -- Quake (stun)
+    equip(mk("puddle", nil, "fire", "water")); cast1()     -- Steam -> MOLTEN GROUND (burn+slow) on the Quake pool
+    frames(RXN_TICK_WAIT)
+    local pud = self.puddles[1]
+    sf(pud and pud.reaction and pud.reaction.id == "molten_ground", "infusion: setup reaction did not fire (got " .. tostring(pud and pud.reaction and pud.reaction.id) .. ")")
+    self.aim.x, self.aim.y = p.x + 400, p.y
+    equip(mk("projectile", nil, "wind", "wind")); cast1()   -- Gale bolt: native push only, burn/slow come only from infusion
+    frames(40)
+    sf(e.statuses and e.statuses.burn ~= nil, "infusion: bolt missed molten_ground burn while the reaction was live")
+    sf(e.statuses and e.statuses.slow ~= nil, "infusion: bolt missed molten_ground slow while the reaction was live")
+    sf(e.statuses and e.statuses.blind ~= nil, "infusion: bolt not infused by the steam pool on the same line (test setup broken; blind lasts 2 s)")
+  end
+end
+-- Infusion does NOT carry the reaction statuses after the reaction reverted (fresh room).
+if begin_room() then
+  settle_pools(self)
+  local p = self.player_pos
+  local e = self.enemies[1]
+  if e then
+    calm_enemy(e)
+    place_target(e, 180)                 -- on the bolt path, beyond both pools; never in a pool
+    self.aim.x, self.aim.y = p.x + 60, p.y
+    equip(mk("puddle", nil, "earth", "earth")); cast1()     -- Quake (stun)
+    equip(mk("puddle", nil, "fire", "water")); cast1()     -- Steam -> MOLTEN GROUND (burn+slow) on the Quake pool
+    frames(RXN_TICK_WAIT)
+    frames(RXN_REVERT_FRAMES)                            -- reaction ends
+    self.aim.x, self.aim.y = p.x + 400, p.y
+    equip(mk("projectile", nil, "wind", "wind")); cast1()   -- Gale bolt: native push only, burn/slow come only from infusion
+    frames(40)
+    sf(e.statuses == nil or e.statuses.burn == nil, "infusion: bolt carried molten_ground burn after the reaction ended")
+    sf(e.statuses == nil or e.statuses.slow == nil, "infusion: bolt carried molten_ground slow after the reaction ended")
+    sf(e.statuses and e.statuses.stun ~= nil, "infusion: bolt missing the pool's native quake stun after the revert (infusion broke)")
+    sf(e.statuses and e.statuses.blind ~= nil, "infusion: bolt not infused by the steam pool on the same line (test setup broken; blind lasts 2 s)")
+  end
+end
+
+-- Pool expires mid-reaction: nothing crashes and nothing leaks.
+if begin_room() then
+  settle_pools(self)
+  self.aim.x, self.aim.y = self.player_pos.x + 60, self.player_pos.y
+  equip(mk("puddle", nil, "earth", "earth")); cast1()
+  equip(mk("puddle", nil, "earth", "water")); cast1()
+  frames(RXN_TICK_WAIT)
+  local pud = self.puddles[1]
+  local errs_before = #errors
+  if pud then pud.duration = 0.01 end
+  frames(3)
+  local still = false
+  for _, pp in ipairs(self.puddles) do if pp == pud then still = true end end
+  sf(not still, "expiry: pool survived a forced expiry mid-reaction")
+  sf(#errors == errs_before, "expiry: error produced while expiring a reacting pool")
+end
+
+-- Room reset clears everything the reaction touched.
+if begin_room() then
+  settle_pools(self)
+  self.aim.x, self.aim.y = self.player_pos.x + 60, self.player_pos.y
+  equip(mk("puddle", nil, "earth", "earth")); cast1()
+  equip(mk("puddle", nil, "earth", "water")); cast1()
+  frames(RXN_TICK_WAIT)
+  local errs_before = #errors
+  self.state = "DEAD"; ui({ action = "continue" })
+  sf(#self.puddles == 0, "reset: pools survived a room reset during a reaction")
+  frames(30)
+  sf(#errors == errs_before, "reset: error after the room reset")
+end
+
+-- A control Pool with no overlap never reacts (same setup, pool placed beyond the source area).
+if begin_room() then
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 400, p.y               -- control pool, out of the Mud area
+  equip(mk("puddle", nil, "earth", "earth")); cast1()
+  local ctrl = self.puddles[1]
+  local base = {}
+  if ctrl then for i, s in ipairs(ctrl.statuses) do base[i] = s end end
+  self.aim.x, self.aim.y = p.x + 60, p.y                -- source area cast far away from it
+  equip(mk("puddle", nil, "earth", "water")); cast1()   -- Mud -> QUAGMIRE would fire on overlap only
+  frames(RXN_TICK_FRAMES)
+  sf(ctrl and ctrl.reaction == nil, "control: pool with no overlap reacted")
+  local same = ctrl ~= nil and #ctrl.statuses == #base
+  if same then for i, s in ipairs(base) do if ctrl.statuses[i] ~= s then same = false break end end end
+  sf(same, "control: statuses changed with no overlap (control pool corrupted)")
+end
+
+-- QUAGMIRE carries root into bolt infusion while the reaction is live...
+if begin_room() then
+  settle_pools(self)
+  local p = self.player_pos
+  local e = self.enemies[1]
+  if e then
+    calm_enemy(e)
+    place_target(e, 180)
+    self.aim.x, self.aim.y = p.x + 60, p.y
+    equip(mk("puddle", nil, "earth", "earth")); cast1()   -- Quake (stun)
+    equip(mk("puddle", nil, "earth", "water")); cast1()   -- Mud -> QUAGMIRE (root) on the Quake pool
+    frames(RXN_TICK_WAIT)
+    local pud = self.puddles[1]
+    sf(pud and pud.reaction and pud.reaction.id == "quagmire",
+       "root infusion: setup reaction did not fire (got " .. tostring(pud and pud.reaction and pud.reaction.id) .. ")")
+    self.aim.x, self.aim.y = p.x + 400, p.y
+    equip(mk("projectile", nil, "wind", "wind")); cast1()   -- Gale bolt: native push only
+    frames(40)
+    sf(e.statuses and e.statuses.root ~= nil, "root infusion: bolt missed quagmire root while the reaction was live")
+    sf(e.statuses and e.statuses.stun ~= nil, "root infusion: bolt missed the quake native stun while the reaction was live")
+  end
+end
+-- ...and NOT after the revert. The Mud source pool natively roots anything infused from it,
+-- so it is given duration = 2 s (dies before the revert) and NO longer infuses the bolt
+-- once that happens. Then only the Quake pool can infuse: it carries stun always, root
+-- only during the reaction.
+if begin_room() then
+  settle_pools(self)
+  local p = self.player_pos
+  local e = self.enemies[1]
+  if e then
+    calm_enemy(e)
+    place_target(e, 180)
+    self.aim.x, self.aim.y = p.x + 60, p.y
+    equip(mk("puddle", nil, "earth", "earth")); cast1()   -- Quake (stun), duration 5 s
+    equip(mk("puddle", nil, "earth", "water")); cast1()   -- Mud -> QUAGMIRE (root), expires at 2 s
+    if self.puddles[2] then self.puddles[2].duration = 2 end
+    frames(RXN_TICK_WAIT)
+    frames(RXN_REVERT_FRAMES)                            -- reaction reverts by clock; Mud is dead
+    self.aim.x, self.aim.y = p.x + 400, p.y
+    equip(mk("projectile", nil, "wind", "wind")); cast1()   -- fresh Gale bolt
+    frames(40)
+    sf(e.statuses == nil or e.statuses.root == nil, "root infusion: bolt carried quagmire root after the reaction ended")
+    sf(e.statuses and e.statuses.stun ~= nil, "root infusion: bolt missing the quake native stun after the revert (infusion broke)")
+  end
+end
+
+-- Room reset and run reset leave no pud.reaction records; live objects return to the
+-- like-for-like pristine baseline (reset without casting), AGENTS #37 discipline.
+local reset_probe = {}
+if begin_room() then
+  -- Like-for-like control: a room is reset without any casts, for a comparable baseline.
+  self.state = "DEAD"; ui({ action = "continue" })
+  frames(30)
+  reset_probe.pristine = count()
+end
+if begin_room() then
+  settle_pools(self)
+  local p = self.player_pos
+  self.aim.x, self.aim.y = p.x + 60, p.y
+  equip(mk("puddle", nil, "earth", "earth")); cast1()     -- Quake
+  equip(mk("puddle", nil, "earth", "water")); cast1()     -- Mud -> QUAGMIRE on the Quake pool
+  frames(RXN_TICK_WAIT)
+  local pud = self.puddles[1]
+  sf(pud and pud.reaction and pud.reaction.id == "quagmire",
+     "reset: reaction did not start (got " .. tostring(pud and pud.reaction and pud.reaction.id) .. ")")
+  local errs_before = #errors
+  self.state = "DEAD"; ui({ action = "continue" })        -- room reset: the run restarts
+  frames(30)
+  reset_probe.after = count()
+  sf(#self.puddles == 0, "reset: pools (and pud.reaction records) survived a reset")
+  sf(#self.spell_areas == 0, "reset: spell areas survived a reset with a live reaction")
+  sf(#errors == errs_before, "reset: error after the reset with a live reaction")
+  sf(reset_probe.after == reset_probe.pristine,
+     "reset: live objects drifted (" .. tostring(reset_probe.after) .. " vs " .. tostring(reset_probe.pristine) .. ")")
+end
+
+-- No gameplay RNG consumed by the reaction path (identical rooms, reaction on/off).
+do
+  local PURITY_SEED = 0xB00B1E
+  local real_random = math.random
+  local seq_a = {}
+  local function record()
+    math.random = function(...) local v = real_random(...); seq_a[#seq_a + 1] = v; return v end
+  end
+  local function seq_str(t)
+    local parts = {}
+    for _, v in ipairs(t) do parts[#parts + 1] = string.format("%.10g", v) end
+    return table.concat(parts, ",")
+  end
+  local got_a, got_b
+  record()
+  if begin_room(PURITY_SEED) then
+    for _, en in ipairs(self.enemies) do en.active = false end
+    self.motes = {}
+    local p = self.player_pos
+    self.aim.x, self.aim.y = p.x + 60, p.y
+    equip(mk("puddle", nil, "earth", "earth")); cast1()   -- Quake, reactionless
+    local pool = self.puddles[1]
+    if pool then pool.color = nil end
+    frames(35)
+  end
+  got_a = seq_a
+  seq_a = {}
+  record()
+  if begin_room(PURITY_SEED) then
+    for _, en in ipairs(self.enemies) do en.active = false end
+    self.motes = {}
+    local p = self.player_pos
+    self.aim.x, self.aim.y = p.x + 60, p.y
+    equip(mk("puddle", nil, "earth", "earth")); cast1()   -- Quake
+    local pool = self.puddles[1]
+    if pool then pool.color = nil end
+    equip(mk("puddle", nil, "earth", "water")); cast1()  -- Mud over it: QUAGMIRE fires
+    if self.puddles[2] then self.puddles[2].color = nil end
+    frames(35)
+  end
+  got_b = seq_a
+  math.random = real_random
+  sf(#got_a > 0, "reaction rng: room consumed no RNG at all (comparison is vacuous)")
+  sf(seq_str(got_a) == seq_str(got_b), "reaction rng: the reaction path consumed gameplay RNG")
 end
 
 for i=1,300 do frame() end
