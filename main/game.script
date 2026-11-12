@@ -1565,6 +1565,19 @@ local function handle_ui_action(self, msg)
             end
             enter_room(self)
         end
+    elseif action == "resume" then
+        if self.state == "PAUSED" then self.state = "ROOM"; print("State: ROOM") end
+    elseif action == "settings_open" then
+        if self.state == "PAUSED" or self.state == "TITLE" then
+            self.settings_from = self.state
+            self.state = "SETTINGS"
+            music.set_state("SETTINGS")
+            print("State: SETTINGS")
+        end
+    elseif action == "quit" then
+        if self.state == "PAUSED" then sys.exit(0) end
+    elseif action == "quit_main" then
+        if self.state == "PAUSED" then reset_run(self) end
     elseif action == "continue" then
         if self.state == "DEAD" or self.state == "WIN" then reset_run(self) end
     end
@@ -2124,6 +2137,7 @@ function update(self, dt)
     self.clock = self.clock + dt
     sfx.update(dt)
     music.update(dt)
+    if self.state == "PAUSED" then return end
     -- Sustain loops: one per type, gain rises with the active count.
     sfx.loop_set("pool", #(self.puddles or {}))
     sfx.loop_set("orbit", #(self.orbits or {}))
@@ -2942,6 +2956,19 @@ function on_input(self, action_id, action)
             if action_id == hash("pause") then
                 self.capture_pending = nil -- ESC swallows the capture, nothing else
             end
+        end
+        return
+    end
+
+    -- ESC: pause in ROOM (settings and menus stay click-driven)
+    if action_id == hash("pause") and action.pressed then
+        if self.state == "ROOM" then
+            self.state = "PAUSED"
+            music.set_state("PAUSED")
+            print("State: PAUSED")
+        elseif self.state == "PAUSED" then
+            self.state = "ROOM"
+            print("State: ROOM")
         end
         return
     end

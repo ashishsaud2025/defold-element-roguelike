@@ -4195,6 +4195,37 @@ do
   apply_loadout(self)   -- put the session loadout back the way later tests read it
 end
 
+-- ===== Pause: freeze boundaries, resume, quit, quit-to-main =====
+sys = { exit = function() sys_exit_calls = (sys_exit_calls or 0) + 1 end }
+do
+  begin_room()
+  act("pause", true, false); act("pause", false, true)
+  sf(self.state == "PAUSED", "pause: ESC did not pause in ROOM (state=" .. tostring(self.state) .. ")")
+  local dt_probe = self.dash_cd
+  for i = 1, 30 do frame() end
+  sf(self.dash_cd == dt_probe, "pause: dash cooldown ticked while PAUSED")
+  sf(self.state == "PAUSED", "pause: PAUSED drifted back to ROOM")
+  ui({ action = "resume" })
+  sf(self.state == "ROOM", "pause: resume did not return to ROOM")
+  self.state = "TITLE"
+  act("pause", true, false); act("pause", false, true)
+  sf(self.state == "TITLE", "pause: ESC acted outside ROOM")
+  begin_room()
+  act("pause", true, false); act("pause", false, true)
+  ui({ action = "quit_main" })
+  sf(self.state == "TITLE", "pause: quit_to_main did not reset to TITLE")
+  begin_room()
+  act("pause", true, false); act("pause", false, true)
+  ui({ action = "quit" })
+  sf(sys_exit_calls == 1, "pause: quit did not route to the sys.exit stub")
+  -- force ROOM first; the previous test intentionally left state == "PAUSED".
+  self.state = "ROOM"
+  ui({ action = "bind", id = "up" })   -- capture OPEN
+  act("pause", true, false)
+  sf(self.capture_pending == nil, "pause: ESC did not eat the capture")
+  sf(self.state ~= "PAUSED", "pause: ESC paused during capture (should only cancel the capture)")
+end
+
 -- ===== HUD message budget: every state's ui message must fit the 2 KB msg.post limit =====
 -- Force each screen state with the heaviest payload the game can carry, then
 -- check the posted message. ui_seen/ui_worst were recorded by the msg.post stub.
