@@ -3,10 +3,11 @@
 -- one-line description, tuning table, behaviour flags) plus the slot filter the
 -- ability editor uses and the hook new quirks are added through.
 --
--- This module OWNS quirk identity. `src/core/data.lua` still exports the legacy
--- parallel arrays (QUIRKS / QUIRK_IDS) and the tuning numbers (QUIRK_DATA); those
--- stay untouched so the existing skill generator keeps working. The tuning tables
--- are consumed here by reference, so every number still lives in exactly one place.
+-- This module OWNS quirk identity. `src/core/data.lua` now exports only the tuning
+-- numbers (QUIRK_DATA); the legacy parallel arrays (QUIRKS / QUIRK_IDS) are gone and
+-- the label -> id map in `main/game.script` is rebuilt from `M.list()`. The tuning
+-- tables are consumed here by reference, so every number still lives in exactly one
+-- place.
 --
 -- `flags` is the behaviour contract: a quirk adds one flag here and one read site
 -- in `do_cast` (main/game.script). Nothing in the generator or the recipe key changes.
@@ -18,8 +19,9 @@ local M = {}
 -- reordering it would change which quirk a given roll produces.
 M.DEFAULT_IDS = { "split_in_two", "leaves_trail", "repeat_once", "bigger_slower", "health_cost" }
 
--- `label` is the display text the generated skill carries (`skill.quirk`); it must
--- match data.QUIRKS[i] character for character while both exist.
+-- `label` is the display text the generated skill carries (`skill.quirk`). FROZEN:
+-- `src/core/sfx.lua` keys its quirk sounds by this text, so renaming one silently
+-- loses that quirk's sound.
 -- `basic_ok` = legal on a left-click basic attack (no self-damaging quirks there).
 -- `default_pool` = granted without any unlock step.
 M.DEFS = {

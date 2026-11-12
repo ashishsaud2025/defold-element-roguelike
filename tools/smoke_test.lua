@@ -3780,6 +3780,63 @@ quirks.unregister("test_extra")
 sf(#quirks.list() == 5, "quirks: unregister did not restore list()")
 sf(quirks.get("test_extra") == nil, "quirks: unregister did not remove get()")
 
+-- ===== Task 2: generator quirk override + identity moved out of data.lua =====
+do
+  local hash_mod = require "src.core.hash"
+  local rng_mod = require "src.core.rng"
+  local function sorted2(a, b) if a <= b then return a, b else return b, a end end
+  -- Default path: every recipe still picks DEFAULT_IDS[floor(r2 * 5) + 1], computed
+  -- here from the same hash + rng the generator uses (draw 1 = power, draw 2 = quirk).
+  for _, r in ipairs(recipes) do
+    local sa, sb = sorted2(r[1], r[2])
+    local rr = rng_mod.new(hash_mod.hash(sa .. "+" .. sb .. "|" .. r[3]))
+    rr()
+    local expect = quirks.DEFAULT_IDS[math.floor(rr() * 5) + 1]
+    local sk = skillgen.makeSkill(r[1], r[2], r[3])
+    sf(sk.quirk_id == expect, "skillgen: default quirk drift for " .. sa .. "+" .. sb .. "|" .. r[3])
+    sf(sk.quirk == quirks.get(expect).label, "skillgen: label drift for " .. sa .. "+" .. sb .. "|" .. r[3])
+  end
+  -- The three frozen results the generator must reproduce (MASTER_PROMPT 5.4, rows 1-2).
+  local g1 = skillgen.makeSkill("fire", "water", "projectile")
+  sf(g1.power == 7 and g1.quirk == "repeats once" and g1.quirk_id == "repeat_once",
+     "skillgen: golden fire+water|projectile drifted")
+  local g2 = skillgen.makeSkill("fire", "fire", "puddle")
+  sf(g2.power == 14 and g2.quirk == "bigger but slower" and g2.quirk_id == "bigger_slower",
+     "skillgen: golden fire+fire|puddle drifted")
+  -- Override changes the quirk and nothing else.
+  local base = skillgen.makeSkill("fire", "fire", "projectile")
+  local over = skillgen.makeSkill("fire", "fire", "projectile", nil, "bigger_slower")
+  sf(over.quirk_id == "bigger_slower", "skillgen: override quirk_id")
+  sf(over.quirk == "bigger but slower", "skillgen: override label")
+  sf(over.power == base.power, "skillgen: override changed power")
+  sf(over.key == base.key, "skillgen: override changed the seed key")
+  sf(over.compound == base.compound and over.elements[1] == base.elements[1] and over.shape == base.shape,
+     "skillgen: override changed the compound/shape")
+  sf(over.cooldown == base.cooldown and over.radius == base.radius, "skillgen: override changed shape data")
+  sf(skillgen.makeSkill("fire", "fire", "projectile", nil, "nope").quirk_id == base.quirk_id,
+     "skillgen: unknown override must fall back to the default quirk")
+  -- A named player still overrides, and the player name still changes the seed.
+  local named = skillgen.makeSkill("fire", "fire", "projectile", "Ash", "leaves_trail")
+  sf(named.quirk_id == "leaves_trail" and named.quirk == "leaves a trail",
+     "skillgen: override with a player name failed")
+  sf(named.key ~= base.key, "skillgen: player name no longer reaches the seed key")
+  -- A registered extra is overridable too (the editor will list registry entries).
+  quirks.register({ id = "task2_extra", label = "task 2 only", short = "task2",
+                    desc = "test-only quirk", basic_ok = true, default_pool = false,
+                    flags = {}, data = {} })
+  local extra = skillgen.makeSkill("fire", "fire", "projectile", nil, "task2_extra")
+  sf(extra.quirk_id == "task2_extra" and extra.quirk == "task 2 only",
+     "skillgen: registered extra cannot be overridden")
+  sf(extra.power == base.power, "skillgen: extra override changed power")
+  quirks.unregister("task2_extra")
+  -- Identity lives in the registry now, not in data.lua.
+  sf(data.QUIRKS == nil, "data: M.QUIRKS must be gone (identity lives in src.core.quirks)")
+  sf(data.QUIRK_IDS == nil, "data: M.QUIRK_IDS must be gone (identity lives in src.core.quirks)")
+  sf(data.QUIRK_DATA.health_cost ~= nil and data.QUIRK_DATA.leaves_trail ~= nil
+     and data.QUIRK_DATA.bigger_slower ~= nil,
+     "data: QUIRK_DATA tuning tables must survive")
+end
+
 -- ===== HUD message budget: every state's ui message must fit the 2 KB msg.post limit =====
 -- Force each screen state with the heaviest payload the game can carry, then
 -- check the posted message. ui_seen/ui_worst were recorded by the msg.post stub.

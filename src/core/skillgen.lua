@@ -4,8 +4,8 @@
 local hash = require "src.core.hash"
 local rng = require "src.core.rng"
 local data = require "src.core.data"
+local quirks = require "src.core.quirks"
 
-local QUIRKS = data.QUIRKS
 local M = {}
 
 local function sortElements(a, b)
@@ -18,8 +18,11 @@ end
 --   r1     = r()                                   -- power jitter
 --   r2     = r()                                   -- quirk pick
 --   power  = floor(compound.power * (0.9 + r1 * 0.2) + 0.5)
---   quirk  = QUIRKS[ floor(r2 * 5) + 1 ]
-function M.makeSkill(elemA, elemB, shape, playerName)
+--   quirk  = quirks.DEFAULT_IDS[ floor(r2 * 5) + 1 ]  (unless quirk_id is given)
+-- `quirk_id` (optional 5th argument) overrides only the quirk pick: the seed, both
+-- draws and everything derived from them stay identical, so an ability editor can
+-- pin a quirk without breaking the deterministic recipe.
+function M.makeSkill(elemA, elemB, shape, playerName, quirk_id)
     playerName = playerName or ""
     local sa, sb = sortElements(elemA, elemB)
     local key = playerName .. sa .. "+" .. sb .. "|" .. shape
@@ -34,7 +37,10 @@ function M.makeSkill(elemA, elemB, shape, playerName)
 
     local power = math.floor(compound.power * (0.9 + r1 * 0.2) + 0.5)
     local quirk_index = math.floor(r2 * 5) + 1
-    local quirk = QUIRKS[quirk_index]
+    -- An unknown id falls back to the frozen default instead of producing a skill
+    -- with no quirk (a quirk-less skill would silently lose its tuning table).
+    local def = (quirk_id and quirks.get(quirk_id)) or quirks.get(quirks.DEFAULT_IDS[quirk_index])
+    assert(def, "skillgen: no quirk def for roll " .. tostring(quirk_index))
 
     -- Skill color = average of the two element colors (4.1)
     local ca = data.ELEMENTS[sa]
@@ -52,8 +58,8 @@ function M.makeSkill(elemA, elemB, shape, playerName)
         shape_key = shape,
         elements = { sa, sb },
         power = power,
-        quirk = quirk,
-        quirk_id = (data.QUIRK_IDS and data.QUIRK_IDS[quirk_index]) or nil,
+        quirk = def.label,
+        quirk_id = def.id,
         color = color,
         cooldown = shapeData.cooldown,
         radius = shapeData.radius,

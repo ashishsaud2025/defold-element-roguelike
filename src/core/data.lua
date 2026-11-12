@@ -33,13 +33,10 @@ M.SHAPES = {
     burst      = { name = "Nova",   cooldown = 2.5, radius = 70, duration = 0, blurb = "Explosion all around" },
 }
 
--- 4.5 Quirks
--- The ordered list is part of the deterministic generator: never reorder it.
-M.QUIRKS = { "splits in two", "leaves a trail", "repeats once", "bigger but slower", "costs 5% health" }
-
--- 4.6 Quirk tuning (keyed by stable id; QUIRK_IDS[i] describes QUIRKS[i]).
+-- 4.5/4.6 Quirk tuning (keyed by stable id).
+-- Quirk IDENTITY (ids, display labels, short forms, descriptions, behaviour flags,
+-- default order) lives in `src/core/quirks.lua`. Only the tuning numbers stay here.
 -- The generated skill carries both `quirk` (display text, unchanged) and `quirk_id`.
-M.QUIRK_IDS = { "split_in_two", "leaves_trail", "repeat_once", "bigger_slower", "health_cost" }
 M.QUIRK_DATA = {
     -- Splits in two: two instances, each at 60% strength so the total is not 2x.
     split_in_two  = { count = 2, strength = 0.60, angle_deg = 15, pool_offset = 0.60, pool_scale = 0.72 },

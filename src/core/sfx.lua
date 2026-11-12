@@ -110,7 +110,7 @@ define({ "mus_room_pad", "mus_room_rhythm", "mus_room_lead", "mus_boss", "mus_ti
 define({ "mus_win", "mus_dead" },
     { gain = 0.80, min_gap = 0, max_voices = 1, pitch_var = 0, bus = "music", dur = 5.0 })
 
--- Quirk names (data.QUIRKS) -> sound id
+-- Quirk display text (skill.quirk, frozen) -> sound id
 M.QUIRK_IDS = {
     ["splits in two"] = "qk_split",
     ["leaves a trail"] = "qk_trail",

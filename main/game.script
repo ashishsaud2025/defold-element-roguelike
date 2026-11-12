@@ -53,8 +53,10 @@ local SHAPE_LIST = { "projectile", "puddle", "orbit", "cone", "burst" }
 local SHAPE_DISPLAY = { projectile = "Bolt", puddle = "Pool", orbit = "Orbit", cone = "Spray", burst = "Nova" }
 
 -- Quirk display text -> stable id (generated skills carry quirk_id; this is the fallback).
+-- Identity comes from the registry, so a newly registered quirk is mapped automatically.
+local quirks_mod = require "src.core.quirks"
 local QUIRK_ID_BY_TEXT = {}
-for i, text in ipairs(data.QUIRKS) do QUIRK_ID_BY_TEXT[text] = data.QUIRK_IDS[i] end
+for _, d in ipairs(quirks_mod.list()) do QUIRK_ID_BY_TEXT[d.label] = d.id end
 
 local PLAYER_RADIUS = 12
 local ENEMY_BASE_TINT = { r = 0.5, g = 0.5, b = 0.5 }
