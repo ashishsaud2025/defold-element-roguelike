@@ -181,7 +181,11 @@ init(self)
 local baseline = 0 local base_ids = {} for id in pairs(live) do baseline = baseline + 1 base_ids[id]=true end
 
 local function ui(a) on_message(self, "ui_action", a, nil) end
-local function act(id, pressed, released, ax, ay) on_input(self, id, {pressed = pressed, released = released, x = ax or 480, y = ay or 320}) end
+local function act(id, pressed, released, ax, ay)
+  -- logical action slots resolve through the rebinding engine by contract
+  if self.bind and self.bind[id] then id = self.bind[id] end
+  on_input(self, id, {pressed = pressed, released = released, x = ax or 480, y = ay or 320})
+end
 local dt = 1/60
 local max_anims = 0
 local function frame()
@@ -4148,6 +4152,47 @@ do
      "editor: quirk desc")
   ui({ action = "done" })
   sf(self.state == "HOME", "editor: done did not return to HOME (2nd)")
+end
+
+-- ===== Rebind engine: defaults, dispatch, collision, capture =====
+-- slot1 is pinned to a known recipe (Earth Bolt, repeats once) so THIS section
+-- does not inherit whatever the preceding suite left in self.loadout[1].
+do
+  local bind_defaults = { up = "k_w", left = "k_a", down = "k_s", right = "k_d",
+      cast1 = "k_q", cast2 = "k_r", interact = "k_e", dash = "k_space", basic = "basic" }
+  for k, v in pairs(bind_defaults) do
+    sf(self.bind and self.bind[k] == v, "bind: default " .. k .. " is not " .. tostring(v))
+    sf(self.bind_hash and self.bind_hash[k] == hash(v), "bind: hash for " .. k .. " mismatch")
+  end
+  self.loadout[1] = { ea = "earth", eb = "earth", shape = "projectile", quirk_id = "repeats once" }
+  apply_loadout(self)
+  begin_room()
+  local b0 = #self.bolts
+  self.slot1_cooldown = 0
+  act("cast1", true, false); act("cast1", false, true)
+  sf(#self.bolts > b0, "bind: default cast1 did not fire")
+  ui({ action = "rebind", id = "cast1", key = "k_k" })
+  sf(self.bind.cast1 == "k_k", "bind: rebind did not write")
+  sf(self.bind_hash.cast1 == hash("k_k"), "bind: hash not rebuilt on rebind")
+  begin_room()
+  local b1 = #self.bolts
+  self.slot1_cooldown = 0
+  act("k_q", true, false); act("k_q", false, true)
+  sf(#self.bolts == b1, "bind: old physical key still fired after rebind")
+  begin_room()
+  local b2 = #self.bolts
+  self.slot1_cooldown = 0
+  act("k_k", true, false); act("k_k", false, true)
+  sf(#self.bolts > b2, "bind: rebound cast1 did not fire")
+  ui({ action = "rebind", id = "cast2", key = "k_space" })
+  begin_room()
+  local b3 = #self.bolts
+  self.slot2_cooldown = 0
+  act("k_space", true, false); act("k_space", false, true)
+  sf(#self.bolts > b3, "bind: duplicate key did not fire BOTH binds (cast2)")
+  sf(self.dash_t > 0, "bind: dash lost its own key after a rebind collided into it")
+  self.loadout[1] = { ea = "water", eb = "water", shape = "projectile", quirk_id = nil }
+  apply_loadout(self)   -- put the session loadout back the way later tests read it
 end
 
 -- ===== HUD message budget: every state's ui message must fit the 2 KB msg.post limit =====

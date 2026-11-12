@@ -58,6 +58,28 @@ local MARGIN = data.TUNING.ARENA_MARGIN
 local ELEMENT_LIST = { "fire", "water", "wind", "earth" }
 local SHAPE_LIST = { "projectile", "puddle", "orbit", "cone", "burst" }
 local SHAPE_DISPLAY = { projectile = "Bolt", puddle = "Pool", orbit = "Orbit", cone = "Spray", burst = "Nova" }
+-- Static physical-key ids registered on every gameplay action (every rebindable key).
+-- The engine dispatches on hash(self.bind[action]) - never on a raw id.
+local BIND_DEFAULTS = {
+    up       = "k_w",
+    left     = "k_a",
+    down     = "k_s",
+    right    = "k_d",
+    cast1    = "k_q",
+    cast2    = "k_r",
+    interact = "k_e",
+    dash     = "k_space",
+    basic    = "basic",       -- "basic" (LMB) or "basic_rmb" (RMB), toggled in settings
+}
+local STATIC_KEY_IDS = {
+    "k_a", "k_b", "k_c", "k_d", "k_e", "k_f", "k_g", "k_h", "k_i", "k_j", "k_k", "k_l",
+    "k_m", "k_n", "k_o", "k_p", "k_q", "k_r", "k_s", "k_t", "k_u", "k_v", "k_w", "k_x", "k_y", "k_z",
+    "k_0", "k_1", "k_2", "k_3", "k_4", "k_5", "k_6", "k_7", "k_8", "k_9",
+    "k_f1", "k_f2", "k_f3", "k_f4", "k_f5", "k_f6", "k_f7", "k_f8", "k_f9", "k_f10", "k_f11", "k_f12",
+    "k_up", "k_down", "k_left", "k_right",
+    "k_space", "k_tab", "k_enter", "k_escape", "k_lbracket", "k_rbracket", "k_minus", "k_equals",
+    "k_lshift", "k_rshift", "k_lctrl", "k_rctrl", "k_lalt", "k_ralt",
+}
 
 -- Quirk identity lives in the registry; labels are `skill.quirk` and ids `skill.quirk_id`.
 local quirks_mod = require "src.core.quirks"
@@ -645,6 +667,13 @@ function init(self)
     ensure_loadout(self)
     self.hold3 = false
     apply_loadout(self)
+
+    -- Live-rebindable input: hash lookup table rebuilt only on rebind
+    self.bind = {}
+    self.bind_hash = {}
+    for k, v in pairs(BIND_DEFAULTS) do self.bind[k], self.bind_hash[k] = v, hash(v) end
+    self.capture_pending = nil
+    self.capture_from = nil
 
     -- Enemies and active deliveries
     self.enemies = {}
@@ -1465,6 +1494,20 @@ local function handle_ui_action(self, msg)
         if self.state == "TITLE" then
             self.state = "COMBOS"
             print("State: COMBOS")
+        end
+    elseif action == "bind" then
+        if type(msg.id) == "string" and BIND_DEFAULTS[msg.id] then
+            if self.capture_pending == msg.id then
+                self.capture_pending = nil
+            else
+                self.capture_pending = msg.id
+                self.capture_from = self.state
+            end
+        end
+    elseif action == "rebind" then
+        if type(msg.id) == "string" and BIND_DEFAULTS[msg.id] and type(msg.key) == "string" then
+            self.bind[msg.id], self.bind_hash[msg.id] = msg.key, hash(msg.key)
+            self.capture_pending = nil
         end
     elseif action == "back" then
         if self.state == "CREDITS" or self.state == "COMBOS" then
@@ -2884,17 +2927,36 @@ function on_input(self, action_id, action)
         self.aim.x, self.aim.y = dx, dy
     end
 
-    -- WASD
-    if action_id == hash("up") then
+    -- Capture mode: a static k_* press is consumed by the rebind dialog, nothing else fires
+    if self.capture_pending then
+        if action.pressed then
+            for _, k in ipairs(STATIC_KEY_IDS) do
+                if action_id == hash(k) then
+                    self.bind[self.capture_pending] = k
+                    self.bind_hash[self.capture_pending] = hash(k)
+                    print("Rebound " .. self.capture_pending .. " -> " .. k)
+                    self.capture_pending = nil
+                    return
+                end
+            end
+            if action_id == hash("pause") then
+                self.capture_pending = nil -- ESC swallows the capture, nothing else
+            end
+        end
+        return
+    end
+
+    -- WASD (rebindable; the physical keyboard still lights the same movement)
+    if action_id == self.bind_hash.up then
         if action.pressed then self.keys.up = true
         elseif action.released then self.keys.up = false end
-    elseif action_id == hash("left") then
+    elseif action_id == self.bind_hash.left then
         if action.pressed then self.keys.left = true
         elseif action.released then self.keys.left = false end
-    elseif action_id == hash("down") then
+    elseif action_id == self.bind_hash.down then
         if action.pressed then self.keys.down = true
         elseif action.released then self.keys.down = false end
-    elseif action_id == hash("right") then
+    elseif action_id == self.bind_hash.right then
         if action.pressed then self.keys.right = true
         elseif action.released then self.keys.right = false end
     end
@@ -2956,19 +3018,19 @@ function on_input(self, action_id, action)
     end
 
     -- Hold-to-fire flags (the update loop casts while a button is held)
-    if action_id == hash("cast1") then
+    if action_id == self.bind_hash.cast1 then
         if action.pressed and self.state == "ROOM" then self.hold1 = true
         elseif action.released then self.hold1 = false end
-    elseif action_id == hash("cast2") then
+    elseif action_id == self.bind_hash.cast2 then
         if action.pressed and self.state == "ROOM" then self.hold2 = true
         elseif action.released then self.hold2 = false end
-    elseif action_id == hash("basic") then
+    elseif action_id == self.bind_hash.basic then
         if action.pressed and self.state == "ROOM" then self.hold3 = true
         elseif action.released then self.hold3 = false end
     end
 
-    -- E: interact (HOME only — stations, not menus)
-    if action_id == hash("interact") and action.pressed and self.state == "HOME" then
+    -- E: interact (HOME only - stations, not menus)
+    if action_id == self.bind_hash.interact and action.pressed and self.state == "HOME" then
         if self.home_focus == "altar" then
             ensure_loadout(self)   -- the loadout is created lazily before the first run
             self.state = "HOME_EDIT"
@@ -2980,7 +3042,7 @@ function on_input(self, action_id, action)
     end
 
     -- SPACE: dash (short invulnerable burst toward the move direction, or the aim point)
-    if action_id == hash("dash") and action.pressed and self.state == "ROOM"
+    if action_id == self.bind_hash.dash and action.pressed and self.state == "ROOM"
        and self.dash_cd <= 0 and self.dash_t <= 0 then
         local ddx = (self.keys.right and 1 or 0) - (self.keys.left and 1 or 0)
         local ddy = (self.keys.up and 1 or 0) - (self.keys.down and 1 or 0)
@@ -2998,8 +3060,8 @@ function on_input(self, action_id, action)
         print("Dash")
     end
 
-    -- LMB: cast the MOUSE basic in ROOM, otherwise hand the click to the HUD (menus)
-    if action_id == hash("basic") and action.pressed then
+    -- basic attack: cast slot 3 in ROOM, otherwise hand the click to the HUD (menus)
+    if action_id == self.bind_hash.basic and action.pressed then
         if self.state == "ROOM" then
             if self.slot3_cooldown <= 0 then
                 do_cast(self, 3)
@@ -3012,8 +3074,8 @@ function on_input(self, action_id, action)
         end
     end
 
-    -- Cast slot 1 (Q)
-    if self.state == "ROOM" and action_id == hash("cast1") and action.pressed then
+    -- Cast slot 1 (default Q before any rebinding)
+    if self.state == "ROOM" and action_id == self.bind_hash.cast1 and action.pressed then
         if self.slot1_cooldown <= 0 then
             do_cast(self, 1)
         else
@@ -3021,8 +3083,8 @@ function on_input(self, action_id, action)
         end
     end
 
-    -- Cast slot 2 (R)
-    if self.state == "ROOM" and action_id == hash("cast2") and action.pressed then
+    -- Cast slot 2 (default R)
+    if self.state == "ROOM" and action_id == self.bind_hash.cast2 and action.pressed then
         if self.slot2_cooldown <= 0 then
             do_cast(self, 2)
         else
