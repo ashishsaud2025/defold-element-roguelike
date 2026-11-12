@@ -3722,6 +3722,52 @@ for _, t in ipairs(timers) do t.fn() end
 timers = {}
 frame()
 
+-- ===== Quirk registry (identity, labels, slot filtering, extension) =====
+local quirks = require "src.core.quirks"
+sf(table.concat(quirks.DEFAULT_IDS, ",") ==
+   "split_in_two,leaves_trail,repeat_once,bigger_slower,health_cost",
+   "quirks: DEFAULT_IDS order changed")
+local WANT_LABEL = { "splits in two", "leaves a trail", "repeats once", "bigger but slower", "costs 5% health" }
+for i, id in ipairs(quirks.DEFAULT_IDS) do
+  local d = quirks.get(id)
+  sf(d ~= nil, "quirks: no DEFS for " .. id)
+  sf(d and d.id == id, "quirks: def id mismatch for " .. id)
+  sf(d and d.label == WANT_LABEL[i], "quirks: label for " .. id .. " is not " .. WANT_LABEL[i])
+  sf(d and type(d.short) == "string" and #d.short > 0 and #d.short <= 9,
+     "quirks: short form must be 1-9 chars for " .. id)
+  sf(d and type(d.desc) == "string" and #d.desc > 0, "quirks: empty desc for " .. id)
+  sf(d and d.data ~= nil, "quirks: no tuning table for " .. id)
+  sf(d and d.flags ~= nil, "quirks: no flags for " .. id)
+  sf(d and ((d.flags.hp_cost == true) == (d.basic_ok == false)),
+     "quirks: basic_ok must be false exactly for the hp-cost quirk (" .. id .. ")")
+end
+sf(#quirks.list() == 5, "quirks: list() is not 5")
+sf(#quirks.list_for_slot("spell") == 5, "quirks: spell slot should see 5 quirks")
+sf(#quirks.list_for_slot("basic") == 4, "quirks: basic slot should see 4 quirks")
+for _, d in ipairs(quirks.list_for_slot("basic")) do
+  sf(d.basic_ok == true, "quirks: disallowed quirk offered to the basic slot: " .. d.id)
+end
+sf(quirks.default_id(0) == "split_in_two", "quirks: default_id(0)")
+sf(quirks.default_id(0.521085) == "repeat_once", "quirks: default_id(golden r2)")
+sf(quirks.default_id(0.999999) == "health_cost", "quirks: default_id(high r2)")
+sf(quirks.get("nope") == nil, "quirks: get(unknown) must be nil")
+sf(quirks.by_label("bigger but slower").id == "bigger_slower", "quirks: by_label failed")
+sf(quirks.by_label("nope") == nil, "quirks: by_label(unknown) must be nil")
+-- extension contract: a new quirk never moves the default mapping
+local fake = { id = "test_extra", label = "test only", short = "test",
+               desc = "test-only quirk", basic_ok = true, default_pool = false,
+               flags = { test_only = true }, data = {} }
+sf(quirks.register(fake) == true, "quirks: register(fake) failed")
+sf(quirks.register(fake) == false, "quirks: register must reject a duplicate id")
+sf(quirks.register({ id = "split_in_two" }) == false, "quirks: register must reject a DEFAULT_IDS id")
+sf(#quirks.list() == 6, "quirks: registered quirk missing from list()")
+sf(quirks.get("test_extra") ~= nil, "quirks: registered quirk missing from get()")
+sf(quirks.default_id(0.521085) == "repeat_once", "quirks: register moved default_id")
+sf(quirks.unregister("split_in_two") == false, "quirks: unregister must refuse a DEFAULT_IDS id")
+quirks.unregister("test_extra")
+sf(#quirks.list() == 5, "quirks: unregister did not restore list()")
+sf(quirks.get("test_extra") == nil, "quirks: unregister did not remove get()")
+
 -- ===== HUD message budget: every state's ui message must fit the 2 KB msg.post limit =====
 -- Force each screen state with the heaviest payload the game can carry, then
 -- check the posted message. ui_seen/ui_worst were recorded by the msg.post stub.
