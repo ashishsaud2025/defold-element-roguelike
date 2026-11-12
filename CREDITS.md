@@ -34,4 +34,6 @@ All audio in assets/sfx and assets/music is generated for this project by tools/
 
 UI frames, keycaps, portrait, health/dash bars, altar and door sprites in assets/art/ui/ are generated for this project by tools/make_ui.py (original work, CC0).
 
+(No new art assets were generated for the v19 pause/settings/rebinding work; it reuses the existing generated UI art and the vendored Cascadia font. No third-party asset changed hands.)
+
 

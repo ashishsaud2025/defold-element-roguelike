@@ -1,3 +1,67 @@
+# Pause, Settings, Rebind and Training Hall in the menu (v19)
+
+Plan: `docs/superpowers/plans/2026-11-12-pause-settings-training.md` (spec: design doc, approved).
+Branch `settings-pause-training`; never touched `main` and never built a zip.
+**Nothing in this delivery has been verified on screen.**
+
+## What shipped
+
+- **TITLE gains two buttons**: `SETTINGS` (mid stack, under CREDITS) and `TRAINING HALL` (under SETTINGS).
+  The debug `T` key is gone; training is the menu button and only that.
+- **ESC = pause** in ROOM only. ESC in ROOM toggles `PAUSED` — a world-rendered overlay over the
+  frozen world (enemies, timers, dashes, cooldowns all freeze exactly like DEAD/WIN). Four buttons:
+  `RESUME` / `SETTINGS` / `QUIT` / `QUIT TO MAIN MENU`. QUIT is `sys.exit(0)`;
+  QUIT TO MAIN MENU resets the run (loadout kept), like DEAD/WIN continue.
+- **SETTINGS screen**: `MST/SFX/MUSIC` volume bars at 0.1 steps (0-100%), wired straight into
+  `sfx.BUS`; live-rebindable rows for WASD / Q / R / E / SPACE / LMB↔RMB toggle.
+  Master, SFX and Music values show as numbers next to the bar.
+- **Live key rebinding**: every physical key in the binding file now has a static `k_*` id
+  (`k_a`..`k_z`, `k_0`..`k_9`, `k_f1`..`k_f12`, arrows, `k_space`, `k_tab`, `k_enter`, `k_escape`,
+  brackets, minus, equals, shift/ctrl/alt). The game reads
+  `self.bind = { up, left, down, right, cast1, cast2, interact, dash, basic }` and `self.bind_hash`
+  (hash map rebuilt only on rebind). Capture mode: click a bind row → next static key becomes
+  the binding. Last write wins (duplicates allowed, never a hard error). ESC cancels capture;
+  ESC in capture does **not** also pause.
+- **HUD**: `hud.gui` grows 154 → **222** nodes. New screens `PAUSED` and `SETTINGS`, plus the six
+  new TITLE nodes. All positions validated headlessly (F1 audit 0 problems on both new states).
+- **Pathing unchanged** (`8/8` twin lanes, `14/12` gauntlet); results `WIN,WIN,DEAD,DEAD,DEAD`
+  identical to the v18 baseline.
+- **SFX/fonts untouched** — capture and volume rows are clicky box/text nodes, reuse HUD bars.
+
+## Not shipped
+
+- No settings persistence (bindings reset every launch — there is no save backend yet).
+- No gamepad rebinding; mouse is LMB/RMB only.
+- The `TRAINING HALL` button always enters room 10 (the Training Arena). ESC opens the pause menu
+  from there; otherwise the player is stuck with dummies (but can leave via pause).
+- Binding a key used by the debug row (1-5/6-0 shape selectors, `[`/`]` compound cycle, F1 audit) is
+  fine; those are read raw, not through `self.bind`.
+- No visual asset for the capture banner beyond the existing `capture_note` text line.
+- No `KEY_ESC -> pause` metadata comment in the file — the binding reads clean, no comments flag it.
+
+## Harness & verification
+
+- `python tools/check_lua.py` (32 files, 32 OK) — dungeon/game.script paths included.
+- `python tools/run_smoke_test.py` (default + `ART_TEST=1`): results `WIN,WIN,DEAD,DEAD,DEAD`;
+  `RESULT: PASS`; HUD harness `0 failed` — binding round-trip, capture-cancel, pause freeze,
+  QUIT stub route, K/CAPTURE state poisoning, settings volume clamps, TITLE training button,
+  payload ORDER/gates updated.
+- `python tools/validate_ui.py`: 222 nodes, 222/222 positions mapped, 0 problems.
+- `python tools/validate_rooms.py`: 11 room(s), 0 problems.
+
+## Not verified (needs you in Defold)
+
+- Rendering, blending, z-order, text widths, bar lengths under live sfx.BUS values.
+- Rebinding feel — capture click, `capture_note` readback, whether the bind visually flashes.
+- The pause overlay panels actually sitting behind the world correctly (DEAD/WIN-style reuse).
+- Whether Escape is the right key for the player's keyboard layout.
+- Whether settings/quit/resume button hit-boxes feel generous enough to click.
+- Whether the `ui_audit` still passes on-screen (headless audit reads the model, not the pixels).
+
+## Deliveries
+
+This entry is v19 (`settings-pause-training` branch). No delivery zip built — ask first.
+
 # Home, Loadout and HUD (v18)
 
 Plan: `docs/superpowers/plans/2026-11-12-home-loadout-quirks-hud.md` (spec: design doc, approved).

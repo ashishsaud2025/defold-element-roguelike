@@ -81,6 +81,11 @@
 - `if e.wander_timer <= 0` errors when the field is nil on a freshly blinded enemy.
 - **Fix:** `if (e.wander_timer or 0) <= 0`.
 
+### 78. `game.input_binding`'s `input:` values are engine enum names, not MVVM/SDL conventions — `KEY_ESCAPE` does not exist
+- **What:** writing `input: KEY_ESCAPE` for the pause key made the editor reject the binding file outright. The engine's enum name is `KEY_ESC` (`engine/input/src/input.cpp`, `InitKeyMap`).
+- **Fix:** look every new binding token up in the 1.14 reference before the file ever reaches the editor — same discipline as the KEY_LBRACKET/KEY_RBRACKET case in the previous delivery.
+- **Rule:** `input/game.input_binding` is code the engine parses against a fixed enum. A token that doesn't exist there doesn't "just not fire" — it kills the binding file.
+
 ### 11. Debug keys need input bindings
 - Adding `hash("1")`…`hash("5")`, `hash("q")`, `hash("e")` handling does nothing unless the keys are wired in `input/game.input_binding` as `key_trigger { input: KEY_1 action: "1" }` etc.
 - **Rule:** every action id referenced in `on_input` must exist in the input binding.
