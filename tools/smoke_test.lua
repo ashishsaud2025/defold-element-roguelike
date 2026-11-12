@@ -4223,7 +4223,13 @@ do
   ui({ action = "bind", id = "up" })   -- capture OPEN
   act("pause", true, false)
   sf(self.capture_pending == nil, "pause: ESC did not eat the capture")
+  sf(self.bind.up == "k_w", "pause: ESC rebound move-up to itself (bind=" .. tostring(self.bind.up) .. ")")
   sf(self.state ~= "PAUSED", "pause: ESC paused during capture (should only cancel the capture)")
+  -- escape is never bindable, no matter how the runtime dispatches the two actions
+  ui({ action = "bind", id = "dash" })
+  act("pause", true, false)
+  sf(self.capture_pending == nil, "pause: ESC did not eat the dash capture")
+  sf(self.bind.dash == "k_space", "pause: ESC rebound dash to ESC (bind=" .. tostring(self.bind.dash) .. ")")
 end
 
 -- ===== Settings: volume rows (live + clamped), binding rows, back, exit =====

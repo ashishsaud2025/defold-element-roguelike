@@ -331,10 +331,6 @@ key_trigger {
   action: "k_enter"
 }
 key_trigger {
-  input: KEY_ESC
-  action: "k_escape"
-}
-key_trigger {
   input: KEY_LBRACKET
   action: "k_lbracket"
 }

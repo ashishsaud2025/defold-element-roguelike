@@ -98,7 +98,7 @@ local STATIC_KEY_IDS = {
     "k_0", "k_1", "k_2", "k_3", "k_4", "k_5", "k_6", "k_7", "k_8", "k_9",
     "k_f1", "k_f2", "k_f3", "k_f4", "k_f5", "k_f6", "k_f7", "k_f8", "k_f9", "k_f10", "k_f11", "k_f12",
     "k_up", "k_down", "k_left", "k_right",
-    "k_space", "k_tab", "k_enter", "k_escape", "k_lbracket", "k_rbracket", "k_minus", "k_equals",
+    "k_space", "k_tab", "k_enter", "k_lbracket", "k_rbracket", "k_minus", "k_equals",
     "k_lshift", "k_rshift", "k_lctrl", "k_rctrl", "k_lalt", "k_ralt",
 }
 
@@ -2985,9 +2985,15 @@ function on_input(self, action_id, action)
         self.aim.x, self.aim.y = dx, dy
     end
 
-    -- Capture mode: a static k_* press is consumed by the rebind dialog, nothing else fires
+    -- Capture mode: a static k_* press is consumed by the rebind dialog, nothing else fires.
+    -- ESC (pause) is checked FIRST so a physical ESC, which fires both pause and
+    -- k_escape in this binding file, deterministically cancels the capture.
     if self.capture_pending then
         if action.pressed then
+            if action_id == hash("pause") then
+                self.capture_pending = nil -- ESC cancels the capture, binds nothing
+                return
+            end
             for _, k in ipairs(STATIC_KEY_IDS) do
                 if action_id == hash(k) then
                     self.bind[self.capture_pending] = k
@@ -2996,9 +3002,6 @@ function on_input(self, action_id, action)
                     self.capture_pending = nil
                     return
                 end
-            end
-            if action_id == hash("pause") then
-                self.capture_pending = nil -- ESC swallows the capture, nothing else
             end
         end
         return
