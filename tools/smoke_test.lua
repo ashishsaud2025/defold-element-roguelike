@@ -83,7 +83,7 @@ msg = { url = function(sock, path, frag) return {path=path, frag=frag} end, post
                   s2        = { ROOM = true, DEAD = true, WIN = true },
                   s3        = { ROOM = true, DEAD = true, WIN = true },
                   dash_cd   = { ROOM = true },
-                  prompt    = { HOME = true },
+                  prompt    = { HOME = true, ROOM = true },
                   editor    = { HOME_EDIT = true },
                   credits   = { CREDITS = true } }
   for field, ok_states in pairs(gated) do
@@ -4287,13 +4287,42 @@ do
   sf(sys_exit_calls == exits_before + 1, "exit: TITLE quit did not route to the sys.exit stub")
 end
 
--- ===== Training from the main menu =====
+-- ===== Training from the main menu + the room-local altar =====
 ui({ action = "training" })
 sf(self.state == "ROOM", "menu: training button did not enter the training room")
 sf(self.room_number == 10, "menu: training button did not load the training room (room=" .. tostring(self.room_number) .. ")")
--- The Training Room has no enemies to kill; ESC -> quit to main menu is the exit.
+sf(self.room_altar_pos ~= nil, "training: room-local altar position missing")
+sf(self.home_altar_pos == nil and self.home_door_pos == nil, "training: stale home stations leaked into the training room")
+-- stand below the altar (row 10 col 10) and expect the EDIT affordance
+local alx, aly = level_mod.cell_center(10, 11)   -- the floor tile one row below the altar
+self.player_pos.x, self.player_pos.y = alx, aly
+frame()
+sf(self.home_focus == "altar", "training: altar focus not detected")
+sf((self.home_prompt or ""):find("EDIT") ~= nil, "training: altar prompt lacks EDIT")
+-- the ROOM ui payload carries the prompt while the training-altar station exists
+frame()
+sf(last_ui and last_ui.prompt and last_ui.prompt:find("EDIT") ~= nil,
+   "ui msg: ROOM did not carry the training-altar prompt")
+-- E opens the editor; done returns to ROOM (not to TITLE, not to HOME)
+act("interact", true, false); act("interact", false, true)
+sf(self.state == "HOME_EDIT", "training: E at the altar did not open the editor")
+sf(self.editor_from == "ROOM", "training: editor_from not ROOM (got " .. tostring(self.editor_from) .. ")")
+ui({ action = "done" })
+sf(self.state == "ROOM", "training: done did not return to ROOM (got " .. tostring(self.state) .. ")")
+sf(self.room_altar_pos ~= nil, "training: altar missing after the editor closed")
+-- reopening works after returning
+act("interact", true, false); act("interact", false, true)
+sf(self.state == "HOME_EDIT", "training: altar did not reopen the editor")
+ui({ action = "done" })
+sf(self.state == "ROOM", "training: second done did not return to ROOM")
+-- pause still freezes and resumes back into ROOM
 act("pause", true, false); act("pause", false, true)
 sf(self.state == "PAUSED", "menu: ESC from training hall did not pause")
+ui({ action = "resume" })
+sf(self.state == "ROOM", "menu: resume did not return to training ROOM")
+-- quit to main menu from pause is the exit
+act("pause", true, false); act("pause", false, true)
+sf(self.state == "PAUSED", "menu: ESC (2nd) from training hall did not pause")
 ui({ action = "quit_main" })
 sf(self.state == "TITLE", "menu: quit_main from training did not return to TITLE")
 

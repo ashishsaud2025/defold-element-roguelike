@@ -15,6 +15,13 @@ Branch `settings-pause-training`; never touched `main` and never built a zip.
   QUIT TO MAIN MENU resets the run (loadout kept), like DEAD/WIN continue.
 - **Editor tabs**: MOUSE / Q / R read white on the dark slot-bg; the active tab is warm gold
   (`accent_gold`) with matching gold-tinted box.
+- **Training Arena gains the Lantern Hall altar**: room 10 now declares `altar = { c = 10, r = 10 }`
+  (after `rows`, like the validator wants) with a matching `O` pillar under it. Entering via
+  TITLE -> TRAINING HALL spawns the same glowing altar prop used by the home room, and standing
+  next to it shows `E - EDIT SPELLS` on the control line (gold). E opens the spell editor; `DONE`
+  returns to the arena (editor remembers `editor_from`), not to the home hall. Home-only stations
+  are cleared on room transitions; the prompt only rides the ROOM payload while a room altar exists.
+  The control line in ROOM is now one owner: banner > training-altar prompt > relic tooltip > hint.
 - **SETTINGS screen**: `MST/SFX/MUSIC` volume bars at 0.1 steps (0-100%), wired straight into
   `sfx.BUS`; live-rebindable rows for WASD / Q / R / E / SPACE / LMB↔RMB toggle.
   Master, SFX and Music values show as numbers next to the bar.

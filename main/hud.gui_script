@@ -801,22 +801,13 @@ local function render(self)
             end
         end
 
-        -- Interaction banner: reuses the control-hint node, restored when the banner ends.
-        -- Only touched when the text changes, so this is two native calls per interaction.
+        -- Control line: one owner for help_text. Priority: banner > training-altar
+        -- prompt > relic tip > default. Only touched when the winner changes.
         local toast = self.toast
-        if toast ~= self.toast_shown then
-            self.toast_shown = toast
-            text("help_text", toast or self.help_default or "")
-            color("help_text", toast and C.toast or C.dim)
-            local s = toast and 0.95 or 0.7
-            gui.set_scale(n("help_text"), vmath.vector3(s, s, 1))
-        end
-
-        -- Relic hover tooltip: name + desc via the control-hint line. Runs AFTER
-        -- the banner branch; a live banner always wins (banner_active above).
+        -- Relic hover tooltip candidate (ROOM only); resolved below into the same chain.
         local hover_rid = nil
         local hx, hy = self.hover_x, self.hover_y
-        if st == "ROOM" and hx and hy and self.relics then
+        if st == "ROOM" and hx and hy and self.relics and not self.toast then
             for i, rid in ipairs(RELIC_ORDER) do
                 if self.relics[rid] then
                     local step = room_layout.relic_bar.slot + room_layout.relic_bar.gap
@@ -826,22 +817,26 @@ local function render(self)
                 end
             end
         end
-        local banner_active = (self.toast ~= nil)
-        if banner_active then
-            self.relic_tip = nil                      -- banner owns the line; drop the tip silently
+        -- Winner of the line (re-resolved every frame, applied only on change).
+        local line_key, line_text, line_color, line_scale
+        if toast then
+            line_key, line_text, line_color, line_scale = "toast", toast, C.toast, 0.95
+        elseif st == "ROOM" and self.prompt then
+            line_key, line_text, line_color, line_scale = "prompt", self.prompt, pv(layout.palette.accent_gold), 0.8
         elseif hover_rid then
-            if self.relic_tip ~= hover_rid then
-                self.relic_tip = hover_rid
-                text("help_text", relics_mod.describe(hover_rid))
-                color("help_text", pv(layout.palette.text))
-                gui.set_scale(n("help_text"), vmath.vector3(0.7, 0.7, 1))
-            end
-        elseif self.relic_tip ~= nil then
-            self.relic_tip = nil
-            text("help_text", self.help_default or "")
-            color("help_text", pv(layout.palette.text_dim))
-            gui.set_scale(n("help_text"), vmath.vector3(0.7, 0.7, 1))
+            line_key, line_text, line_color, line_scale = "tip:" .. hover_rid, relics_mod.describe(hover_rid), pv(layout.palette.text), 0.7
+        else
+            line_key, line_text, line_color, line_scale = "default", self.help_default or "", pv(layout.palette.text_dim), 0.7
         end
+        if self.line_key ~= line_key then
+            self.line_key = line_key
+            text("help_text", line_text)
+            color("help_text", line_color)
+            gui.set_scale(n("help_text"), vmath.vector3(line_scale, line_scale, 1))
+        end
+        -- Legacy fields kept consistent (banner bookkeeping used by other paths).
+        self.toast_shown = toast
+        self.relic_tip = (not toast) and hover_rid or nil
     end
 
     if reward then

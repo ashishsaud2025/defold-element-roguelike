@@ -438,19 +438,31 @@ local function home_prop(self, kind, pos, glow)
     return id
 end
 
-local function nearest_station(self)
-    local best, bestd = nil, math.huge
+local function stations(self)
+    local list = {}
     if self.home_altar_pos then
-        local dx, dy = self.player_pos.x - self.home_altar_pos.x, self.player_pos.y - self.home_altar_pos.y
-        best, bestd = "altar", dx * dx + dy * dy
+        list[#list + 1] = { kind = "altar", x = self.home_altar_pos.x, y = self.home_altar_pos.y, label = "E - EDIT SPELLS" }
     end
     if self.home_door_pos then
-        local dx, dy = self.player_pos.x - self.home_door_pos.x, self.player_pos.y - self.home_door_pos.y
-        local d = dx * dx + dy * dy
-        if d < bestd then best, bestd = "door", d end
+        list[#list + 1] = { kind = "door", x = self.home_door_pos.x, y = self.home_door_pos.y, label = "E - BEGIN RUN" }
     end
-    if bestd <= HOME_FOCUS_SQ then return best end
-    return nil
+    if self.room_altar_pos then
+        list[#list + 1] = { kind = "altar", x = self.room_altar_pos.x, y = self.room_altar_pos.y, label = "E - EDIT SPELLS" }
+    end
+    return list
+end
+
+local function nearest_station(self)
+    local best, bestd = nil, math.huge
+    for _, s in ipairs(stations(self)) do
+        local dx = self.player_pos.x - s.x
+        local dy = self.player_pos.y - s.y
+        local d = dx * dx + dy * dy
+        if d <= HOME_FOCUS_SQ and (not bestd or d < bestd) then
+            best, bestd = s.kind, d
+        end
+    end
+    return best
 end
 
 local function update_home(self)
@@ -460,7 +472,8 @@ local function update_home(self)
     elseif self.home_focus == "door" then
         self.home_prompt = "E - BEGIN RUN"
     else
-        self.home_prompt = "WASD move"
+        -- HOME wants an idle hint line; ROOM falls through to the normal control hint
+        self.home_prompt = (self.state == "HOME") and "WASD move" or nil
     end
 end
 
@@ -1014,7 +1027,7 @@ local function send_ui(self)
         end
         ui.capture = self.capture_pending or nil
     end
-    if st == "HOME" then
+    if st == "HOME" or (st == "ROOM" and self.room_altar_pos) then
         ui.prompt = self.home_prompt
     end
     if st == "ROOM" or st == "DEAD" or st == "WIN" then
@@ -1113,6 +1126,9 @@ clear_world = function(self)
     self.spell_areas = {}
     self.interaction_timer = 0
     self.room_flags = {}   -- per-room one-shot trigger toasts (D4); cleared on every room enter/reset
+    self.home_altar_pos, self.home_door_pos, self.room_altar_pos = nil, nil, nil
+    self.home_focus, self.home_prompt = nil, nil
+    self.editor_from = nil
     sfx.stop("loop_pool")
     sfx.stop("loop_orbit")
 end
@@ -1364,6 +1380,15 @@ enter_room = function(self)
     self.room_number = self.room_number + 1
     self.room_clear_timer = nil
     local lv = set_room_visuals(self, self.room_number)     -- tiles + palette for this room
+    -- A room-local altar station (Training Arena): same prop and interaction as
+    -- the Lantern Hall altar. Rooms without def.altar spawn nothing.
+    local def = rooms_mod[self.room_number]
+    if def and def.altar then
+        local ax, ay = level_mod.cell_center(def.altar.c, def.altar.r)
+        self.room_altar_pos = { x = ax, y = ay }
+        home_prop(self, "altar", self.room_altar_pos, true)
+    end
+    self.home_focus, self.home_prompt = nil, nil
     self.player_pos.x, self.player_pos.y = lv.start.x, lv.start.y
     go.set_position(self.player_pos, self.player_visual)
     self.dash_t = 0
@@ -1499,8 +1524,9 @@ local function handle_ui_action(self, msg)
             sfx.play("ui_click")
         end
     elseif action == "edit" then
-        if self.state == "HOME" then
+        if self.state == "HOME" or (self.state == "ROOM" and self.room_altar_pos) then
             ensure_loadout(self)
+            self.editor_from = self.state
             self.state = "HOME_EDIT"
             self.loadout_tab = self.loadout_tab or 1
             sfx.play("ui_click")
@@ -1578,8 +1604,9 @@ local function handle_ui_action(self, msg)
         end
     elseif action == "done" then
         if self.state == "HOME_EDIT" then
-            self.state = "HOME"
-            print("State: HOME")
+            self.state = self.editor_from or "HOME"   -- HOME: back to the hall, training: back to the arena
+            self.editor_from = nil
+            print("State: " .. self.state)
         elseif self.state == "CAULDRON" then
             if self.cauldron_loop then
                 sfx.stop("ui_cauldron_loop")
@@ -2244,7 +2271,8 @@ function update(self, dt)
 
     self.player_moving = (dx ~= 0 or dy ~= 0)
     sync_player(self)
-    if self.state == "HOME" then update_home(self) end
+    if self.state == "HOME" then update_home(self)
+    elseif self.state == "ROOM" and self.room_altar_pos then update_home(self) end
 
     -- Player invulnerability + player-side statuses (hide_self)
     player_mod.update_invuln(self.player, dt)
@@ -3109,14 +3137,17 @@ function on_input(self, action_id, action)
         elseif action.released then self.hold3 = false end
     end
 
-    -- E: interact (HOME only - stations, not menus)
-    if action_id == self.bind_hash.interact and action.pressed and self.state == "HOME" then
+    -- E: interact (stations only: the Lantern Hall altar/door, or a room-local
+    -- altar such as the Training Arena's; never on menus)
+    if action_id == self.bind_hash.interact and action.pressed
+       and (self.state == "HOME" or (self.state == "ROOM" and self.room_altar_pos)) then
         if self.home_focus == "altar" then
             ensure_loadout(self)   -- the loadout is created lazily before the first run
+            self.editor_from = self.state
             self.state = "HOME_EDIT"
             self.loadout_tab = self.loadout_tab or 1
             print("State: HOME_EDIT")
-        elseif self.home_focus == "door" then
+        elseif self.home_focus == "door" and self.state == "HOME" then
             begin_run(self)
         end
     end
