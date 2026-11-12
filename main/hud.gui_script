@@ -1431,26 +1431,25 @@ function on_message(self, message_id, message, sender)
         self.roll_t = message.roll_t
         self.toast = message.toast
         if message.name_buffer ~= nil then self.name_buffer = message.name_buffer end
-        if message.damage_number then
-            local dn = message.damage_number
-            local gen_id = "__dn" .. (#self.damage_numbers + 1)
-            local node = gui.new_text_node(vmath.vector3(dn.x, dn.y, 10), tostring(dn.amount))
-            gui.set_scale(node, vmath.vector3(1, 1, 1))
-            gui.set_font(node, "text")
-            gui.set_color(node, vmath.vector4(1, 1, 1, 1))
-            gui.set_layer(node, "text")
-            self.damage_numbers[#self.damage_numbers + 1] = {
-                node = node, id = gen_id,
-                x = dn.x, y = dn.y, amount = dn.amount,
-                life = 0.8, max_life = 0.8,
-                vy = 60,
-            }
-        end
         if not self.started then
             self.started = true
             print("HUD ready")
         end
         render(self)
+    elseif message_id == hash("damage_number") then
+        local dn = message
+        local node = gui.new_text_node(vmath.vector3(dn.x, dn.y, 10), tostring(dn.amount))
+        gui.set_scale(node, vmath.vector3(1, 1, 1))
+        gui.set_font(node, "text")
+        gui.set_color(node, vmath.vector4(1, 1, 1, 1))
+        gui.set_layer(node, "text")
+        gui.set_enabled(node, true)
+        self.damage_numbers[#self.damage_numbers + 1] = {
+            node = node, id = "__dn" .. (#self.damage_numbers + 1),
+            x = dn.x, y = dn.y, amount = dn.amount,
+            life = 0.8, max_life = 0.8,
+            vy = 60,
+        }
     elseif message_id == hash("click") then
         on_click(self, message.x or 0, message.y or 0)
     elseif message_id == hash("ui_audit") then
