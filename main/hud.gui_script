@@ -50,14 +50,18 @@ local ALL_NODES = {
     "panel", "title_text", "subtitle_text", "start_box", "start_text",
     "combos_box", "combos_text",
     "credits_box", "credits_text_btn", "credits_title", "credits_body",
-    "back_box", "back_text", "version_text", "pick_title", "pick_hint",
-    "e1_box", "e1_text", "e1_role", "e2_box", "e2_text", "e2_role",
-    "e3_box", "e3_text", "e3_role", "e4_box", "e4_text", "e4_role",
-    "pick_status", "enter_box", "enter_text",
+    "back_box", "back_text", "version_text",
+    "loadout_title", "loadout_preview", "loadout_quirk_desc",
+    "tab_mouse_box", "tab_mouse_text", "tab_q_box", "tab_q_text",
+    "tab_r_box", "tab_r_text",
+    "row_ea_label", "row_ea_val", "row_ea_prev_box", "row_ea_prev_text", "row_ea_next_box", "row_ea_next_text",
+    "row_eb_label", "row_eb_val", "row_eb_prev_box", "row_eb_prev_text", "row_eb_next_box", "row_eb_next_text",
+    "row_shape_label", "row_shape_val", "row_shape_prev_box", "row_shape_prev_text", "row_shape_next_box", "row_shape_next_text",
+    "row_quirk_label", "row_quirk_val", "row_quirk_prev_box", "row_quirk_prev_text", "row_quirk_next_box", "row_quirk_next_text",
     "hp_bg", "hp_fill", "hp_text",
     "flash_box",
-    "s1_bg", "s1_cd", "s1_name", "s1_quirk", "s1_dot1", "s1_dot2",
-    "s2_bg", "s2_cd", "s2_name", "s2_quirk", "s2_dot1", "s2_dot2",
+    "s1_bg", "s1_cd", "s1_quirk", "s1_dot1", "s1_dot2",
+    "s2_bg", "s2_cd", "s2_quirk", "s2_dot1", "s2_dot2",
     "s1_shape_icon", "s2_shape_icon",
     "relic1", "relic2", "relic3", "relic4",
     "echo_pip1", "echo_pip2", "echo_pip3", "echo_pip4", "echo_pip5",
@@ -231,33 +235,33 @@ local function apply_layout(self)
         pos("back_text", bb.text.x, bb.text.y)
     end
 
-    -- ===== PICK_START =====
-    local P = layout.SCREENS.PICK_START
-    pos("pick_title", P.texts.pick_title.x, P.texts.pick_title.y)
-    color("pick_title", pv(layout.palette.text))
-    pos("pick_hint", P.texts.pick_hint.x, P.texts.pick_hint.y)
-    color("pick_hint", pv(layout.palette.text_dim))
-    pos("pick_status", P.texts.pick_status.x, P.texts.pick_status.y)
-    color("pick_status", pv(layout.palette.text))
-    for _, b in ipairs(P.buttons) do
+    -- ===== HOME_EDIT =====
+    local E = layout.SCREENS.HOME_EDIT
+    pos("loadout_title", E.texts.loadout_title.x, E.texts.loadout_title.y)
+    color("loadout_title", pv(layout.palette.text))
+    pos("loadout_preview", E.texts.loadout_preview.x, E.texts.loadout_preview.y)
+    color("loadout_preview", pv(layout.palette.text))
+    pos("loadout_quirk_desc", E.texts.loadout_quirk_desc.x, E.texts.loadout_quirk_desc.y)
+    color("loadout_quirk_desc", pv(layout.palette.text_dim))
+    for i, f in ipairs({ "ea", "eb", "shape", "quirk" }) do
+        local y = ({ 464, 396, 328, 260 })[i]
+        pos("row_" .. f .. "_label", E.texts["row_" .. f .. "_label"].x, E.texts["row_" .. f .. "_label"].y)
+        color("row_" .. f .. "_label", pv(layout.palette.text_dim))
+        pos("row_" .. f .. "_val", E.texts["row_" .. f .. "_val"].x, E.texts["row_" .. f .. "_val"].y)
+        color("row_" .. f .. "_val", pv(layout.palette.text))
+    end
+    for _, b in ipairs(E.buttons) do
         pos_rect(b.id, b)
-        if b.element then
-            set_icon(b.id, b.element)
+        if b.id == "done_box" then
+            color("done_box", pv(layout.palette.box))
+        else
+            color(b.id, pv(layout.palette.slot_bg))
+        end
+        if b.text and b.text.x then
+            local id = b.id:gsub("_box$", "_text")
+            if n(id) then pos(id, b.text.x, b.text.y); color(id, pv(layout.palette.text)) end
         end
     end
-    for _, t in ipairs(P.tiles) do
-        local spec = P.texts[t.text_id]
-        pos(t.text_id, spec.x, spec.y)
-        color(t.text_id, pv(layout.palette.text))
-        local rspec = P.texts[t.role_id]
-        pos(t.role_id, rspec.x, rspec.y)
-        color(t.role_id, pv(layout.palette.text_dim))
-    end
-    local enter = P.buttons[5]
-    pos_rect(enter.id, enter)
-    color(enter.id, pv(layout.palette.box_dim))
-    pos("enter_text", P.texts.enter_text.x, P.texts.enter_text.y)
-    color("enter_text", pv(layout.palette.text_dim))
 
     -- ===== ROOM HUD =====
     local R = layout.SCREENS.ROOM
@@ -280,8 +284,6 @@ local function apply_layout(self)
         pos_rect(prefix .. "_shape_icon", R["shape_icon_" .. prefix])
         pos_rect(prefix .. "_dot1", R["dot1_" .. prefix])
         pos_rect(prefix .. "_dot2", R["dot2_" .. prefix])
-        pos(prefix .. "_name", R.texts[prefix .. "_name"].x, R.texts[prefix .. "_name"].y)
-        color(prefix .. "_name", pv(layout.palette.text))
         pos(prefix .. "_quirk", R.texts[prefix .. "_quirk"].x, R.texts[prefix .. "_quirk"].y)
         color(prefix .. "_quirk", pv(layout.palette.text_dim))
     end
@@ -399,18 +401,19 @@ end
 
 local function render(self)
     local st = self.state
-    local pick = (st == "PICK_START")
     local over = (st == "DEAD" or st == "WIN")
     local hud = (st == "ROOM" or over)
     local reward = (st == "REWARD")
     local cauldron = (st == "CAULDRON")
+    local editor = (st == "HOME_EDIT")
 
     -- Panel
-    show("panel", st == "TITLE" or st == "COMBOS" or st == "CREDITS" or st == "PICK_START" or over or reward or cauldron)
+    show("panel", st == "TITLE" or st == "COMBOS" or st == "CREDITS" or over or reward or cauldron or editor)
     color("panel", over and C.panel_soft or C.panel)
     panel_enabled(self.panel_combos, st == "COMBOS")
     panel_enabled(self.panel_credits, st == "CREDITS")
     panel_enabled(self.panel_cauldron, cauldron)
+    panel_enabled(self.panel_home_edit, editor)
 
     -- TITLE
     if st == "TITLE" then
@@ -465,29 +468,30 @@ local function render(self)
         end
     end
 
-    -- Pick group
-    show("pick_title", pick)
-    show("pick_hint", pick)
-    show("pick_status", pick)
-    show("enter_box", pick)
-    show("enter_text", pick)
-    for i = 1, 4 do
-        show("e" .. i .. "_box", pick)
-        show("e" .. i .. "_text", pick)
-        show("e" .. i .. "_role", pick)
-    end
-
     -- HUD group
     for _, id in ipairs({ "hp_bg", "hp_fill", "hp_text",
-                          "s1_bg", "s1_cd", "s1_name", "s1_quirk", "s1_dot1", "s1_dot2",
-                          "s2_bg", "s2_cd", "s2_name", "s2_quirk", "s2_dot1", "s2_dot2",
+                          "s1_bg", "s1_cd", "s1_quirk", "s1_dot1", "s1_dot2",
+                          "s2_bg", "s2_cd", "s2_quirk", "s2_dot1", "s2_dot2",
                           "s1_shape_icon", "s2_shape_icon",
                           "relic1", "relic2", "relic3", "relic4",
-                          "echo_pip1", "echo_pip2", "echo_pip3", "echo_pip4", "echo_pip5",
-                          "help_text" }) do
+                          "echo_pip1", "echo_pip2", "echo_pip3", "echo_pip4", "echo_pip5" }) do
         show(id, hud)
     end
+    show("help_text", hud or st == "HOME")
     show("room_text", st == "ROOM")
+
+    -- Editor group (the altar's modal)
+    for _, id in ipairs({ "loadout_title", "loadout_preview", "loadout_quirk_desc",
+                          "tab_mouse_box", "tab_mouse_text", "tab_q_box", "tab_q_text",
+                          "tab_r_box", "tab_r_text",
+                          "row_ea_label", "row_ea_val", "row_ea_prev_box", "row_ea_prev_text", "row_ea_next_box", "row_ea_next_text",
+                          "row_eb_label", "row_eb_val", "row_eb_prev_box", "row_eb_prev_text", "row_eb_next_box", "row_eb_next_text",
+                          "row_shape_label", "row_shape_val", "row_shape_prev_box", "row_shape_prev_text", "row_shape_next_box", "row_shape_next_text",
+                          "row_quirk_label", "row_quirk_val", "row_quirk_prev_box", "row_quirk_prev_text", "row_quirk_next_box", "row_quirk_next_text" }) do
+        show(id, editor)
+    end
+    show("done_box", editor or cauldron)
+    show("done_text", editor or cauldron)
 
     -- Reward group
     show("reward_title", reward)
@@ -514,7 +518,6 @@ local function render(self)
                           "preview_name", "preview_detail", "preview_quirk", "preview_status",
                           "reaction_hint",
                           "craft1_box", "craft1_text", "craft2_box", "craft2_text",
-                          "done_box", "done_text",
                           "relic_title", "relic_1", "relic_2", "relic_3", "relic_4" }) do
         show(id, cauldron)
     end
@@ -546,7 +549,6 @@ local function render(self)
             local d = i == 1 and self.s1 or self.s2
             local slot = room_layout["slot_" .. prefix]
             if d then
-                text(prefix .. "_name", d.name)
                 text(prefix .. "_quirk", d.quirk)
                 local maxcd = d.cd_max or 0
                 local f = 0
@@ -558,11 +560,6 @@ local function render(self)
                 set_icon(prefix .. "_dot2", d.eb)
                 if d.shape then
                     gui.play_flipbook(n(prefix .. "_shape_icon"), hash(SHAPE_ICON[d.shape] or "particle_flare"))
-                end
-                if d.cd > 0 then
-                    color(prefix .. "_name", C.dim)
-                else
-                    color(prefix .. "_name", C.white)
                 end
             end
         end
@@ -636,55 +633,6 @@ local function render(self)
             color("help_text", pv(layout.palette.text_dim))
             gui.set_scale(n("help_text"), vmath.vector3(0.7, 0.7, 1))
         end
-    end
-
-    if st == "PICK_START" then
-        local picked = {}
-        for _, el in ipairs(self.picks) do picked[el] = (picked[el] or 0) + 1 end
-        for i, el in ipairs(ELEM_ORDER) do
-            local count = picked[el] or 0
-            text("e" .. i .. "_text", ELEM_LABEL[el] .. (count > 0 and ("  x" .. count) or ""))
-            color("e" .. i .. "_text", count > 0 and C.white or C.dim)
-        end
-        local parts = {}
-        for _, el in ipairs(self.picks) do parts[#parts + 1] = ELEM_LABEL[el] end
-        while #parts < 2 do parts[#parts + 1] = "?" end
-        text("pick_status", "Picked: " .. parts[1] .. " + " .. parts[2])
-        local P = layout.SCREENS.PICK_START
-        -- Role lines (from data.ELEMENTS[x].role): wrapped at render time to the
-        -- role node's inner width. max_chars is derived from the fixed-advance
-        -- math against the spec's size and max_w, never hard-coded; the data
-        -- string itself is unchanged.
-        for _, t in ipairs(P.tiles) do
-            local el = t.element
-            local spec = P.texts[t.role_id] or {}
-            local fs = spec.size or 11
-            local inner = spec.max_w or 126
-            local max_chars = math.max(1, math.floor(inner / (fs * layout.MONO_ADVANCE)))
-            local role = data.ELEMENTS[el] and data.ELEMENTS[el].role or ""
-            text(t.role_id, table.concat(layout.wrap(role, max_chars), "\n"))
-        end
-        local ready = (#self.picks >= 2)
-        local hx, hy = self.hover_x, self.hover_y
-        for _, b in ipairs(P.buttons) do
-            if b.element then
-                if hx and point_in_rect(b, hx, hy) then
-                    color(b.id, pv(layout.palette.box_hover))
-                elseif (picked[b.element] or 0) > 0 then
-                    color(b.id, elem_color(b.element))
-                else
-                    color(b.id, C.pick_off)
-                end
-            end
-        end
-        local enter = P.buttons[5]
-        if hx and point_in_rect(enter, hx, hy) and ready then
-            color("enter_box", C.box_ready)
-        else
-            color("enter_box", ready and C.box_ready or C.box_dim)
-        end
-        color("enter_text", ready and C.white or C.dim)
-        gui.set_enabled(n("enter_box"), ready)
     end
 
     if reward then
@@ -847,6 +795,51 @@ local function render(self)
         color("done_box", C.box)
     end
 
+    if editor then
+        local ed = self.editor
+        if ed then
+            text("row_ea_val", tostring(ed.ea_label or "-"))
+            text("row_eb_val", tostring(ed.eb_label or "-"))
+            text("row_shape_val", tostring(ed.shape_label or "-"))
+            text("row_quirk_val", ed.quirk_short and string.upper(ed.quirk_short) or "-")
+            text("loadout_preview", tostring(ed.preview_name or ""))
+            text("loadout_quirk_desc", tostring(ed.quirk_desc or ""))
+            -- the MOUSE basic is always a Bolt: the SHAPE row is a static BOLT
+            if ed.tab == 3 then
+                text("row_shape_val", "BOLT")
+                color("row_shape_val", C.dim)
+                color("row_shape_prev_box", pv(layout.palette.pick_off))
+                color("row_shape_next_box", pv(layout.palette.pick_off))
+            else
+                color("row_shape_val", C.white)
+                color("row_shape_prev_box", pv(layout.palette.slot_bg))
+                color("row_shape_next_box", pv(layout.palette.slot_bg))
+            end
+            local hx, hy = self.hover_x, self.hover_y
+            if hx and hy then
+                for _, b in ipairs(layout.SCREENS.HOME_EDIT.buttons) do
+                    if b.id ~= "done_box" and point_in_rect(b, hx, hy) then
+                        color(b.id, pv(layout.palette.box_hover))
+                    end
+                end
+            end
+            local tab_match = { tab_mouse_box = 3, tab_q_box = 1, tab_r_box = 2 }
+            for id, slot in pairs(tab_match) do
+                if ed.tab == slot then
+                    color(id, pv(layout.palette.box_ready))
+                else
+                    color(id, pv(layout.palette.slot_bg))
+                end
+            end
+        end
+    end
+
+    if st == "HOME" then
+        text("help_text", self.prompt or self.help_default or "")
+        color("help_text", pv(layout.palette.text_dim))
+        gui.set_scale(n("help_text"), vmath.vector3(0.7, 0.7, 1))
+    end
+
     if over then
         local win = st == "WIN"
         text("overlay_title", win and "YOU WIN" or "YOU DIED")
@@ -882,11 +875,13 @@ local function on_click(self, x, y)
         if b then send(b.action) end
         return
     end
-    if st == "PICK_START" then
-        local b = layout.hit_enabled(st, x, y, { picks = self.picks or {} })
+    if st == "HOME_EDIT" then
+        local b = layout.hit_enabled(st, x, y)
         if b then
-            if b.element then
-                send(b.action, { element = b.element })
+            if b.id == "tab_mouse_box" or b.id == "tab_q_box" or b.id == "tab_r_box" then
+                send("tab", { slot = b.slot })
+            elseif b.field then
+                send(b.action, { field = b.field, dir = b.dir })
             else
                 send(b.action)
             end
@@ -923,6 +918,7 @@ function init(self)
     self.max_hp = 100
     self.s1 = nil
     self.s2 = nil
+    self.s3 = nil
     self.room = 0
     self.inventory = nil
     self.reward_options = nil
@@ -939,7 +935,7 @@ function init(self)
 
     -- The authored control hint (keep in sync with main/hud.gui -> help_text).
     -- Restored whenever no interaction banner is up.
-    self.help_default = "WASD move   Mouse aim   Hold LMB / RMB cast   SPACE dash"
+    self.help_default = "WASD move   Mouse aim   LMB basic   Q/R spells   SPACE dash"
 
     -- Every node in main/hud.gui is positioned from the shared layout rects
     -- (apply_layout below); nothing is offset here.
@@ -954,6 +950,9 @@ function init(self)
     self.panel_combos = make_panel_nodes(layout.SCREENS.COMBOS.panel, hash("graphics"))
     self.panel_credits = make_panel_nodes(layout.SCREENS.CREDITS.panel, hash("graphics"))
     self.panel_cauldron = make_panel_nodes(layout.SCREENS.CAULDRON.panel, hash("graphics"))
+    self.panel_home_edit = make_panel_nodes(layout.SCREENS.HOME_EDIT.panel, hash("graphics"))
+    self.editor = nil
+    self.prompt = nil
     apply_layout(self)
 
     render(self)
@@ -967,6 +966,9 @@ function on_message(self, message_id, message, sender)
         self.max_hp = message.max_hp or self.max_hp
         self.s1 = message.s1
         self.s2 = message.s2
+        self.s3 = message.s3
+        self.editor = message.editor
+        self.prompt = message.prompt
         self.hover_x = message.hover_x or self.hover_x
         self.hover_y = message.hover_y or self.hover_y
         self.room = message.room or self.room
@@ -1013,7 +1015,7 @@ function on_message(self, message_id, message, sender)
         local problems = {}
         for _, p in ipairs(layout.audit_screen(st)) do problems[#problems + 1] = p end
         for _, p in ipairs(layout.audit_text_fit()) do problems[#problems + 1] = p end
-        for id, spec in pairs(scr.texts) do
+        for id, spec in pairs(scr.texts or {}) do
             local node = n(id)
             if node then
                 local s = gui.get_text(node) or ""

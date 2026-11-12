@@ -821,6 +821,35 @@ apply_loadout = function(self)
     end
 end
 
+-- The loadout editor cycles: element A/B over ELEMENT_LIST, shape over SHAPE_LIST,
+-- quirk over the registry's list for the target slot kind. Always re-equips after.
+loadout_cycle = function(self, field, dir)
+    if self.state ~= "HOME_EDIT" or not field then return end
+    ensure_loadout(self)
+    local tab = self.loadout_tab or 1
+    local l = self.loadout[tab]
+    if not l then return end
+    local d = (dir or 1) >= 0 and 1 or -1
+    local function idx(list, v)
+        for i, x in ipairs(list) do if x == v then return i end end
+        return 0
+    end
+    if field == "ea" or field == "eb" then
+        l[field] = ELEMENT_LIST[(idx(ELEMENT_LIST, l[field]) - 1 + d) % #ELEMENT_LIST + 1]
+    elseif field == "shape" then
+        if tab == 3 then return end   -- the MOUSE basic is always a Bolt
+        l.shape = SHAPE_LIST[(idx(SHAPE_LIST, l.shape) - 1 + d) % #SHAPE_LIST + 1]
+    elseif field == "quirk" then
+        local kind = (tab == 3) and "basic" or "spell"
+        local ids = {}
+        for _, def in ipairs(quirks_mod.list_for_slot(kind)) do ids[#ids + 1] = def.id end
+        l.quirk_id = ids[(idx(ids, l.quirk_id) - 1 + d) % #ids + 1]
+    else
+        return
+    end
+    apply_loadout(self)
+end
+
 -- All 10 compound pairs (elements sorted, doubles allowed) in canonical order.
 local COMPOUND_PAIRS = {
     { "earth", "earth" }, { "earth", "fire" }, { "earth", "water" }, { "earth", "wind" },
@@ -902,6 +931,27 @@ local function send_ui(self)
         hover_x = self.mouse_pos and self.mouse_pos.x or nil,
         hover_y = self.mouse_pos and self.mouse_pos.y or nil,
     }
+    if st == "HOME_EDIT" then
+        local tab = self.loadout_tab or 1
+        local l = self.loadout and self.loadout[tab]
+        if l then
+            local sk = skillgen.makeSkill(l.ea, l.eb, l.shape, nil, l.quirk_id)
+            local def = quirks_mod.get(sk.quirk_id)
+            local function up(s) return tostring(s or ""):upper() end
+            ui.editor = {
+                tab = tab,
+                ea_label = up(l.ea),
+                eb_label = up(l.eb),
+                shape_label = up(SHAPE_DISPLAY[l.shape] or l.shape),
+                basic = (tab == 3),
+                quirk_short = def and def.short or "?",
+                quirk_label = def and def.label or "?",
+                quirk_desc = def and def.desc or "",
+                preview_name = sk.compound .. " " .. (SHAPE_DISPLAY[sk.shape_key] or sk.shape),
+                preview_detail = string.format("Power %d   Cooldown %.1fs", sk.power, sk.cooldown),
+            }
+        end
+    end
     if st == "HOME" then
         ui.prompt = self.home_prompt
     end
@@ -1387,6 +1437,7 @@ local function handle_ui_action(self, msg)
         end
     elseif action == "edit" then
         if self.state == "HOME" then
+            ensure_loadout(self)
             self.state = "HOME_EDIT"
             self.loadout_tab = self.loadout_tab or 1
             sfx.play("ui_click")
@@ -1396,6 +1447,14 @@ local function handle_ui_action(self, msg)
         if self.state == "TITLE" then
             self.state = "CREDITS"
             print("State: CREDITS")
+        end
+    elseif action == "tab" then
+        if self.state == "HOME_EDIT" and type(msg.slot) == "number" and msg.slot >= 1 and msg.slot <= 3 then
+            self.loadout_tab = math.floor(msg.slot)
+        end
+    elseif action == "cycle" then
+        if self.state == "HOME_EDIT" and msg.field and msg.dir then
+            loadout_cycle(self, msg.field, msg.dir)
         end
     elseif action == "combos" then
         if self.state == "TITLE" then
@@ -1448,7 +1507,10 @@ local function handle_ui_action(self, msg)
             craft_skill(self, slot, self.cauldron.ea, self.cauldron.eb, self.cauldron.shape)
         end
     elseif action == "done" then
-        if self.state == "CAULDRON" then
+        if self.state == "HOME_EDIT" then
+            self.state = "HOME"
+            print("State: HOME")
+        elseif self.state == "CAULDRON" then
             if self.cauldron_loop then
                 sfx.stop("ui_cauldron_loop")
                 self.cauldron_loop = false
@@ -2904,6 +2966,7 @@ function on_input(self, action_id, action)
     -- E: interact (HOME only — stations, not menus)
     if action_id == hash("interact") and action.pressed and self.state == "HOME" then
         if self.home_focus == "altar" then
+            ensure_loadout(self)   -- the loadout is created lazily before the first run
             self.state = "HOME_EDIT"
             self.loadout_tab = self.loadout_tab or 1
             print("State: HOME_EDIT")

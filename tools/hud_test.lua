@@ -155,6 +155,15 @@ if not chunk then
 end
 chunk()
 
+local function enabled(id) return nodes[id] ~= nil and nodes[id].enabled == true end
+local function text_of(id)
+  local found = nil
+  for _, rec in ipairs(set_texts) do
+    if rec.id == id then found = rec.text end
+  end
+  return found
+end
+
 local data = require "src.core.data"
 local layout = require "src.ui.layout"
 local relics_mod = require "src.core.relics"
@@ -176,7 +185,12 @@ local function example_ui(state)
     toast = (state == "ROOM") and "BURNING MUD" or nil,
     hover_x = 480, hover_y = 320,
   }
-  if state == "PICK_START" then ui.picks = { "fire", "water" } end
+  if state == "HOME" then ui.prompt = "E - BEGIN RUN" end
+  if state == "HOME_EDIT" then
+    ui.editor = { tab = 1, ea_label = "FIRE", eb_label = "WATER", shape_label = "BOLT",
+                  quirk_label = "repeats once", quirk_short = "repeats", quirk_desc = "Casts a second time from the same spot.",
+                  preview_name = "Steam Bolt", preview_detail = "Power 7", basic = false }
+  end
   if state == "ROOM" or state == "DEAD" or state == "WIN" then
     ui.s1 = { name = "Inferno Nova", quirk = "splits in two", cd = 0.2, cd_max = 2.5, ea = "fire", eb = "wind" }
     ui.s2 = { name = "Tide Pool",   quirk = "repeats once",  cd = 0,   cd_max = 4.0, ea = "water", eb = "water" }
@@ -299,7 +313,7 @@ local function assert_geometry(state)
   end
 end
 
-local STATES = { "TITLE", "COMBOS", "CREDITS", "PICK_START", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN" }
+local STATES = { "TITLE", "COMBOS", "CREDITS", "HOME", "HOME_EDIT", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN" }
 local function send_ui(state)
   on_message(self, hash("ui"), example_ui(state))
 end
@@ -337,7 +351,8 @@ end
 
 -- ===== Every button sends its expected action (through the real click path) =====
 -- TITLE / COMBOS / CREDITS: layout.SCREENS registry is the contract.
--- PICK_START / REWARD / CAULDRON / DEAD / WIN: legacy node-geometry buttons with
+-- TITLE / COMBOS / CREDITS / HOME_EDIT / REWARD / CAULDRON / DEAD / WIN:
+-- legacy node-geometry buttons; nothing left to flip.
 -- fixed ids; Phase C moves them into the registry and this table flips over.
 for state, buttons in pairs(layout.SCREENS) do
   if buttons.buttons and #buttons.buttons > 0 then
@@ -357,19 +372,50 @@ for state, buttons in pairs(layout.SCREENS) do
   end
 end
 
--- PICK_START: ENTER must stay inert until two picks land
-send_ui("PICK_START")
-self.picks = {}
-on_message(self, hash("ui"), { state = "PICK_START", hp = 100, max_hp = 100, picks = {} })
-sent_actions = {}
-local enter = layout.SCREENS.PICK_START.buttons[5]
-on_message(self, hash("click"), { x = enter.x + enter.w * 0.5, y = enter.y + enter.h * 0.5 })
-sf(#sent_actions == 0, "PICK_START: ENTER fired with zero picks")
-self.picks = { "fire" }
-on_message(self, hash("ui"), { state = "PICK_START", hp = 100, max_hp = 100, picks = { "fire" } })
-sent_actions = {}
-on_message(self, hash("click"), { x = enter.x + enter.w * 0.5, y = enter.y + enter.h * 0.5 })
-sf(#sent_actions == 0, "PICK_START: ENTER fired with one pick")
+-- HOME: only the prompt line is visible; nothing from the combat HUD
+do
+  on_message(self, hash("ui"), { state = "HOME", prompt = "E - BEGIN RUN", hp = 100, max_hp = 100 })
+  sf(enabled("help_text"), "HUD: HOME prompt is not shown")
+  sf(text_of("help_text") == "E - BEGIN RUN", "HUD: HOME prompt text")
+  sf(not enabled("s1_bg"), "HUD: slot bg visible in HOME")
+  sf(not enabled("hp_bg"), "HUD: health bar visible in HOME")
+  sf(not enabled("panel"), "HUD: panel shown in HOME")
+end
+-- HOME_EDIT: tabs, rows, preview, DONE
+do
+  on_message(self, hash("ui"), { state = "HOME_EDIT", hp = 100, max_hp = 100, editor = {
+    tab = 1, ea_label = "FIRE", eb_label = "WATER", shape_label = "BOLT",
+    quirk_label = "repeats once", quirk_short = "repeats", quirk_desc = "Casts a second time from the same spot.",
+    preview_name = "Steam Bolt", preview_detail = "Power 7   Cooldown 0.6s", basic = false } })
+  for _, id in ipairs({ "loadout_title", "tab_mouse_box", "tab_q_box", "tab_r_box",
+                        "row_ea_label", "row_ea_val", "row_quirk_val",
+                        "loadout_preview", "loadout_quirk_desc", "done_box", "done_text" }) do
+    sf(enabled(id), "HUD: HOME_EDIT missing " .. id)
+  end
+  sf(text_of("row_ea_val") == "FIRE", "HUD: element A value")
+  sf(text_of("row_ea_val") == "FIRE" and text_of("row_ea_val") ~= nil, "HUD: element A value is set")
+  sf(text_of("row_quirk_val") == "REPEATS", "HUD: quirk value")
+  sf(text_of("loadout_preview") == "Steam Bolt", "HUD: preview name")
+  sf(text_of("loadout_quirk_desc") == "Casts a second time from the same spot.", "HUD: quirk desc")
+  -- click path: tab Q/R/MOUSE and the four arrows and DONE
+  on_message(self, hash("click"), { x = 480, y = 542 })
+  sf(sent_actions[#sent_actions] and sent_actions[#sent_actions].action == "tab"
+     and sent_actions[#sent_actions].slot == 1, "HUD: Q tab click payload")
+  on_message(self, hash("click"), { x = 652, y = 542 })
+  sf(sent_actions[#sent_actions].slot == 2 and sent_actions[#sent_actions].action == "tab",
+     "HUD: R tab click payload")
+  on_message(self, hash("click"), { x = 308, y = 542 })
+  sf(sent_actions[#sent_actions].slot == 3 and sent_actions[#sent_actions].action == "tab",
+     "HUD: MOUSE tab click payload")
+  on_message(self, hash("click"), { x = 260, y = 464 })
+  sf(sent_actions[#sent_actions].action == "cycle" and sent_actions[#sent_actions].field == "ea"
+     and sent_actions[#sent_actions].dir == -1, "HUD: ea prev payload")
+  on_message(self, hash("click"), { x = 700, y = 260 })
+  sf(sent_actions[#sent_actions].action == "cycle" and sent_actions[#sent_actions].field == "quirk"
+     and sent_actions[#sent_actions].dir == 1, "HUD: quirk next payload")
+  on_message(self, hash("click"), { x = 480, y = 68 })
+  sf(sent_actions[#sent_actions].action == "done", "HUD: DONE click payload")
+end
 
 -- ===== Content shown comes from data / relics.DEFS =====
 -- REWARD: element/shape/relic cards carry data-derived name, tag, desc
@@ -418,7 +464,7 @@ do
     inventory = { elements = { fire = 2, water = 2, wind = 1, earth = 0 },
                   shapes = { projectile = 1, puddle = 2, orbit = 0, cone = 0, burst = 0 } },
     relics = { echoing_crystal = true },
-    slots = { "Inferno Spray", "empty" },
+    slots = { { name = "Inferno Spray", quirk = "splits" }, "empty" },
   })
   local function text_for(id)
     for _, rec in ipairs(set_texts) do
@@ -431,6 +477,7 @@ do
   sf(text_for("ing_elem_1") == "FIRE  x2", "CAULDRON: ingredient row shows element + count from inventory")
   sf(text_for("ing_shape_2") == "POOL  x2", "CAULDRON: shape row shows shape + count from inventory")
   sf(text_for("craft1_text"):find("Inferno Spray", 1, true) ~= nil, "CAULDRON: craft button shows current slot contents")
+  sf(text_for("craft1_text"):find("Q -> SPLITS", 1, true) ~= nil, "CAULDRON: craft button shows the target quirk short form")
   sf(text_for("craft2_text"):find("empty", 1, true) ~= nil, "CAULDRON: empty slot is reported as empty")
   local relic_txt = text_for("relic_2")   -- echoing_crystal is RELIC_ORDER[2]
   local def = relics_mod.DEFS.echoing_crystal
@@ -462,33 +509,6 @@ do
   sf(hint:find("FIRESTORM", 1, true) == nil, "CAULDRON: fire+wind cell belongs to Fire Cyclone, never a reaction")
 end
 
--- All four element roles fit their tiles (PICK_START): wrapped at render time
--- to the role node's inner width, with the data strings unchanged.
-do
-  send_ui("PICK_START")
-  for _, el in ipairs({ "fire", "water", "wind", "earth" }) do
-    local i = ({ fire = 1, water = 2, wind = 3, earth = 4 })[el]
-    local id = "e" .. i .. "_role"
-    local spec = layout.SCREENS.PICK_START.texts[id]
-    local node = nodes[id]
-    sf(node ~= nil, id .. ": node missing from the harness")
-    if node then
-      local role = data.ELEMENTS[el] and data.ELEMENTS[el].role or ""
-      sf(#role > 0, "data: ELEMENTS." .. el .. ".role missing")
-      local lines = {}
-      for l in tostring(node.text):gmatch("[^\n]+") do lines[#lines + 1] = l end
-      local fs = spec.size
-      local max_chars = math.floor(spec.max_w / (fs * layout.MONO_ADVANCE))
-      local expect = table.concat(layout.wrap(role, max_chars), "\n")
-      sf(node.text == expect, id .. ": must render data.ELEMENTS.role wrapped to the tile's inner width")
-      for _, l in ipairs(lines) do
-        sf(layout.text_width(l, fs) <= spec.max_w, id .. ": wrapped role line wider than the tile's inner width")
-      end
-      sf(#lines <= 3, id .. ": more than three lines (vertical budget)")
-      sf(#lines * fs * layout.LINE_HEIGHT <= spec.max_h, id .. ": wrapped role lines exceed the tile's vertical budget (max_h)")
-    end
-  end
-end
 
 -- ROOM: HP text renders the actual numbers; relic bar matches owned relics; toast reuses help_text
 do

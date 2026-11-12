@@ -17,7 +17,7 @@ local M = {}
 
 -- ===== Design space & tuning =====
 M.DESIGN_W, M.DESIGN_H = 960, 640
-M.ALL_SCREENS = { "TITLE", "COMBOS", "CREDITS", "PICK_START", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN" }
+M.ALL_SCREENS = { "TITLE", "COMBOS", "CREDITS", "HOME", "HOME_EDIT", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN" }
 -- Full-screen nodes (panel, flash_box) get this explicit rect: centre 480,320.
 M.FULL_SCREEN = { x = 0, y = 0, w = M.DESIGN_W, h = M.DESIGN_H }
 M.MARGIN = 16
@@ -181,35 +181,37 @@ M.SCREENS = {
         },
         back_rect = { x = 420, y = 34, w = 120, h = 48 },
     },
-    -- ===== Phase C: gameplay screens =====
-    PICK_START = {
-        panel = M.panel(0, 0, M.DESIGN_W, M.DESIGN_H, nil),
+    -- ===== The Lantern Hall home room =====
+    HOME = {},
+    -- ===== Loadout editor (the altar's modal) =====
+    HOME_EDIT = {
+        panel = M.panel(40, 20, 880, 600, "SPELL LOADOUT"),
         texts = {
-            pick_title = { x = 480, y = 566, size = 28, color = "text", max_h = 38 },
-            pick_hint = { x = 480, y = 534, size = 13, color = "text_dim", max_w = 900, max_h = 22 },
-            pick_status = { x = 480, y = 196, size = 20, color = "text", max_h = 30 },
-            enter_text = { x = 480, y = 116, size = 17, color = "text", max_h = 26 },
-            e1_text = { x = 195, y = 306, size = 17, color = "text", max_h = 26 },
-            e2_text = { x = 385, y = 306, size = 17, color = "text", max_h = 26 },
-            e3_text = { x = 575, y = 306, size = 17, color = "text", max_h = 26 },
-            e4_text = { x = 765, y = 306, size = 17, color = "text", max_h = 26 },
-            e1_role = { x = 195, y = 274, size = 11, color = "text_dim", max_w = 126, max_h = 48, role_element = "fire" },
-            e2_role = { x = 385, y = 274, size = 11, color = "text_dim", max_w = 126, max_h = 48, role_element = "water" },
-            e3_role = { x = 575, y = 274, size = 11, color = "text_dim", max_w = 126, max_h = 48, role_element = "wind" },
-            e4_role = { x = 765, y = 274, size = 11, color = "text_dim", max_w = 126, max_h = 48, role_element = "earth" },
+            loadout_title = { x = 480, y = 586, size = 22, color = "text", max_h = 30 },
+            loadout_preview = { x = 480, y = 190, size = 14, color = "text", max_w = 820, max_h = 26 },
+            loadout_quirk_desc = { x = 480, y = 158, size = 12, color = "text_dim", max_w = 820, max_h = 40 },
+            row_ea_label = { x = 140, y = 464, size = 13, color = "text_dim", max_w = 150, max_h = 24 },
+            row_ea_val = { x = 480, y = 464, size = 14, color = "text", max_w = 320, max_h = 24 },
+            row_eb_label = { x = 140, y = 396, size = 13, color = "text_dim", max_w = 150, max_h = 24 },
+            row_eb_val = { x = 480, y = 396, size = 14, color = "text", max_w = 320, max_h = 24 },
+            row_shape_label = { x = 140, y = 328, size = 13, color = "text_dim", max_w = 150, max_h = 24 },
+            row_shape_val = { x = 480, y = 328, size = 14, color = "text", max_w = 320, max_h = 24 },
+            row_quirk_label = { x = 140, y = 260, size = 13, color = "text_dim", max_w = 150, max_h = 24 },
+            row_quirk_val = { x = 480, y = 260, size = 14, color = "text", max_w = 320, max_h = 24 },
         },
         buttons = {
-            { id = "e1_box", action = "pick", label = "FIRE",  x = 120, y = 330, w = 150, h = 150, enabled = true, element = "fire",  text = { x = 195, y = 405 } },
-            { id = "e2_box", action = "pick", label = "WATER", x = 310, y = 330, w = 150, h = 150, enabled = true, element = "water", text = { x = 385, y = 405 } },
-            { id = "e3_box", action = "pick", label = "WIND",  x = 500, y = 330, w = 150, h = 150, enabled = true, element = "wind",  text = { x = 575, y = 405 } },
-            { id = "e4_box", action = "pick", label = "EARTH", x = 690, y = 330, w = 150, h = 150, enabled = true, element = "earth", text = { x = 765, y = 405 } },
-            M.button("enter_box", "enter", 340, 88, 280, 56, "ENTER ROOM", true),
-        },
-        tiles = {
-            { id = "e1_box", element = "fire",  text_id = "e1_text", role_id = "e1_role" },
-            { id = "e2_box", element = "water", text_id = "e2_text", role_id = "e2_role" },
-            { id = "e3_box", element = "wind",  text_id = "e3_text", role_id = "e3_role" },
-            { id = "e4_box", element = "earth", text_id = "e4_text", role_id = "e4_role" },
+            { id = "tab_mouse_box", action = "tab", label = "MOUSE", x = 228, y = 520, w = 160, h = 44, enabled = true, slot = 3, text = { x = 308, y = 542 } },
+            { id = "tab_q_box",     action = "tab", label = "Q",     x = 400, y = 520, w = 160, h = 44, enabled = true, slot = 1, text = { x = 480, y = 542 } },
+            { id = "tab_r_box",     action = "tab", label = "R",     x = 572, y = 520, w = 160, h = 44, enabled = true, slot = 2, text = { x = 652, y = 542 } },
+            { id = "row_ea_prev_box", action = "cycle", label = "<", x = 210, y = 440, w = 100, h = 48, enabled = true, field = "ea", dir = -1, text = { x = 260, y = 464 } },
+            { id = "row_ea_next_box", action = "cycle", label = ">", x = 650, y = 440, w = 100, h = 48, enabled = true, field = "ea", dir = 1,  text = { x = 700, y = 464 } },
+            { id = "row_eb_prev_box", action = "cycle", label = "<", x = 210, y = 372, w = 100, h = 48, enabled = true, field = "eb", dir = -1, text = { x = 260, y = 396 } },
+            { id = "row_eb_next_box", action = "cycle", label = ">", x = 650, y = 372, w = 100, h = 48, enabled = true, field = "eb", dir = 1,  text = { x = 700, y = 396 } },
+            { id = "row_shape_prev_box", action = "cycle", label = "<", x = 210, y = 304, w = 100, h = 48, enabled = true, field = "shape", dir = -1, text = { x = 260, y = 328 } },
+            { id = "row_shape_next_box", action = "cycle", label = ">", x = 650, y = 304, w = 100, h = 48, enabled = true, field = "shape", dir = 1,  text = { x = 700, y = 328 } },
+            { id = "row_quirk_prev_box", action = "cycle", label = "<", x = 210, y = 236, w = 100, h = 48, enabled = true, field = "quirk", dir = -1, text = { x = 260, y = 260 } },
+            { id = "row_quirk_next_box", action = "cycle", label = ">", x = 650, y = 236, w = 100, h = 48, enabled = true, field = "quirk", dir = 1,  text = { x = 700, y = 260 } },
+            M.button("done_box", "done", 380, 40, 200, 56, "DONE", true),   -- shared with CAULDRON: same rect on both screens
         },
     },
     ROOM = {
@@ -217,9 +219,7 @@ M.SCREENS = {
         texts = {
             hp_text = { x = 164, y = 601, size = 13, color = "text", max_w = 280, max_h = 22 },
             room_text = { x = 480, y = 601, size = 16, color = "text", max_w = 340, max_h = 26 },
-            s1_name = { x = 169, y = 96,  size = 13, color = "text", max_w = 258, max_h = 22 },
             s1_quirk = { x = 169, y = 78,  size = 11, color = "text_dim", max_w = 258, max_h = 20 },
-            s2_name = { x = 791, y = 96,  size = 13, color = "text", max_w = 258, max_h = 22 },
             s2_quirk = { x = 791, y = 78,  size = 11, color = "text_dim", max_w = 258, max_h = 20 },
             help_text = { x = 480, y = 14,  size = 13, color = "text_dim", max_w = 900, max_h = 24 },
         },
@@ -339,17 +339,7 @@ M.SCREENS = {
         },
     },
 }
--- Role lines: the audit measures the exact strings the HUD will draw.
-for _, spec in pairs(M.SCREENS.PICK_START.texts) do
-    if spec.role_element then
-        spec.text = data.ELEMENTS[spec.role_element].role
-    end
-end
-
--- ENTER ROOM needs two picks: the HUD passes ctx = { picks = self.picks }.
-M.SCREENS.PICK_START.buttons[5].requires = "two_picks"
-
--- Everything the Phase C screens draw is authored statically in main/hud.gui;
+-- Everything the screens draw is authored statically in main/hud.gui;
 -- this list is kept for future runtime-created ids (tools/validate_ui.py skips
 -- the "exists in hud.gui" check for ids listed here).
 M.CREATED_IDS = {}
@@ -445,10 +435,6 @@ end
 function M.hit_enabled(screen, x, y, ctx)
     local b = M.hit(screen, x, y)
     if not b or b.enabled ~= true then return nil end
-    if b.requires == "two_picks" then
-        local picks = ctx and ctx.picks
-        if not picks or #picks < 2 then return nil end
-    end
     return b
 end
 

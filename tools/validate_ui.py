@@ -30,7 +30,7 @@ if L is None:
     print("validate_ui: layout.lua failed to load")
     sys.exit(1)
 
-ALL_SCREENS = ("TITLE", "COMBOS", "CREDITS", "PICK_START", "ROOM", "REWARD",
+ALL_SCREENS = ("TITLE", "COMBOS", "CREDITS", "HOME", "HOME_EDIT", "ROOM", "REWARD",
                 "CAULDRON", "DEAD", "WIN")
 
 # Runtime-built bodies for the static audit (COMBOS/CREDITS panels): built INSIDE
@@ -196,8 +196,8 @@ print("ALL_NODES: %d id(s)" % len(re.findall(r'"([a-z0-9_]+)"', m.group(1))))
 if len(gui_set) != len(re.findall(r'"([a-z0-9_]+)"', m.group(1))):
     problems.append("node count mismatch: hud.gui has %d, ALL_NODES has %d" % (
         len(gui_set), len(re.findall(r'"([a-z0-9_]+)"', m.group(1)))))
-if len(gui_set) != 125:
-    problems.append("hud.gui node count changed: expected 125, got %d (update this constant with the change)" % len(gui_set))
+if len(gui_set) != 139:
+    problems.append("hud.gui node count changed: expected 139, got %d (update this constant with the change)" % len(gui_set))
 
 if problems:
     for p in problems:

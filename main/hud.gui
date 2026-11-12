@@ -152,136 +152,6 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  type: TYPE_TEXT
-  text: "PICK TWO ELEMENTS"
-  font: "text"
-  id: "pick_title"
-  layer: "text"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  type: TYPE_TEXT
-  text: "Click an element twice to double it."
-  font: "text"
-  id: "pick_hint"
-  layer: "text"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  size { x: 150.0 y: 150.0 }
-  type: TYPE_BOX
-  texture: "ui/icon_fire"
-  id: "e1_box"
-  layer: "graphics"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  type: TYPE_TEXT
-  text: "FIRE"
-  font: "text"
-  id: "e1_text"
-  layer: "text"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  size { x: 150.0 y: 150.0 }
-  type: TYPE_BOX
-  texture: "ui/icon_water"
-  id: "e2_box"
-  layer: "graphics"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  type: TYPE_TEXT
-  text: "WATER"
-  font: "text"
-  id: "e2_text"
-  layer: "text"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  size { x: 150.0 y: 150.0 }
-  type: TYPE_BOX
-  texture: "ui/icon_wind"
-  id: "e3_box"
-  layer: "graphics"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  type: TYPE_TEXT
-  text: "WIND"
-  font: "text"
-  id: "e3_text"
-  layer: "text"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  size { x: 150.0 y: 150.0 }
-  type: TYPE_BOX
-  texture: "ui/icon_earth"
-  id: "e4_box"
-  layer: "graphics"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  type: TYPE_TEXT
-  text: "EARTH"
-  font: "text"
-  id: "e4_text"
-  layer: "text"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  type: TYPE_TEXT
-  text: "Picked: -"
-  font: "text"
-  id: "pick_status"
-  layer: "text"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  size { x: 280.0 y: 56.0 }
-  type: TYPE_BOX
-  texture: "ui/square"
-  id: "enter_box"
-  layer: "graphics"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  type: TYPE_TEXT
-  text: "ENTER ROOM"
-  font: "text"
-  id: "enter_text"
-  layer: "text"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
   size { x: 280.0 y: 22.0 }
   type: TYPE_BOX
   texture: "ui/square"
@@ -333,16 +203,6 @@ nodes {
 nodes {
   position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
-  text: "Slot 1"
-  font: "text"
-  id: "s1_name"
-  layer: "text"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  type: TYPE_TEXT
   text: ""
   font: "text"
   id: "s1_quirk"
@@ -387,16 +247,6 @@ nodes {
   texture: "ui/square"
   id: "s2_cd"
   layer: "graphics"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  type: TYPE_TEXT
-  text: "Slot 2"
-  font: "text"
-  id: "s2_name"
-  layer: "text"
   inherit_alpha: true
 }
 
@@ -726,46 +576,6 @@ nodes {
   text: "Done"
   font: "text"
   id: "done_text"
-  layer: "text"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  type: TYPE_TEXT
-  text: ""
-  font: "text"
-  id: "e1_role"
-  layer: "text"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  type: TYPE_TEXT
-  text: ""
-  font: "text"
-  id: "e2_role"
-  layer: "text"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  type: TYPE_TEXT
-  text: ""
-  font: "text"
-  id: "e3_role"
-  layer: "text"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  type: TYPE_TEXT
-  text: ""
-  font: "text"
-  id: "e4_role"
   layer: "text"
   inherit_alpha: true
 }
@@ -1256,6 +1066,336 @@ nodes {
   type: TYPE_BOX
   texture: "ui/square"
   id: "flash_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "SPELL LOADOUT"
+  font: "text"
+  id: "loadout_title"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "loadout_preview"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "loadout_quirk_desc"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "ELEMENT A"
+  font: "text"
+  id: "row_ea_label"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "FIRE"
+  font: "text"
+  id: "row_ea_val"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "ELEMENT B"
+  font: "text"
+  id: "row_eb_label"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "WATER"
+  font: "text"
+  id: "row_eb_val"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "SHAPE"
+  font: "text"
+  id: "row_shape_label"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "BOLT"
+  font: "text"
+  id: "row_shape_val"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "QUIRK"
+  font: "text"
+  id: "row_quirk_label"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "row_quirk_val"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "MOUSE"
+  font: "text"
+  id: "tab_mouse_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "Q"
+  font: "text"
+  id: "tab_q_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "R"
+  font: "text"
+  id: "tab_r_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "<"
+  font: "text"
+  id: "row_ea_prev_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ">"
+  font: "text"
+  id: "row_ea_next_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "<"
+  font: "text"
+  id: "row_eb_prev_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ">"
+  font: "text"
+  id: "row_eb_next_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "<"
+  font: "text"
+  id: "row_shape_prev_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ">"
+  font: "text"
+  id: "row_shape_next_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "<"
+  font: "text"
+  id: "row_quirk_prev_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ">"
+  font: "text"
+  id: "row_quirk_next_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 160.0 y: 44.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "tab_mouse_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 160.0 y: 44.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "tab_q_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 160.0 y: 44.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "tab_r_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 100.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "row_ea_prev_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 100.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "row_ea_next_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 100.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "row_eb_prev_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 100.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "row_eb_next_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 100.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "row_shape_prev_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 100.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "row_shape_next_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 100.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "row_quirk_prev_box"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 100.0 y: 48.0 }
+  type: TYPE_BOX
+  texture: "ui/square"
+  id: "row_quirk_next_box"
   layer: "graphics"
   inherit_alpha: true
 }

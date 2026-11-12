@@ -83,6 +83,7 @@ msg = { url = function(sock, path, frag) return {path=path, frag=frag} end, post
                   s2        = { ROOM = true, DEAD = true, WIN = true },
                   s3        = { ROOM = true, DEAD = true, WIN = true },
                   prompt    = { HOME = true },
+                  editor    = { HOME_EDIT = true },
                   credits   = { CREDITS = true } }
   for field, ok_states in pairs(gated) do
     if message[field] ~= nil and not ok_states[st] then
@@ -4076,6 +4077,72 @@ do
   sf(last_ui and last_ui.prompt == nil, "ui msg: prompt leaked outside HOME")
 end
 
+-- ===== Editor: tabs, cycling, MOUSE restrictions, preview, state guard =====
+do
+  self.loadout = nil
+  self.state = "DEAD"
+  ui({ action = "continue" })
+  self.state = "TITLE"
+  ui({ action = "start" })
+  ui({ action = "edit" })
+  sf(self.state == "HOME_EDIT", "editor: edit did not open")
+  sf(self.loadout ~= nil, "editor: no loadout exists")
+  sf((self.loadout_tab or 1) == 1, "editor: default tab is not Q (slot 1)")
+  ui({ action = "tab", slot = 3 })
+  sf(self.loadout_tab == 3, "editor: tab did not switch to MOUSE")
+  local s3shape = self.loadout[3].shape
+  ui({ action = "cycle", field = "shape", dir = 1 })
+  sf(self.loadout[3].shape == s3shape, "editor: MOUSE shape must not change")
+  -- cycling the MOUSE quirk stays inside basic_ok defs and wraps all the way round
+  local s3q = self.loadout[3].quirk_id
+  local seen = {}
+  for _ = 1, #quirks.list_for_slot("basic") do
+    ui({ action = "cycle", field = "quirk", dir = 1 })
+    local d = quirks.get(self.loadout[3].quirk_id)
+    sf(d and d.basic_ok == true, "editor: basic slot accepted a disallowed quirk")
+    seen[self.loadout[3].quirk_id] = true
+  end
+  sf(self.loadout[3].quirk_id == s3q, "editor: cycling did not wrap to the starting quirk")
+  sf(self.slot3.quirk_id == self.loadout[3].quirk_id, "editor: quirk change did not re-equip slot 3")
+  ui({ action = "tab", slot = 1 })
+  local ea0 = self.loadout[1].ea
+  ui({ action = "cycle", field = "ea", dir = 1 })
+  sf(self.loadout[1].ea ~= ea0, "editor: ea did not cycle")
+  ui({ action = "cycle", field = "ea", dir = -1 })
+  sf(self.loadout[1].ea == ea0, "editor: ea did not cycle back")
+  local sidx = 1
+  for i, shape in ipairs({ "projectile", "puddle", "orbit", "cone", "burst" }) do
+    if self.loadout[1].shape == shape then sidx = i end
+  end
+  ui({ action = "cycle", field = "shape", dir = 1 })
+  local nextf = ({ "projectile", "puddle", "orbit", "cone", "burst" })[sidx % 5 + 1]
+  sf(self.loadout[1].shape == nextf, "editor: shape did not cycle")
+  sf(self.slot1.quirk_id == self.loadout[1].quirk_id, "editor: change did not re-equip slot 1")
+  ui({ action = "done" })
+  sf(self.state == "HOME", "editor: done did not return to HOME")
+  -- state guard: editor actions are inert outside HOME_EDIT
+  local before = self.loadout[1].ea
+  ui({ action = "cycle", field = "ea", dir = 1 })
+  ui({ action = "tab", slot = 2 })
+  sf(self.loadout[1].ea == before, "editor: action applied outside HOME_EDIT")
+  sf(self.loadout_tab == 1, "editor: tab changed outside HOME_EDIT")
+  -- the preview is the generator's answer for the same loadout
+  ui({ action = "edit" })
+  frame()
+  local l = self.loadout[self.loadout_tab]
+  local sk = skillgen.makeSkill(l.ea, l.eb, l.shape, nil, l.quirk_id)
+  sf(last_ui and last_ui.editor and last_ui.editor.preview_name:find(sk.compound) ~= nil,
+     "editor: preview name")
+  sf(last_ui and last_ui.editor and last_ui.editor.preview_detail:find("Power " .. sk.power) ~= nil,
+     "editor: preview power")
+  sf(last_ui and last_ui.editor and last_ui.editor.quirk_label == quirks.get(l.quirk_id).label,
+     "editor: quirk label")
+  sf(last_ui and last_ui.editor and last_ui.editor.quirk_desc == quirks.get(l.quirk_id).desc,
+     "editor: quirk desc")
+  ui({ action = "done" })
+  sf(self.state == "HOME", "editor: done did not return to HOME (2nd)")
+end
+
 -- ===== HUD message budget: every state's ui message must fit the 2 KB msg.post limit =====
 -- Force each screen state with the heaviest payload the game can carry, then
 -- check the posted message. ui_seen/ui_worst were recorded by the msg.post stub.
@@ -4094,6 +4161,7 @@ do
   force("COMBOS", function() end)
   force("CREDITS", function() end)
   force("HOME", function() self.loadout_tab = 1 end)
+  force("HOME_EDIT", function() self.loadout_tab = 1 end)
   force("ROOM", function()
     self.inventory = big_inventory
     self.relics = four_relics
@@ -4120,7 +4188,7 @@ do
   end)
   force("DEAD", function() self.relics = four_relics end)
   force("WIN", function() self.relics = four_relics end)
-  local ORDER = { "TITLE", "COMBOS", "CREDITS", "HOME", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN" }
+  local ORDER = { "TITLE", "COMBOS", "CREDITS", "HOME", "HOME_EDIT", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN" }
   for _, st in ipairs(ORDER) do
     sf((ui_seen[st] or 0) >= 1, "ui msg: no ui message posted in state " .. st)
     local w = ui_worst[st] or 0
