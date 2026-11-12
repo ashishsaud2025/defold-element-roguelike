@@ -558,12 +558,12 @@ local function render(self)
     -- STORY: the panel becomes a dialogue box along the bottom of the window
     if story then
         -- the box hugs the bottom edge and is only as tall as the page needs:
-        -- hint row + body lines + speaker line + padding (body line height ~22 px)
+        -- top margin + title + body + hint + bottom margin
         local lines = 1
         for _ in string.gmatch(self.story_body or "", "\n") do lines = lines + 1 end
-        local h = 74 + 22 * lines
+        local h = 90 + 16 * lines
         gui.set_size(n("panel"), vmath.vector3(880, h, 0))
-        gui.set_position(n("panel"), vmath.vector3(480, 10 + h / 2, 0))
+        gui.set_position(n("panel"), vmath.vector3(480, 20 + h / 2, 0))
         color("panel", C.panel)
     else
         gui.set_size(n("panel"), vmath.vector3(960, 640, 0))
@@ -1197,20 +1197,31 @@ local function render(self)
     if not (st == "CREDITS" or st == "COMBOS") then show("credits_title", false) end
     if not story then gui.set_scale(n("overlay_title"), vmath.vector3(40 / 14, 40 / 14, 1)) end
     if story then
-        -- left-aligned dialogue: speaker on top, text below, hint bottom-right
+        -- left-aligned dialogue: speaker on top, text below, hint bottom-right.
+        -- All positions are derived from the panel rect (panel_bottom = 20,
+        -- panel height = 90 + 16 * story_lines) so the text can never leave it.
+        -- Body grows upward from a fixed baseline; title sits above it; hint
+        -- stays pinned just above the panel bottom edge.
+        local story_lines = 1
+        for _ in string.gmatch(self.story_body or "", "\n") do story_lines = story_lines + 1 end
+        local panel_bottom = 20
+        local panel_top = panel_bottom + 90 + 16 * story_lines
+        -- title: vertical centre (pivot W), below the top margin
         gui.set_pivot(n("overlay_title"), gui.PIVOT_W)
-        gui.set_position(n("overlay_title"), vmath.vector3(70, 186, 0))
+        gui.set_position(n("overlay_title"), vmath.vector3(70, panel_top - 39, 0))
         gui.set_scale(n("overlay_title"), vmath.vector3(22 / 14, 22 / 14, 1))
         text("overlay_title", self.story_title or "")
         color("overlay_title", C.win)
         show("credits_body", true)
-        gui.set_pivot(n("credits_body"), gui.PIVOT_NW)
-        gui.set_position(n("credits_body"), vmath.vector3(70, 162, 0))
+        -- body: bottom-left (pivot SW), grows upward from just above the hint
+        gui.set_pivot(n("credits_body"), gui.PIVOT_SW)
+        gui.set_position(n("credits_body"), vmath.vector3(70, panel_bottom + 30, 0))
         gui.set_scale(n("credits_body"), vmath.vector3(16 / 14, 16 / 14, 1))
         text("credits_body", self.story_body or "")
         color("credits_body", pv(layout.palette.text))
+        -- hint: vertical centre (pivot E), just above the panel bottom edge
         gui.set_pivot(n("overlay_hint"), gui.PIVOT_E)
-        gui.set_position(n("overlay_hint"), vmath.vector3(890, 32, 0))
+        gui.set_position(n("overlay_hint"), vmath.vector3(890, panel_bottom + 14, 0))
         gui.set_scale(n("overlay_hint"), vmath.vector3(12 / 14, 12 / 14, 1))
         text("overlay_hint", self.story_hint or "Click to continue")
         color("overlay_hint", pv(layout.palette.text_dim))
