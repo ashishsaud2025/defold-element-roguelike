@@ -1450,6 +1450,7 @@ function on_message(self, message_id, message, sender)
             life = 0.8, max_life = 0.8,
             vy = 60,
         }
+        render(self)
     elseif message_id == hash("click") then
         on_click(self, message.x or 0, message.y or 0)
     elseif message_id == hash("ui_audit") then
