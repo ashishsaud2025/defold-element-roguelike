@@ -331,7 +331,7 @@ key_trigger {
   action: "k_enter"
 }
 key_trigger {
-  input: KEY_ESCAPE
+  input: KEY_ESC
   action: "k_escape"
 }
 key_trigger {
