@@ -469,6 +469,16 @@ Format: **what happened / why / rule for agents.** These are the assistant's own
   model result, not a screen verdict.
 
 ---
+### 76. Early functions referencing later `local function` declarations bind to a nil global at call time
+- **What:** `enter_home` called `clear_world` and `begin_run` called `enter_room`; both were declared later in `main/game.script` with `local function`. Lua resolves locals lexically, so the free name in the early function body bound to a global that was never assigned at call time — `attempt to index a nil value` deep in my new home flow, only caught because I added the home test and ran it.
+- **Fix:** forward declaration at the top (`local clear_world`, `local enter_room`) plus plain assignment at the definition site (`clear_world = function(self) ... end`), never a second `local function` reusing the same name.
+- **Rule:** if an earlier-placed function must call a file-level local, forward-declare it, or hoist the definition above the first caller. After any such refactor, run the suite before assuming the flow works.
+
+### 77. `print` in the headless harness is captured into a `logs` table that is never dumped
+- **What:** my `print("DEBUG input: state=%s bolts=%d ...")` during a failed Q-cast check produced zero output. The mock redirects `print` into a table for assertion-time inspection; nobody ever flushes it to stdout.
+- **Fix:** diagnostics that must be seen go into a scratch file (`io.open("debug_out.txt", "a"):write(...)` under the project root) or into an assertion message, then delete the scratch file.
+- **Rule:** when a headless check fails, never reach for `print` — dump to a file or assert, then clean up. And when the failing line is obvious, believe it first: `#self.bolts` grew by 2, not 1, because of `splits in two` — read the failing line before debugging the system.
+
 ## Definition of Done (run before telling the human a change is finished)
 1. Syntax-check every Lua file you touched (`loadstring` in LuaJIT or `luac -p` for 5.1). No `goto`, `//`, bit operators.
 2. `python tools/validate_rooms.py` -> `0 problem(s)` (if you touched rooms).

@@ -945,7 +945,6 @@ end
 
 function init(self)
     self.state = "TITLE"
-    self.picks = {}
     self.hp = 100
     self.max_hp = 100
     self.s1 = nil
@@ -993,7 +992,6 @@ end
 function on_message(self, message_id, message, sender)
     if message_id == hash("ui") then
         self.state = message.state or self.state
-        self.picks = message.picks or {}
         self.hp = message.hp or self.hp
         self.max_hp = message.max_hp or self.max_hp
         self.s1 = message.s1
