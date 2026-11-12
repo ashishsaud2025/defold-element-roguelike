@@ -70,7 +70,7 @@ msg = { url = function(sock, path, frag) return {path=path, frag=frag} end, post
   if enc > ui_msg_max then ui_msg_max = enc; ui_msg_max_state = st end
   ui_seen[st] = (ui_seen[st] or 0) + 1
   if enc > (ui_worst[st] or 0) then ui_worst[st] = enc end
-  local gated = { inventory = { ROOM = true, REWARD = true, CAULDRON = true },
+  local gated = { inventory = { REWARD = true, CAULDRON = true },
                   relics    = { ROOM = true, REWARD = true, CAULDRON = true, DEAD = true, WIN = true },
                   reward_options = { REWARD = true },
                   cauldron  = { CAULDRON = true },
@@ -400,7 +400,8 @@ local function begin_room(seed)
   self.keys = { up = false, left = false, down = false, right = false }
   self.dash_t, self.dash_cd = 0, 0
   self.aim.x, self.aim.y = self.player_pos.x + 120, self.player_pos.y
-  self.slot1_cooldown, self.slot2_cooldown = 0, 0
+  self.slot1_cooldown, self.slot2_cooldown, self.slot3_cooldown = 0, 0, 0
+  self.hold3 = false
   self.relics, self.cast_count, self.status_dur_mul = {}, 0, 1
   return self.state == "ROOM"
 end
@@ -3835,6 +3836,60 @@ do
   sf(data.QUIRK_DATA.health_cost ~= nil and data.QUIRK_DATA.leaves_trail ~= nil
      and data.QUIRK_DATA.bigger_slower ~= nil,
      "data: QUIRK_DATA tuning tables must survive")
+end
+
+-- ===== Loadout: three slots, MOUSE forced to Bolt, sanitised =====
+do
+  self.loadout = nil
+  apply_loadout(self)                       -- creates defaults, then equips
+  sf(self.loadout ~= nil, "loadout: not created")
+  sf(#self.loadout == 3, "loadout: expected 3 slots")
+  for i = 1, 3 do
+    sf(type(self.loadout[i].ea) == "string", "loadout: slot " .. i .. " ea")
+    sf(type(self.loadout[i].eb) == "string", "loadout: slot " .. i .. " eb")
+    sf(type(self.loadout[i].quirk_id) == "string", "loadout: slot " .. i .. " quirk_id")
+    sf(quirks.get(self.loadout[i].quirk_id) ~= nil, "loadout: slot " .. i .. " quirk_id unknown")
+  end
+  sf(self.loadout[3].shape == "projectile", "loadout: MOUSE must be Bolt")
+  sf(self.slot3 ~= nil, "loadout: slot3 skill missing")
+  sf(self.slot3.shape_key == "projectile", "loadout: slot3 not Bolt")
+  sf(self.slot3_elem_a ~= nil and self.slot3_elem_b ~= nil, "loadout: slot3 elements missing")
+  sf(self.slot3_cd_max == self.slot3.cooldown, "loadout: slot3 cd_max")
+  sf(self.cooldown_ready[3] ~= nil, "loadout: cooldown_ready[3] missing")
+  sf(self.slot1.quirk_id == self.loadout[1].quirk_id, "loadout: slot1 quirk not applied")
+  sf(self.slot2.quirk_id == self.loadout[2].quirk_id, "loadout: slot2 quirk not applied")
+  -- a named quirk is stamped on the slot it is equipped into
+  local sk = skillgen.makeSkill("earth", "earth", "burst")
+  equip_skill(self, 3, sk, "split_in_two")
+  sf(self.slot3.quirk_id == "split_in_two", "equip_skill: quirk_id not stamped")
+  sf(self.slot3.quirk == "splits in two", "equip_skill: label not stamped")
+  sf(self.slot3.shape_key == "burst", "equip_skill: skill not installed")
+  sf(self.slot3_cd_max == sk.cooldown, "equip_skill: cd_max not set")
+  -- sanitisation: forged shape and a quirk the MOUSE slot may not have
+  self.loadout[3].shape = "burst"
+  self.loadout[3].quirk_id = "health_cost"
+  apply_loadout(self)
+  sf(self.loadout[3].shape == "projectile", "apply_loadout: MOUSE shape not forced to Bolt")
+  sf(self.slot3.shape_key == "projectile", "apply_loadout: slot3 shape not Bolt")
+  sf(self.slot3.quirk_id ~= "health_cost", "apply_loadout: MOUSE kept a disallowed quirk")
+  sf(quirks.get(self.slot3.quirk_id).basic_ok == true, "apply_loadout: MOUSE got a non-basic quirk")
+  -- a forged element falls back to the default too
+  self.loadout[3].ea, self.loadout[3].eb = "plasma", "gold"
+  apply_loadout(self)
+  sf(self.loadout[3].ea == "fire" and self.loadout[3].eb == "fire",
+     "apply_loadout: forged elements not repaired")
+  -- slot 3 is an ordinary cast (driven through update's hold-fire path in a real room)
+  begin_room()
+  local b = #self.bolts
+  self.slot3_cooldown = 0
+  self.hold3 = true
+  frame()
+  self.hold3 = false
+  sf(#self.bolts == b + 1, "slot3: hold-fire produced no bolt")
+  sf(self.slot3_cooldown > 0, "slot3: cooldown not set")
+  -- and it keeps its quirk across rooms
+  local quirk3 = self.loadout[3].quirk_id
+  sf(self.slot3.quirk_id == quirk3, "slot3: quirk changed after a room reset")
 end
 
 -- ===== HUD message budget: every state's ui message must fit the 2 KB msg.post limit =====

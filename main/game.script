@@ -560,27 +560,14 @@ function init(self)
     -- Movement keys
     self.keys = { up = false, left = false, down = false, right = false }
 
-    -- Debug skill setup (slot 1 and slot 2)
-    self.slot1_elem_a = "fire"
-    self.slot1_elem_b = "fire"
-    self.slot1_shape = "projectile"
-    self.slot2_elem_a = "water"
-    self.slot2_elem_b = "water"
-    self.slot2_shape = "projectile"
-
-    self.slot1 = skillgen.makeSkill("fire", "fire", "projectile")
-    self.slot2 = skillgen.makeSkill("water", "water", "projectile")
-    self.slot1_cooldown = 0
-    self.slot2_cooldown = 0
-
-    -- Cooldowns belong to the SKILL, not the slot: when a slot is swapped the
-    -- remaining time is remembered per skill key and restored on swap-back.
-    -- Stored as an absolute "ready at" time on self.clock.
+    -- Loadout: MOUSE (slot 3), Q (slot 1), R (slot 2). The altar picks it, the
+    -- door applies it. Cooldowns belong to the SKILL, not the slot: when a slot is
+    -- swapped the remaining time is remembered per skill key and restored on swap-back.
     self.clock = 0
-    self.cooldown_ready = { [1] = {}, [2] = {} }
-
-    print("Slot 1: " .. self.slot1.compound .. " " .. self.slot1.shape .. " (power=" .. self.slot1.power .. ", quirk=" .. self.slot1.quirk .. ")")
-    print("Slot 2: " .. self.slot2.compound .. " " .. self.slot2.shape .. " (power=" .. self.slot2.power .. ", quirk=" .. self.slot2.quirk .. ")")
+    self.cooldown_ready = { [1] = {}, [2] = {}, [3] = {} }
+    ensure_loadout(self)
+    self.hold3 = false
+    apply_loadout(self)
 
     -- Enemies and active deliveries
     self.enemies = {}
@@ -669,6 +656,91 @@ local function rebuild_skills(self)
 
     print("Slot 1: " .. self.slot1.compound .. " " .. self.slot1.shape .. " (power=" .. self.slot1.power .. ", quirk=" .. self.slot1.quirk .. ")")
     print("Slot 2: " .. self.slot2.compound .. " " .. self.slot2.shape .. " (power=" .. self.slot2.power .. ", quirk=" .. self.slot2.quirk .. ")")
+end
+
+-- ===== Ability loadout: MOUSE (slot 3), Q (slot 1), R (slot 2) =====
+-- The home altar picks { ea, eb, shape, quirk_id } for each slot; the door applies it.
+-- Slot 3 is always a Bolt. `equip_skill` stamps the quirk onto the skill, so a cauldron
+-- craft or a debug re-craft keeps the slot's quirk.
+local LOADOUT_DEFAULTS = {
+    [1] = { ea = "water", eb = "water", shape = "projectile" },  -- Q
+    [2] = { ea = "wind",  eb = "wind",  shape = "projectile" },  -- R
+    [3] = { ea = "fire",  eb = "fire",  shape = "projectile" },  -- MOUSE
+}
+
+ensure_loadout = function(self)
+    if self.loadout then return end
+    self.loadout = {}
+    for slot = 1, 3 do
+        local d = LOADOUT_DEFAULTS[slot]
+        self.loadout[slot] = {
+            ea = d.ea, eb = d.eb, shape = d.shape,
+            quirk_id = skillgen.makeSkill(d.ea, d.eb, d.shape).quirk_id,
+        }
+    end
+end
+
+equip_skill = function(self, slot, skill, quirk_id)
+    local def = (quirk_id and quirks_mod.get(quirk_id))
+        or (skill.quirk_id and quirks_mod.get(skill.quirk_id))
+        or (skill.quirk and quirks_mod.by_label(skill.quirk))
+        or quirks_mod.get("repeat_once")
+    if def then
+        skill.quirk_id = def.id
+        skill.quirk = def.label
+    end
+    self.cooldown_ready = self.cooldown_ready or {}
+    if slot == 1 then
+        self.slot1 = skill
+        self.slot1_cooldown, self.slot1_cd_max = 0, skill.cooldown
+        self.cooldown_ready[1] = {}
+    elseif slot == 2 then
+        self.slot2 = skill
+        self.slot2_cooldown, self.slot2_cd_max = 0, skill.cooldown
+        self.cooldown_ready[2] = {}
+    else
+        self.slot3 = skill
+        self.slot3_cooldown, self.slot3_cd_max = 0, skill.cooldown
+        self.cooldown_ready[3] = {}
+    end
+end
+
+-- Sanitises forged/legacy loadout data, then equips all three slots.
+-- Slot 3's shape is forced to Bolt and its quirks filtered to basic_ok ones.
+apply_loadout = function(self)
+    ensure_loadout(self)
+    local function elem_ok(e) return data.ELEMENTS[e] ~= nil end
+    local function allowed_id(allowed, id)
+        for _, d in ipairs(allowed) do if d.id == id then return d.id end end
+        return nil
+    end
+    for slot = 1, 3 do
+        local l = self.loadout[slot]
+        local d = LOADOUT_DEFAULTS[slot]
+        l.ea = elem_ok(l.ea) and l.ea or d.ea
+        l.eb = elem_ok(l.eb) and l.eb or d.eb
+        local kind = (slot == 3) and "basic" or "spell"
+        local allowed = quirks_mod.list_for_slot(kind)
+        local shape = (slot == 3) and "projectile"
+            or ((data.SHAPES[l.shape] and l.shape) or "projectile")
+        local qid = allowed_id(allowed, l.quirk_id)
+        if not qid then
+            local dflt = skillgen.makeSkill(l.ea, l.eb, shape).quirk_id
+            qid = allowed_id(allowed, dflt) or allowed[1].id
+        end
+        l.shape, l.quirk_id = shape, qid
+        local sk = skillgen.makeSkill(l.ea, l.eb, shape, nil, qid)
+        equip_skill(self, slot, sk, qid)
+        if slot == 1 then
+            self.slot1_elem_a, self.slot1_elem_b, self.slot1_shape = l.ea, l.eb, shape
+        elseif slot == 2 then
+            self.slot2_elem_a, self.slot2_elem_b, self.slot2_shape = l.ea, l.eb, shape
+        else
+            self.slot3_elem_a, self.slot3_elem_b, self.slot3_shape = l.ea, l.eb, shape
+        end
+        print(string.format("Slot %d: %s %s (power=%d, quirk=%s)",
+            slot, sk.compound, sk.shape, sk.power, sk.quirk))
+    end
 end
 
 -- All 10 compound pairs (elements sorted, doubles allowed) in canonical order.
@@ -760,12 +832,16 @@ local function send_ui(self)
                            self.slot1_elem_a, self.slot1_elem_b)
         ui.s2 = skill_view(self.slot2, self.slot2_cooldown, self.slot2_cd_max,
                            self.slot2_elem_a, self.slot2_elem_b)
+        ui.s3 = skill_view(self.slot3, self.slot3_cooldown, self.slot3_cd_max,
+                           self.slot3_elem_a, self.slot3_elem_b)
         ui.casts = self.cast_count or 0
     end
     if st == "ROOM" or st == "REWARD" or st == "CAULDRON" or st == "DEAD" or st == "WIN" then
         ui.relics = self.relics
     end
-    if st == "ROOM" or st == "REWARD" or st == "CAULDRON" then
+    -- ROOM does not render the inventory (it never reads self.inventory); leaving it off keeps
+    -- the ROOM message under the 2048-byte msg.post limit now that s3 rides along.
+    if st == "REWARD" or st == "CAULDRON" then
         ui.inventory = self.inventory
     end
     if st == "REWARD" then
@@ -851,7 +927,8 @@ local function reset_run(self)
     self.picks = {}
     self.slot1_cooldown = 0
     self.slot2_cooldown = 0
-    self.cooldown_ready = { [1] = {}, [2] = {} }
+    self.slot3_cooldown = 0
+    self.cooldown_ready = { [1] = {}, [2] = {}, [3] = {} }
     self.spawn_timer = 0
     self.room_number = 0
     self.inventory = {
@@ -867,7 +944,7 @@ local function reset_run(self)
     self.boss = nil
     self.screen_flash = 0
     self.dash_t, self.dash_cd = 0, 0
-    self.hold1, self.hold2 = false, false
+    self.hold1, self.hold2, self.hold3 = false, false, false
     self.pending_wave = {}
     self.relics = {}
     self.cast_count = 0
@@ -2484,10 +2561,12 @@ function update(self, dt)
         -- Cooldowns
         if self.slot1_cooldown > 0 then self.slot1_cooldown = self.slot1_cooldown - dt end
         if self.slot2_cooldown > 0 then self.slot2_cooldown = self.slot2_cooldown - dt end
+        if self.slot3_cooldown > 0 then self.slot3_cooldown = self.slot3_cooldown - dt end
 
         -- Hold the mouse button to keep casting as soon as the cooldown is ready
         if self.hold1 and self.slot1_cooldown <= 0 then do_cast(self, 1) end
         if self.hold2 and self.slot2_cooldown <= 0 then do_cast(self, 2) end
+        if self.hold3 and self.slot3_cooldown <= 0 and self.state == "ROOM" then do_cast(self, 3) end
 
         -- Repeat casts (quirk)
         for i = #self.repeat_casts, 1, -1 do
@@ -2781,7 +2860,7 @@ end
 -- Cast a skill from the given slot (1 or 2)
 do_cast = function(self, slot_num, is_repeat, ctx)
     -- A repeat/echo carries the ORIGINAL cast's skill, position and aim (ctx).
-    local skill = (ctx and ctx.skill) or (slot_num == 1 and self.slot1 or self.slot2)
+    local skill = (ctx and ctx.skill) or (slot_num == 1 and self.slot1) or (slot_num == 2 and self.slot2) or (slot_num == 3 and self.slot3)
     if not skill then return false end
     local qid = skill.quirk_id or QUIRK_ID_BY_TEXT[skill.quirk]
     local qd = data.QUIRK_DATA[qid] or {}
@@ -3205,6 +3284,9 @@ do_cast = function(self, slot_num, is_repeat, ctx)
         if slot_num == 1 then
             self.slot1_cooldown = cooldown
             self.slot1_cd_max = cooldown
+        elseif slot_num == 3 then
+            self.slot3_cooldown = cooldown
+            self.slot3_cd_max = cooldown
         else
             self.slot2_cooldown = cooldown
             self.slot2_cd_max = cooldown
