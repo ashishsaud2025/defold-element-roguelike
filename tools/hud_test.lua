@@ -138,6 +138,9 @@ gui = {
     end
     if node then node.flipbook = id end
   end,
+  show_keyboard = function(type) end,
+  hide_keyboard = function() end,
+  KEYBOARD_TYPE_DEFAULT = "KEYBOARD_TYPE_DEFAULT",
   PIVOT_CENTER = "PIVOT_CENTER", PIVOT_N = "PIVOT_N", PIVOT_NE = "PIVOT_NE", PIVOT_E = "PIVOT_E",
   PIVOT_SE = "PIVOT_SE", PIVOT_S = "PIVOT_S", PIVOT_SW = "PIVOT_SW", PIVOT_W = "PIVOT_W", PIVOT_NW = "PIVOT_NW",
   new_box_node = function(pos, size)

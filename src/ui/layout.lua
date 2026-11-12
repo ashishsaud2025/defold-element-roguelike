@@ -589,6 +589,30 @@ end
 
 -- ===== Full position map for EVERY authored node id (used by the harness and
 -- validate_ui.py to prove every node is positioned from a layout rect) =====
+-- ===== Touch controls (mobile only; repositioned live for the stick) =====
+M.TOUCH = {
+    stick_base = { x = 12,  y = 196, w = 120, h = 120 },  -- home position only; moved while dragging
+    stick_nub  = { x = 46,  y = 230, w = 56,  h = 56  },
+    s1         = { x = 780, y = 352, w = 112, h = 88  },   -- slot 1 (cast slot 1)
+    s2         = { x = 780, y = 248, w = 112, h = 88  },   -- slot 2
+    s3         = { x = 780, y = 144, w = 112, h = 88  },   -- slot 3 / basic
+    dash       = { x = 780, y =  40, w = 112, h = 88  },   -- dash
+    interact   = { x = 780, y = 460, w = 112, h = 64  },   -- interact (E)
+    pause      = { x = 746, y = 576, w = 122, h = 56  },   -- pause (II)
+    icons      = 3,  -- touch_icon_1..3, centred on each slot button
+    dash_text  = { x = 836, y = 84,  text = "DASH" },
+    interact_text = { x = 836, y = 492, text = "E" },
+    pause_text    = { x = 807, y = 604, text = "II" },
+}
+for i = 1, 3 do
+    local b = M.TOUCH["s" .. i]
+    M.TOUCH["icon_" .. i] = { x = b.x + b.w * 0.5 - 28, y = b.y + b.h * 0.5 - 28, w = 56, h = 56 }
+end
+M.TOUCH_ORDER = { "touch_stick_base", "touch_stick_nub", "touch_btn_1", "touch_btn_2", "touch_btn_3",
+                  "touch_btn_dash", "touch_btn_interact", "touch_btn_pause",
+                  "touch_icon_1", "touch_icon_2", "touch_icon_3",
+                  "touch_dash_text", "touch_interact_text", "touch_pause_text" }
+
 -- ALL_RECT_RECT[id] = { x, y, w, h }   (x,y = BOTTOM-LEFT, as everywhere here)
 -- ALL_RECTS[id]     = centre position { x, y }
 M.ALL_RECT_RECT = {}
@@ -688,6 +712,27 @@ end
 -- full-screen nodes
 put_rect("panel", M.FULL_SCREEN)
 put_rect("flash_box", M.FULL_SCREEN)
+
+-- Touch controls (authored, positioned here so the map stays complete)
+for _, id in ipairs(M.TOUCH_ORDER) do
+    local rect = nil
+    if id == "touch_stick_base" then rect = M.TOUCH.stick_base
+    elseif id == "touch_stick_nub" then rect = M.TOUCH.stick_nub
+    elseif id == "touch_btn_1" then rect = M.TOUCH.s1
+    elseif id == "touch_btn_2" then rect = M.TOUCH.s2
+    elseif id == "touch_btn_3" then rect = M.TOUCH.s3
+    elseif id == "touch_btn_dash" then rect = M.TOUCH.dash
+    elseif id == "touch_btn_interact" then rect = M.TOUCH.interact
+    elseif id == "touch_btn_pause" then rect = M.TOUCH.pause
+    elseif id == "touch_icon_1" then rect = M.TOUCH.icon_1
+    elseif id == "touch_icon_2" then rect = M.TOUCH.icon_2
+    elseif id == "touch_icon_3" then rect = M.TOUCH.icon_3
+    end
+    if rect then put_rect(id, rect) end
+end
+put_center("touch_dash_text", M.TOUCH.dash_text.x, M.TOUCH.dash_text.y)
+put_center("touch_interact_text", M.TOUCH.interact_text.x, M.TOUCH.interact_text.y)
+put_center("touch_pause_text", M.TOUCH.pause_text.x, M.TOUCH.pause_text.y)
 
 M.ALL_RECTS = {}
 for id, r in pairs(M.ALL_RECT_RECT) do

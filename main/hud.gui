@@ -2570,6 +2570,146 @@ nodes {
   inherit_alpha: true
 }
 
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 120.0 y: 120.0 }
+  type: TYPE_BOX
+  texture: "ui/particle_circle"
+  id: "touch_stick_base"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 56.0 y: 56.0 }
+  type: TYPE_BOX
+  texture: "ui/particle_circle"
+  id: "touch_stick_nub"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 112.0 y: 88.0 }
+  type: TYPE_BOX
+  texture: "ui/particle_circle"
+  id: "touch_btn_1"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 112.0 y: 88.0 }
+  type: TYPE_BOX
+  texture: "ui/particle_circle"
+  id: "touch_btn_2"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 112.0 y: 88.0 }
+  type: TYPE_BOX
+  texture: "ui/particle_circle"
+  id: "touch_btn_3"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 112.0 y: 88.0 }
+  type: TYPE_BOX
+  texture: "ui/particle_circle"
+  id: "touch_btn_dash"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 112.0 y: 64.0 }
+  type: TYPE_BOX
+  texture: "ui/particle_circle"
+  id: "touch_btn_interact"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 122.0 y: 56.0 }
+  type: TYPE_BOX
+  texture: "ui/particle_circle"
+  id: "touch_btn_pause"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 56.0 y: 56.0 }
+  type: TYPE_BOX
+  texture: "ui/particle_flare"
+  id: "touch_icon_1"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 56.0 y: 56.0 }
+  type: TYPE_BOX
+  texture: "ui/particle_flare"
+  id: "touch_icon_2"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 56.0 y: 56.0 }
+  type: TYPE_BOX
+  texture: "ui/particle_flare"
+  id: "touch_icon_3"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "DASH"
+  font: "text"
+  id: "touch_dash_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "E"
+  font: "text"
+  id: "touch_interact_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "II"
+  font: "text"
+  id: "touch_pause_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
 layers { name: "cdbg" }
 layers { name: "graphics" }
 layers { name: "text" }

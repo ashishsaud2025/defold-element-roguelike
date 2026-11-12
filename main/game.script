@@ -15,10 +15,11 @@ local story_mod = require "src.core.story"
 local credits_mod = require "src.core.credits"
 
 -- Forward declarations: these are defined below but are called from functions that
--- appear earlier in the file (enter_home, begin_run).
+-- appear earlier in the file (enter_home, begin_run, touch machine).
 local clear_world
 local enter_room
 local start_story, story_advance, start_boss_loot
+local to_design
 local art_mod = require "src.core.art"
 local FX = art_mod.FX
 -- Spec 6.3: element-specific effect art. index 1 = element A (trail/rise),
@@ -51,6 +52,7 @@ local status_mod = require "src.core.status"
 local relics_mod = require "src.core.relics"
 local rewards_mod = require "src.game.rewards"
 local events = require "src.game.events"
+local layout = require "src.ui.layout"
 local sfx = require "src.core.sfx"
 local music = require "src.core.music"
 
@@ -680,6 +682,12 @@ function init(self)
     self.mouse_pos = { x = -1, y = -1 }
     self.particles = {}
     self.anims = {}
+    -- Touch controls state (see TOUCH_ENABLED; inert on desktop)
+    self.touch_enabled = TOUCH_ENABLED
+    self.touches = {}
+    self.touch_move = { x = 0, y = 0 }
+    self.touch_stick = nil
+    self.stick_id = nil
     build_environment(self)
     local lv0 = set_room_visuals(self, 1)
     self.player_glow = fx_make(ARENA_W * 0.5, ARENA_H * 0.5, 0.05, FX.glow, 1, 1, 1, 0.6, 1.1)
@@ -1026,6 +1034,7 @@ local function send_ui(self)
         toast = ((self.toast_t or 0) > 0) and self.toast_text or nil,
         hover_x = self.mouse_pos and self.mouse_pos.x or nil,
         hover_y = self.mouse_pos and self.mouse_pos.y or nil,
+        touch = self.touch_enabled or false,
     }
     if st == "HOME_EDIT" then
         local tab = self.loadout_tab or 1
@@ -1882,6 +1891,196 @@ local function apply_statuses(self, target, names)
     end
 end
 
+-- ===== Touch controls (mobile): left-half virtual stick, right-edge cast buttons =====
+-- Touch entries carry a persistent `id` (Defold input docs: on_input.touch). We
+-- build a small per-touch machine out of that: entries living on the left half
+-- drive a floating stick; the right column is tappable/draggable cast buttons.
+-- Desktops (and HTML5) are untouched: menus rely on the tap-as-click path that
+-- already exists (mouse_button_1 fires from taps), and the stick/buttons just hide.
+local TOUCH_ENABLED = false
+if sys and sys.get_sys_info then
+    local n = sys.get_sys_info().system_name
+    TOUCH_ENABLED = (n == "Android" or n == "iOS")
+end
+
+local TOUCH_BTN_IDS = {
+    s1 = "touch_btn_1", s2 = "touch_btn_2", s3 = "touch_btn_3",
+    dash = "touch_btn_dash", interact = "touch_btn_interact", pause = "touch_btn_pause",
+}
+
+local function touch_hit(b, x, y)
+    return x >= b.x and x <= b.x + b.w and y >= b.y and y <= b.y + b.h
+end
+
+local function touch_button_at(x, y)
+    for kind, rect in pairs(layout.TOUCH) do
+        if type(rect) == "table" and rect.w and rect.h and TOUCH_BTN_IDS[kind] then
+            if touch_hit(rect, x, y) then return kind end
+        end
+    end
+    return nil
+end
+
+local function touch_stick_post(self)
+    if self.touch_stick then
+        msg.post("/hud#gui", "touch_stick", { on = true, cx = self.touch_stick.cx, cy = self.touch_stick.cy,
+                                              nx = self.touch_stick.nub_x, ny = self.touch_stick.nub_y })
+    else
+        msg.post("/hud#gui", "touch_stick", { on = false })
+    end
+end
+
+local function touch_btn_post(self, id, pressed)
+    msg.post("/hud#gui", "touch_btn", { id = id, pressed = pressed })
+end
+
+local function touch_dash(self)
+    if self.state ~= "ROOM" or self.dash_cd > 0 or self.dash_t > 0 then return end
+    local ddx, ddy = self.touch_move.x, self.touch_move.y
+    if ddx == 0 and ddy == 0 then
+        ddx, ddy = self.aim.x - self.player_pos.x, self.aim.y - self.player_pos.y
+    end
+    local len = math.sqrt(ddx * ddx + ddy * ddy)
+    if len < 0.001 then ddx, ddy, len = 1, 0, 1 end
+    self.dash_dx, self.dash_dy = ddx / len, ddy / len
+    self.dash_t = data.TUNING.DASH_TIME
+    self.dash_cd = data.TUNING.DASH_COOLDOWN
+    self.dash_i = 1
+    self.player.invuln = math.max(self.player.invuln, data.TUNING.DASH_TIME + 0.12)
+    events.emit("dash", { self = self, x = self.player_pos.x, y = self.player_pos.y })
+    print("Dash")
+end
+
+-- One code path for the E key and the touch interact button (stations only:
+-- altar/door in the Lantern Hall or a room altar such as the Training Arena).
+local function touch_interact(self)
+    if self.state ~= "HOME" and not (self.state == "ROOM" and (self.room_altar_pos or self.boss_loot or self.room_exit_pos)) then
+        return false
+    end
+    if self.home_focus == "next" then
+        if self.exit_open then
+            sfx.play("ui_click")
+            enter_room(self)
+        end
+    elseif self.home_focus == "chest" and not self.chest_opened then
+        self.chest_opened = true
+        sfx.play("relic_get", { x = self.player_pos.x })
+        start_story(self, story_mod.chest_pages(), "resume")
+    elseif self.home_focus == "exit" and self.chest_opened then
+        sfx.play("ui_click")
+        start_story(self, story_mod.ENDING, "roll")
+    elseif self.home_focus == "altar" then
+        ensure_loadout(self)   -- the loadout is created lazily before the first run
+        self.editor_from = self.state
+        self.state = "HOME_EDIT"
+        self.loadout_tab = self.loadout_tab or 1
+        print("State: HOME_EDIT")
+    elseif self.home_focus == "door" and self.state == "HOME" then
+        begin_run(self)
+    end
+    return true
+end
+
+local function touch_cast(self, slot, e)
+    -- Drag in a direction while holding a slot button => aim there (bolt/pool/spray).
+    -- Tap => keep the current aim (orbit/nova, and everything else by convenience).
+    local dx = e.x - e.start_x
+    local dy = e.y - e.start_y
+    local len = math.sqrt(dx * dx + dy * dy)
+    if len > 12 then
+        self.aim.x = self.player_pos.x + dx / len * 240
+        self.aim.y = self.player_pos.y + dy / len * 240
+    end
+    if slot == 1 then
+        if self.slot1_cooldown <= 0 then do_cast(self, 1) end
+    elseif slot == 2 then
+        if self.slot2_cooldown <= 0 then do_cast(self, 2) end
+    else
+        if self.slot3_cooldown <= 0 then do_cast(self, 3) end
+    end
+end
+
+local function touch_end(self, e)
+    if e.id == self.stick_id then
+        self.stick_id = nil
+        self.touch_stick = nil
+        self.touch_move = { x = 0, y = 0 }
+        touch_stick_post(self)
+        self.touches[e.id] = nil
+        return
+    end
+    if e.button then
+        touch_btn_post(self, TOUCH_BTN_IDS[e.button], false)
+        if e.button == "s1" then touch_cast(self, 1, e)
+        elseif e.button == "s2" then touch_cast(self, 2, e)
+        elseif e.button == "s3" then touch_cast(self, 3, e)
+        elseif e.button == "dash" then touch_dash(self)
+        elseif e.button == "interact" then touch_interact(self)
+        elseif e.button == "pause" then
+            self.pause_from = self.state
+            self.state = "PAUSED"
+            music.set_state("PAUSED")
+            print("State: PAUSED")
+        end
+    end
+    self.touches[e.id] = nil
+end
+
+local function touch_update(self, list)
+    local seen = {}
+    for _, t in ipairs(list) do
+        local x, y = to_design(t.x, t.y)
+        local e = self.touches[t.id]
+        if not e then
+            e = { id = t.id, x = x, y = y, dx = 0, dy = 0,
+                  start_x = x, start_y = y, button = nil }
+            self.touches[t.id] = e
+            if x < 480 then
+                if not self.stick_id then
+                    self.stick_id = e.id
+                    self.touch_stick = { cx = x, cy = y, nub_x = x, nub_y = y }
+                else
+                    e.zone = "stick_taken"
+                end
+            else
+                local b = touch_button_at(x, y)
+                if b then
+                    e.button = b
+                    touch_btn_post(self, TOUCH_BTN_IDS[b], true)
+                end
+            end
+        end
+        local ox, oy = e.x, e.y
+        e.x, e.y = x, y
+        e.dx, e.dy = x - ox, y - oy
+        e.pressed = t.pressed or false
+        e.released = t.released or false
+        seen[t.id] = true
+    end
+    for id, e in pairs(self.touches) do
+        if not seen[id] then touch_end(self, e) end
+    end
+    if self.stick_id and self.touches[self.stick_id] then
+        local e = self.touches[self.stick_id]
+        local cx, cy = self.touch_stick.cx, self.touch_stick.cy
+        local dx, dy = e.x - cx, e.y - cy
+        local len = math.sqrt(dx * dx + dy * dy)
+        local maxr = 46
+        if len > maxr then dx, dy = dx * maxr / len, dy * maxr / len end
+        self.touch_stick.nub_x = cx + dx
+        self.touch_stick.nub_y = cy + dy
+        local mag = math.min(1, len / maxr)
+        if len > 0.001 and mag > 0.18 then
+            self.touch_move = { x = dx / len * mag, y = dy / len * mag }
+        else
+            self.touch_move = { x = 0, y = 0 }
+        end
+        touch_stick_post(self)
+    else
+        self.touch_move = { x = 0, y = 0 }
+    end
+end
+
 -- ONE hit path for every shape: damage -> statuses -> knockback (Phase 2).
 -- `statuses` is the hit's own list, never the enemy's accumulated status table, so a stale
 -- push from an earlier spell cannot knock an enemy back for this hit.
@@ -2485,6 +2684,11 @@ function update(self, dt)
         if self.keys.left  then dx = dx - 1 end
         if self.keys.down  then dy = dy - 1 end
         if self.keys.up    then dy = dy + 1 end
+        -- Virtual stick contributes an analog component (magnitude = drag distance).
+        if self.touch_enabled and (self.touch_move.x ~= 0 or self.touch_move.y ~= 0) then
+            dx = dx + self.touch_move.x
+            dy = dy + self.touch_move.y
+        end
     end
 
     -- Dash: short burst along dash_dx/dy, invulnerable, leaves afterimages
@@ -2500,8 +2704,10 @@ function update(self, dt)
 
     if dx ~= 0 or dy ~= 0 then
         local len = math.sqrt(dx * dx + dy * dy)
-        dx = dx / len
-        dy = dy / len
+        if len > 1 then                       -- analog stick keeps partial magnitude
+            dx = dx / len
+            dy = dy / len
+        end
         self.player_pos.x, self.player_pos.y = level_mod.slide(self.level, self.player_pos.x, self.player_pos.y,
             self.player_pos.x + dx * data.TUNING.PLAYER_SPEED * dt,
             self.player_pos.y + dy * data.TUNING.PLAYER_SPEED * dt, PLAYER_RADIUS)
@@ -3252,7 +3458,7 @@ end
 -- The window can be any size/aspect; the world is letterboxed into the 960x640 design area
 -- (main/letterbox.render_script). action.x/y arrive stretched over the whole window, so undo that
 -- stretch and the black bars to get design-space (world) coordinates.
-local function to_design(ax, ay)
+to_design = function(ax, ay)
     local ww, wh = 0, 0
     if window and window.get_size then ww, wh = window.get_size() end
     if not ww or ww <= 0 or wh <= 0 then return ax, ay end
@@ -3270,6 +3476,22 @@ function on_input(self, action_id, action)
         local dx, dy = to_design(action.x, action.y)
         self.mouse_pos = { x = dx, y = dy }
         self.aim.x, self.aim.y = dx, dy
+    end
+
+    -- Multi-touch (Android/iOS): left half = virtual stick, right edge = cast buttons.
+    -- Desktops and HTML5: menus use single taps, which arrive as mouse_button_1 = basic -> click;
+    -- only ROOM is owned by the touch machine here.
+    if self.touch_enabled and action_id == hash("touch") and action.touch then
+        if self.state == "ROOM" then
+            touch_update(self, action.touch)
+        end
+        return
+    end
+    -- On mobile in ROOM, taps are fired by the touch machine on release, so swallow the
+    -- touch-derived basic action here instead of double-casting slot 3 per tap.
+    if self.touch_enabled and self.state == "ROOM"
+        and action_id == self.bind_hash.basic and action.source == hash("touch") then
+        return
     end
 
     -- Capture mode: a static k_* press is consumed by the rebind dialog, nothing else fires.
@@ -3468,29 +3690,8 @@ function on_input(self, action_id, action)
 
     -- E: interact (stations only: the Lantern Hall altar/door, or a room-local
     -- altar such as the Training Arena's; never on menus)
-    if action_id == self.bind_hash.interact and action.pressed
-       and (self.state == "HOME" or (self.state == "ROOM" and (self.room_altar_pos or self.boss_loot or self.room_exit_pos))) then
-        if self.home_focus == "next" then
-            if self.exit_open then
-                sfx.play("ui_click")
-                enter_room(self)
-            end
-        elseif self.home_focus == "chest" and not self.chest_opened then
-            self.chest_opened = true
-            sfx.play("relic_get", { x = self.player_pos.x })
-            start_story(self, story_mod.chest_pages(), "resume")
-        elseif self.home_focus == "exit" and self.chest_opened then
-            sfx.play("ui_click")
-            start_story(self, story_mod.ENDING, "roll")
-        elseif self.home_focus == "altar" then
-            ensure_loadout(self)   -- the loadout is created lazily before the first run
-            self.editor_from = self.state
-            self.state = "HOME_EDIT"
-            self.loadout_tab = self.loadout_tab or 1
-            print("State: HOME_EDIT")
-        elseif self.home_focus == "door" and self.state == "HOME" then
-            begin_run(self)
-        end
+    if action_id == self.bind_hash.interact and action.pressed then
+        touch_interact(self)
     end
 
     -- SPACE: dash (short invulnerable burst toward the move direction, or the aim point)

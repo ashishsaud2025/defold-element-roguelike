@@ -115,6 +115,10 @@ local ALL_NODES = {
     "row_dash_label", "row_dash_bind_box", "row_dash_bind_text",
     "capture_note", "settings_back_box", "settings_back_text",
     "settings_box", "settings_text", "training_box", "training_text", "exit_box", "exit_text",
+    "touch_stick_base", "touch_stick_nub",
+    "touch_btn_1", "touch_btn_2", "touch_btn_3", "touch_btn_dash", "touch_btn_interact", "touch_btn_pause",
+    "touch_icon_1", "touch_icon_2", "touch_icon_3",
+    "touch_dash_text", "touch_interact_text", "touch_pause_text",
 }
 
 -- Only ids authored in main/hud.gui may be touched by the uniform text-scale
@@ -513,7 +517,7 @@ local function apply_layout(self)
     color("done_box", pv(layout.palette.box))
     pos_rect("cd_done_art", CD.art.cd_done_art)
 
-    -- ===== DEAD / WIN =====
+    -- ===== DEAD / WIN (end of screens list) =====
     for _, screen in ipairs({ "DEAD", "WIN" }) do
         local D = layout.SCREENS[screen]
         pos("overlay_title", D.texts.overlay_title.x, D.texts.overlay_title.y)
@@ -522,6 +526,44 @@ local function apply_layout(self)
         pos("overlay_hint", D.texts.overlay_hint.x, D.texts.overlay_hint.y)
         color("overlay_hint", pv(layout.palette.text_dim))
     end
+
+    -- ===== Touch controls (mobile only; positions are authored from layout.TOUCH) =====
+    local T = layout.TOUCH
+    local function tpos(id, rect)
+        pos(id, rect.x + rect.w * 0.5, rect.y + rect.h * 0.5)
+    end
+    tpos("touch_stick_base", T.stick_base)
+    tpos("touch_stick_nub", T.stick_nub)
+    color("touch_stick_base", vmath.vector4(0.75, 0.75, 0.85, 0.38))
+    color("touch_stick_nub", vmath.vector4(0.95, 0.95, 1.0, 0.75))
+    tpos("touch_btn_1", T.s1)
+    tpos("touch_btn_2", T.s2)
+    tpos("touch_btn_3", T.s3)
+    tpos("touch_btn_dash", T.dash)
+    tpos("touch_btn_interact", T.interact)
+    tpos("touch_btn_pause", T.pause)
+    for _, id in ipairs({ "touch_btn_1", "touch_btn_2", "touch_btn_3", "touch_btn_dash", "touch_btn_interact", "touch_btn_pause" }) do
+        color(id, pv(layout.palette.box))
+        show(id, false)
+    end
+    tpos("touch_icon_1", T.icon_1)
+    tpos("touch_icon_2", T.icon_2)
+    tpos("touch_icon_3", T.icon_3)
+    for _, id in ipairs({ "touch_icon_1", "touch_icon_2", "touch_icon_3" }) do
+        color(id, vmath.vector4(1, 1, 1, 0.95))
+        show(id, false)
+    end
+    pos("touch_dash_text", T.dash_text.x, T.dash_text.y)
+    color("touch_dash_text", pv(layout.palette.text_dim))
+    show("touch_dash_text", false)
+    pos("touch_interact_text", T.interact_text.x, T.interact_text.y)
+    color("touch_interact_text", pv(layout.palette.text_dim))
+    show("touch_interact_text", false)
+    pos("touch_pause_text", T.pause_text.x, T.pause_text.y)
+    color("touch_pause_text", pv(layout.palette.text))
+    show("touch_pause_text", false)
+    show("touch_stick_base", false)
+    show("touch_stick_nub", false)
 
     -- One source of truth for text scale: spec.size / 14 (the builtin font
     -- renders 14 px at scale 1). Only authored ids participate. The fixed-advance
@@ -711,6 +753,39 @@ local function render(self)
         else
             color("back_box", pv(layout.palette.box))
         end
+    end
+
+    -- Touch controls (only on mobile, only in ROOM; stick only while a drag is active)
+    local touch_ui = (self.touch_ui == true) and st == "ROOM"
+    for _, id in ipairs({ "touch_btn_1", "touch_icon_1", "touch_btn_2", "touch_icon_2",
+                           "touch_btn_3", "touch_icon_3", "touch_btn_dash", "touch_dash_text",
+                           "touch_btn_interact", "touch_interact_text",
+                           "touch_btn_pause", "touch_pause_text" }) do
+        show(id, touch_ui)
+    end
+    if touch_ui then
+        -- shape icons track the HUD slot flipbooks (same textures)
+        for i = 1, 3 do
+            local d = (i == 1 and self.s1) or (i == 2 and self.s2) or self.s3
+            if d and d.shape then
+                gui.play_flipbook(n("touch_icon_" .. i), hash(SHAPE_ICON[d.shape] or "particle_flare"))
+            end
+        end
+        -- pressed state highlight (accent vs slot-box)
+        for id in pairs(self.touch_btn_pressed) do
+            if self.touch_btn_pressed[id] then
+                color(id, pv(layout.palette.box_hover))
+            else
+                color(id, pv(layout.palette.box))
+            end
+        end
+    end
+    local stick_on = touch_ui and self.stick_on == true
+    show("touch_stick_base", stick_on)
+    show("touch_stick_nub", stick_on)
+    if stick_on and self.stick_cx then
+        gui.set_position(n("touch_stick_base"), vmath.vector3(self.stick_cx, self.stick_cy, 0))
+        gui.set_position(n("touch_stick_nub"), vmath.vector3(self.stick_nx, self.stick_ny, 0))
     end
 
     -- HUD group
@@ -1389,6 +1464,13 @@ function init(self)
     self.relic_tip = nil
     self.started = false
     self.damage_numbers = {}
+    self.keyboard_shown = false
+    -- Touch controls (mobile only): button highlight states + stick visibility
+    self.touch_ui = false
+    self.touch_btn_pressed = {}
+    self.stick_on = false
+    self.stick_cx, self.stick_cy = nil, nil
+    self.stick_nx, self.stick_ny = nil, nil
 
     -- The authored control hint (keep in sync with main/hud.gui -> help_text).
     -- Restored whenever no interaction banner is up.
@@ -1439,6 +1521,7 @@ end
 function on_message(self, message_id, message, sender)
     if message_id == hash("ui") then
         self.state = message.state or self.state
+        if message.touch ~= nil then self.touch_ui = message.touch end
         self.hp = message.hp or self.hp
         self.max_hp = message.max_hp or self.max_hp
         self.s1 = message.s1
@@ -1470,10 +1553,29 @@ function on_message(self, message_id, message, sender)
         self.roll_t = message.roll_t
         self.toast = message.toast
         if message.name_buffer ~= nil then self.name_buffer = message.name_buffer end
+        -- On-screen keyboard only while the name input is up (Android shows the system panel;
+        -- desktop never sees a panel and keeps the manual k_* key mapping untouched).
+        if self.state == "NAME_INPUT" then
+            if not self.keyboard_shown then
+                gui.show_keyboard(gui.KEYBOARD_TYPE_DEFAULT)
+                self.keyboard_shown = true
+            end
+        elseif self.keyboard_shown then
+            gui.hide_keyboard()
+            self.keyboard_shown = false
+        end
         if not self.started then
             self.started = true
             print("HUD ready")
         end
+        render(self)
+    elseif message_id == hash("touch_stick") then
+        self.stick_on = message.on == true
+        self.stick_cx, self.stick_cy = message.cx, message.cy
+        self.stick_nx, self.stick_ny = message.nx, message.ny
+        render(self)
+    elseif message_id == hash("touch_btn") then
+        self.touch_btn_pressed[message.id] = message.pressed == true
         render(self)
     elseif message_id == hash("damage_number") then
         local dn = message

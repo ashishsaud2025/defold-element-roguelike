@@ -1,6 +1,13 @@
-# v0.1 release — shipped 2026-11-12 · https://github.com/ashishsaud2025/defold-element-roguelike/releases/tag/v0.1
+# v0.2 release — shipped 2026-11-12 · https://github.com/ashishsaud2025/defold-element-roguelike/releases/tag/v0.2
 
-Force-pushed `settings-pause-training` to `origin/main` (4f8bed2) after green results. Assets: Windows (symbols), Linux x64, macOS universal (unsigned), Android debug APK, HTML5 wasm ZIP. iOS not included (needs macOS + Apple Developer account). Release notes flag the unsigned macOS app (Gatekeeper) and the debug APK being unsuitable for Google Play.
+Force-pushed `settings-pause-training` to `origin/main` after green results. Assets: Windows (symbols), Linux x64, macOS universal (unsigned), Android debug APK, HTML5 wasm ZIP. iOS not included (needs macOS + Apple Developer account). Release notes flag the unsigned macOS app (Gatekeeper) and the debug APK being unsuitable for Google Play.
+
+## What's in v0.2 (everything from v0.1, plus)
+- **Touch controls (Android/iOS)**: left-half floating virtual stick (analog magnitude; release to stop). Right-edge buttons: `touch_btn_1..3` (drag out in a direction to aim — bolt/pool/spray; tap otherwise), `DASH`, `E` (interact), `II` (pause). Drag-cast uses the drag direction as aim; tap uses current aim; slot shapes are irrelevant to the mechanic. Desktop/mouse untouched. Smoke/hud harnesses still green (touch gated to action_id == "touch" and Android/iOS system_name).
+- **NAME_INPUT on Android**: soft keyboard now shows (`text_trigger` + `gui.show_keyboard` while the name screen is up); desktop unchanged.
+- **App icon** (AI-generated art by the user) rebuilt into every platform: Windows BMP `app.ico`, macOS `app.icns` (ic07–ic10), Android 36–192, HTML5 splash.
+- `[osx] app_icon` key (not `[macos]`), `[windows]`/`[android]`/`[html5]` packaging sections; `html5.max_pixel_ratio = 1.5`.
+
 
 - **Credits audit + app icon**: CREDITS entries cross-checked against the atlas/code (every entry was in use). `icon_player.png` (credited as lorc/wizard-staff) was unused — removed from the atlas and from credits (file kept on disk). `bed.png`/`chest.png` (16x16, Tiny Dungeon style) attributed to Tiny Dungeon (CC0, style match only — not byte-verified; see CREDITS.md). Name line is now "Code and game design: Ashish Saud and Avinash Joshi" in both CREDITS.md and `src/core/credits.lua`.
 - **App icon is AI-generated**: the bundled icon art (`downloads/ai_gen_icon.png`) is AI-generated pixel art — noted in CREDITS.md and on the in-game CREDITS screen. All platform icons rebuilt from it (1024 master, Windows BMP `app.ico`, macOS `app.icns` ic07-ic10, Android 36-192 PNGs, HTML5 splash).
