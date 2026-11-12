@@ -432,17 +432,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 48.0 y: 48.0 }
-  type: TYPE_BOX
-  texture: "ui/icon_cauldron"
-  id: "cauldron_icon"
-  layer: "graphics"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  size { x: 108.0 y: 108.0 }
+  size { x: 120.0 y: 124.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "sel_ea_box"
@@ -462,7 +452,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 108.0 y: 108.0 }
+  size { x: 120.0 y: 124.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "sel_eb_box"
@@ -482,7 +472,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 108.0 y: 108.0 }
+  size { x: 120.0 y: 124.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "sel_shape_box"
@@ -522,7 +512,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 172.0 y: 72.0 }
+  size { x: 120.0 y: 114.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "craft1_box"
@@ -542,7 +532,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 172.0 y: 72.0 }
+  size { x: 120.0 y: 114.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "craft2_box"
@@ -772,7 +762,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 28.0 y: 28.0 }
+  size { x: 24.0 y: 24.0 }
   type: TYPE_BOX
   texture: "ui/icon_fire"
   id: "ing_icon_1"
@@ -792,7 +782,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 28.0 y: 28.0 }
+  size { x: 24.0 y: 24.0 }
   type: TYPE_BOX
   texture: "ui/icon_fire"
   id: "ing_icon_2"
@@ -812,7 +802,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 28.0 y: 28.0 }
+  size { x: 24.0 y: 24.0 }
   type: TYPE_BOX
   texture: "ui/icon_fire"
   id: "ing_icon_3"
@@ -832,7 +822,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 28.0 y: 28.0 }
+  size { x: 24.0 y: 24.0 }
   type: TYPE_BOX
   texture: "ui/icon_fire"
   id: "ing_icon_4"
@@ -902,7 +892,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 52.0 y: 52.0 }
+  size { x: 48.0 y: 48.0 }
   type: TYPE_BOX
   texture: "ui/icon_fire"
   id: "slot_icon_ea"
@@ -912,7 +902,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 52.0 y: 52.0 }
+  size { x: 48.0 y: 48.0 }
   type: TYPE_BOX
   texture: "ui/icon_water"
   id: "slot_icon_eb"
@@ -922,7 +912,7 @@ nodes {
 
 nodes {
   position { x: 0.0 y: 0.0 }
-  size { x: 52.0 y: 52.0 }
+  size { x: 48.0 y: 48.0 }
   type: TYPE_BOX
   texture: "ui/particle_flare"
   id: "slot_icon_shape"
@@ -976,36 +966,6 @@ nodes {
   text: ""
   font: "text"
   id: "relic_1"
-  layer: "text"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  type: TYPE_TEXT
-  text: ""
-  font: "text"
-  id: "relic_2"
-  layer: "text"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  type: TYPE_TEXT
-  text: ""
-  font: "text"
-  id: "relic_3"
-  layer: "text"
-  inherit_alpha: true
-}
-
-nodes {
-  position { x: 0.0 y: 0.0 }
-  type: TYPE_TEXT
-  text: ""
-  font: "text"
-  id: "relic_4"
   layer: "text"
   inherit_alpha: true
 }
@@ -2230,6 +2190,367 @@ nodes {
   inherit_alpha: true
 }
 
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 960.0 y: 640.0 }
+  type: TYPE_BOX
+  texture: "ui/cd_bg"
+  id: "cd_bg"
+  layer: "cdbg"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 230.0 y: 470.0 }
+  type: TYPE_BOX
+  texture: "ui/cd_ing_panel"
+  id: "cd_ing_panel"
+  layer: "cdbg"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 340.0 y: 72.0 }
+  type: TYPE_BOX
+  texture: "ui/cd_title_banner"
+  id: "cd_title_banner"
+  layer: "cdbg"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 460.0 y: 44.0 }
+  type: TYPE_BOX
+  texture: "ui/cd_scroll"
+  id: "cd_scroll"
+  layer: "cdbg"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 388.0 y: 130.0 }
+  type: TYPE_BOX
+  texture: "ui/cd_preview_panel"
+  id: "cd_preview_panel"
+  layer: "cdbg"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 300.0 y: 56.0 }
+  type: TYPE_BOX
+  texture: "ui/cd_btn_done"
+  id: "cd_done_art"
+  layer: "cdbg"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 140.0 y: 34.0 }
+  type: TYPE_BOX
+  texture: "ui/cd_small_box"
+  id: "cd_small_box_1"
+  layer: "cdbg"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 140.0 y: 34.0 }
+  type: TYPE_BOX
+  texture: "ui/cd_small_box"
+  id: "cd_small_box_2"
+  layer: "cdbg"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 18.0 y: 18.0 }
+  type: TYPE_BOX
+  texture: "ui/cd_gem"
+  id: "cd_gem"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 18.0 y: 18.0 }
+  type: TYPE_BOX
+  texture: "ui/cd_trophy"
+  id: "cd_trophy"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 210.0 y: 30.0 }
+  type: TYPE_BOX
+  texture: "ui/cd_row_hl"
+  id: "cd_hl_1"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 210.0 y: 30.0 }
+  type: TYPE_BOX
+  texture: "ui/cd_row_hl"
+  id: "cd_hl_2"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 210.0 y: 30.0 }
+  type: TYPE_BOX
+  texture: "ui/cd_row_hl"
+  id: "cd_hl_s"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 72.0 y: 72.0 }
+  type: TYPE_BOX
+  texture: "ui/icon_fire"
+  id: "cd_preview_icon"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 36.0 y: 36.0 }
+  type: TYPE_BOX
+  texture: "ui/icon_fire"
+  id: "cd_card_icon_1"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 36.0 y: 36.0 }
+  type: TYPE_BOX
+  texture: "ui/icon_fire"
+  id: "cd_card_icon_2"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 72.0 y: 72.0 }
+  type: TYPE_BOX
+  texture: "ui/fxa_smoke_a"
+  id: "cd_smoke_1"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 72.0 y: 72.0 }
+  type: TYPE_BOX
+  texture: "ui/fxa_smoke_a"
+  id: "cd_smoke_2"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 72.0 y: 72.0 }
+  type: TYPE_BOX
+  texture: "ui/fxa_smoke_a"
+  id: "cd_smoke_3"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 24.0 y: 24.0 }
+  type: TYPE_BOX
+  texture: "ui/particle_flare"
+  id: "ing_shape_icon_1"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 24.0 y: 24.0 }
+  type: TYPE_BOX
+  texture: "ui/particle_flare"
+  id: "ing_shape_icon_2"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 24.0 y: 24.0 }
+  type: TYPE_BOX
+  texture: "ui/particle_flare"
+  id: "ing_shape_icon_3"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 24.0 y: 24.0 }
+  type: TYPE_BOX
+  texture: "ui/particle_flare"
+  id: "ing_shape_icon_4"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 24.0 y: 24.0 }
+  type: TYPE_BOX
+  texture: "ui/particle_flare"
+  id: "ing_shape_icon_5"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "READY"
+  font: "text"
+  id: "cd_status"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "ing_cnt_1"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "ing_cnt_2"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "ing_cnt_3"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "ing_cnt_4"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "ing_shcnt_1"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "ing_shcnt_2"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "ing_shcnt_3"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "ing_shcnt_4"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "ing_shcnt_5"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "Click a slot to cycle"
+  font: "text"
+  id: "ing_info_1"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: "Craft: 2 elem + 1 shape"
+  font: "text"
+  id: "ing_info_2"
+  layer: "text"
+  inherit_alpha: true
+}
+
+layers { name: "cdbg" }
 layers { name: "graphics" }
 layers { name: "text" }
 

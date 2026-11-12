@@ -578,17 +578,17 @@ do
   end
   sf(text_for("preview_name") == "Steam Pool", "CAULDRON: preview_name must render the sent preview")
   sf(text_for("preview_status") == "Statuses: push, blind", "CAULDRON: preview_status must render the sent statuses")
-  sf(text_for("ing_elem_1") == "FIRE  x2", "CAULDRON: ingredient row shows element + count from inventory")
-  sf(text_for("ing_shape_2") == "POOL  x2", "CAULDRON: shape row shows shape + count from inventory")
-  sf(text_for("craft1_text"):find("Inferno Spray", 1, true) ~= nil, "CAULDRON: craft button shows current slot contents")
-  sf(text_for("craft1_text"):find("Q -> SPLITS", 1, true) ~= nil, "CAULDRON: craft button shows the target quirk short form")
-  sf(text_for("craft2_text"):find("empty", 1, true) ~= nil, "CAULDRON: empty slot is reported as empty")
-  local relic_txt = text_for("relic_2")   -- echoing_crystal is RELIC_ORDER[2]
+  sf(text_for("preview_detail") == "Power: 7   Cooldown: 4.0s", "CAULDRON: preview_detail shows power + cooldown")
+  sf(text_for("preview_quirk") == "Quirk: repeats once", "CAULDRON: preview_quirk shows the sent quirk")
+  sf(text_for("ing_elem_1") == "FIRE" and text_for("ing_cnt_1") == "x2", "CAULDRON: ingredient row shows element (left) + count (right) from inventory")
+  sf(text_for("ing_shape_2") == "Pool" and text_for("ing_shcnt_2") == "x2", "CAULDRON: shape row shows shape + count from inventory")
+  sf(text_for("sel_ea_text") == "1. ELEMENT A\nFIRE\nowned x2", "CAULDRON: tile shows slot label, element and owned count")
+  sf(text_for("craft1_text"):find("was: Inferno Spray", 1, true) ~= nil, "CAULDRON: craft card shows current slot contents")
+  sf(text_for("craft1_text"):find("quirk: SPLITS", 1, true) ~= nil, "CAULDRON: craft card shows the current quirk short form")
+  sf(text_for("craft2_text"):find("was: empty", 1, true) ~= nil, "CAULDRON: empty slot is reported as empty")
   local def = relics_mod.DEFS.echoing_crystal
-  local wrapped = layout.wrap(def.desc, 34)
-  if #wrapped > 2 then wrapped = { wrapped[1], wrapped[2] } end
-  local expect = def.name .. "\n" .. table.concat(wrapped, "\n")
-  sf(relic_txt == expect, "CAULDRON: owned relic panel must render relics.DEFS name + desc")
+  sf(text_for("relic_title") == "Relics: 1/4", "CAULDRON: relic counter shows owned/total")
+  sf(text_for("relic_1") == def.name, "CAULDRON: relic summary shows the owned relic name from relics.DEFS")
   -- mixed elements: no reaction hint; pure pool: hint must name the reacting combos from data
   sf((text_for("reaction_hint") or "") == "", "CAULDRON: mixed elements must not show a pure-pool hint")
   set_texts = {}

@@ -838,3 +838,21 @@ ROOM_COUNT, DASH_SPEED, DASH_TIME, DASH_COOLDOWN, HEAL_ON_CLEAR, DEBUG.
 - `src/core/art.lua` is now the single source of art ids: `FX` roles and `ELEMENT_ICONS` (HUD and `data.ART` read from it); player art + facing supported.
 - Fixed: splitter children / boss summons used the wrong scale after a hit flash (`spawn_wisp_at` now sets `base_scale`).
 - New tools: `tools/validate_rooms.py`, `tools/run_smoke_test.py` (wraps `tools/smoke_test.lua`; modes: default, `ART_TEST=1`, `SPRITE_MAX=n`).
+
+## Story intro + boss chest + ending
+- New src/core/story.lua (intro dialogue, ingredients, chest + ending text).
+- Intro dialogue with the sick wife (bed in the Lantern Hall) shown once per launch after START.
+- Room 9 boss no longer ends in WIN: a chest (1 ingredient) and an exit door appear; door -> "journey has just begun" -> scrolling credits -> main menu.
+- New states STORY and ROLL (HUD reuses the overlay + credits nodes). New art: chest.png, bed.png.
+- Rooms 1-8: sealed entry door in the bottom wall (player arrives above it), exit door on the top/left/right wall that opens only after the room is cleared (and reward + cauldron are done); E at the door goes to the next room.
+- Wife's bed moved to the top-right of the Lantern Hall (spawn next to it) so the bottom dialogue box does not cover it.
+
+---
+# CAULDRON screen redesign (2026-11-12)
+- New look matching the mock: pixel-art alchemist room backdrop, gold-framed INGREDIENTS panel (icon, name, count, gold highlight on the picked rows), title banner, status scroll, three ingredient tiles under the cauldron, spell preview panel (animated element flame icon, Power/Cooldown, Quirk, Statuses), two CRAFT cards ("was: <spell>", "quirk: <short>"), purple DONE - ENTER ROOM button, relic summary (Relics: n/4 + newest relic) top-right and looping smoke puffs over the cauldron.
+- Art: `tools/make_cauldron_ui.py` -> `assets/art/ui/cd_*.png` (registered in `shapes.atlas`). Smoke: existing `fxa_smoke_a` (Free Smoke Fx Pixel 2) looped from the HUD script.
+- `src/ui/layout.lua` CAULDRON block rewritten (new `art`, `ing_shape_icons`, `align` text fields); `tools/hud_nodes.py` +32 nodes (254 total), removed `cauldron_icon`, `relic_2..4`; new `cdbg` GUI layer (backdrop/frames, drawn under everything).
+- `main/hud.gui_script`: left/right aligned text via PIVOT_W/PIVOT_E, hover skins (`cd_tile_hot`, `cd_card_hot`, `cd_btn_done_hot`), `done_box` is an invisible hit area on this screen with the art in `cd_done_art`. The `panel` node and `panel_cauldron` are no longer drawn on CAULDRON.
+- Tests updated for the new text format (`tools/hud_test.lua`) and node count (`tools/validate_ui.py`). Gameplay and the ui message size are unchanged.
+- Not verifiable headlessly: real rendering. Check in the Defold editor that the `cdbg` layer order, the smoke loop and the preview flame look right.
+

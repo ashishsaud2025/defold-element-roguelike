@@ -2969,4 +2969,55 @@ images {
 images {
   image: "/assets/art/ui/door.png"
 }
+images {
+  image: "/assets/art/ui/chest.png"
+}
+images {
+  image: "/assets/art/ui/bed.png"
+}
+images {
+  image: "/assets/art/ui/cd_bg.png"
+}
+images {
+  image: "/assets/art/ui/cd_btn_done.png"
+}
+images {
+  image: "/assets/art/ui/cd_btn_done_hot.png"
+}
+images {
+  image: "/assets/art/ui/cd_card.png"
+}
+images {
+  image: "/assets/art/ui/cd_card_hot.png"
+}
+images {
+  image: "/assets/art/ui/cd_gem.png"
+}
+images {
+  image: "/assets/art/ui/cd_ing_panel.png"
+}
+images {
+  image: "/assets/art/ui/cd_preview_panel.png"
+}
+images {
+  image: "/assets/art/ui/cd_row_hl.png"
+}
+images {
+  image: "/assets/art/ui/cd_scroll.png"
+}
+images {
+  image: "/assets/art/ui/cd_small_box.png"
+}
+images {
+  image: "/assets/art/ui/cd_tile.png"
+}
+images {
+  image: "/assets/art/ui/cd_tile_hot.png"
+}
+images {
+  image: "/assets/art/ui/cd_title_banner.png"
+}
+images {
+  image: "/assets/art/ui/cd_trophy.png"
+}
 extrude_borders: 2

@@ -222,29 +222,29 @@ M.SCREENS = {
         texts = {
             hp_text = { x = 200, y = 596, size = 13, color = "text", max_w = 120, max_h = 22 },
             room_text = { x = 480, y = 601, size = 14, color = "text", max_w = 340, max_h = 26 },
-            s1_quirk = { x = 480, y = 10, size = 10, color = "text_dim", max_w = 88, max_h = 16 },
-            s2_quirk = { x = 556, y = 10, size = 10, color = "text_dim", max_w = 88, max_h = 16 },
-            s3_quirk = { x = 404, y = 10, size = 10, color = "text_dim", max_w = 88, max_h = 16 },
+            s1_quirk = { x = 124, y = 10, size = 10, color = "text_dim", max_w = 88, max_h = 16 },
+            s2_quirk = { x = 200, y = 10, size = 10, color = "text_dim", max_w = 88, max_h = 16 },
+            s3_quirk = { x = 48, y = 10, size = 10, color = "text_dim", max_w = 88, max_h = 16 },
             help_text = { x = 480, y = 128, size = 13, color = "text_dim", max_w = 900, max_h = 24 },
         },
         hp_bar    = { x = 80, y = 584, w = 240, h = 24 },
         dash_bar  = { x = 80, y = 572, w = 240, h = 6 },
         portrait  = { x = 16, y = 568, w = 56, h = 56 },
-        slot_s1   = { x = 448, y = 18, w = 64, h = 64 },
-        slot_s2   = { x = 524, y = 18, w = 64, h = 64 },
-        slot_s3   = { x = 372, y = 18, w = 64, h = 64 },
-        shape_icon_s1 = { x = 450, y = 32, w = 28, h = 28 },
-        shape_icon_s2 = { x = 526, y = 32, w = 28, h = 28 },
-        shape_icon_s3 = { x = 374, y = 32, w = 28, h = 28 },
-        dot1_s1 = { x = 480, y = 56, w = 16, h = 16 },
-        dot2_s1 = { x = 480, y = 38, w = 16, h = 16 },
-        dot1_s2 = { x = 556, y = 56, w = 16, h = 16 },
-        dot2_s2 = { x = 556, y = 38, w = 16, h = 16 },
-        dot1_s3 = { x = 404, y = 56, w = 16, h = 16 },
-        dot2_s3 = { x = 404, y = 38, w = 16, h = 16 },
-        key_s1 = { x = 468, y = 86, w = 24, h = 24 },
-        key_s2 = { x = 544, y = 86, w = 24, h = 24 },
-        key_s3 = { x = 392, y = 86, w = 24, h = 24 },
+        slot_s1   = { x = 92, y = 18, w = 64, h = 64 },
+        slot_s2   = { x = 168, y = 18, w = 64, h = 64 },
+        slot_s3   = { x = 16, y = 18, w = 64, h = 64 },
+        shape_icon_s1 = { x = 94, y = 32, w = 28, h = 28 },
+        shape_icon_s2 = { x = 170, y = 32, w = 28, h = 28 },
+        shape_icon_s3 = { x = 18, y = 32, w = 28, h = 28 },
+        dot1_s1 = { x = 124, y = 56, w = 16, h = 16 },
+        dot2_s1 = { x = 124, y = 38, w = 16, h = 16 },
+        dot1_s2 = { x = 200, y = 56, w = 16, h = 16 },
+        dot2_s2 = { x = 200, y = 38, w = 16, h = 16 },
+        dot1_s3 = { x = 48, y = 56, w = 16, h = 16 },
+        dot2_s3 = { x = 48, y = 38, w = 16, h = 16 },
+        key_s1 = { x = 112, y = 86, w = 24, h = 24 },
+        key_s2 = { x = 188, y = 86, w = 24, h = 24 },
+        key_s3 = { x = 36, y = 86, w = 24, h = 24 },
         relic_bar = { x = 776, y = 590, slot = 34, gap = 8 },
         relic_slots = { "relic1", "relic2", "relic3", "relic4" },
         pips = { x = 776, y = 566, size = 14, gap = 8 },
@@ -277,60 +277,106 @@ M.SCREENS = {
         owned_strip = { x = 480, y = 96 },
     },
     CAULDRON = {
+        -- Redesigned screen (target mock): pixel-art backdrop, ingredients panel on the
+        -- left, title banner + status scroll on top, three ingredient tiles under the
+        -- cauldron, spell preview + two craft cards below, DONE button at the bottom and
+        -- a small relic summary top-right. `panel` is kept for the audits only; the
+        -- screen itself is drawn by the cd_* art nodes (see `art`).
         panel = M.panel(0, 0, M.DESIGN_W, M.DESIGN_H, "CAULDRON"),
-        texts = {
-            cauldron_title = { x = 480, y = 590, size = 26, color = "text", max_h = 36 },
-            ing_title = { x = 152, y = 520, size = 16, color = "text", max_h = 26 },
-            ing_elem_1 = { x = 152, y = 478, size = 13, color = "text", max_h = 22 },
-            ing_elem_2 = { x = 152, y = 434, size = 13, color = "text", max_h = 22 },
-            ing_elem_3 = { x = 152, y = 390, size = 13, color = "text", max_h = 22 },
-            ing_elem_4 = { x = 152, y = 346, size = 13, color = "text", max_h = 22 },
-            shape_title = { x = 152, y = 306, size = 14, color = "text_dim", max_h = 24 },
-            ing_shape_1 = { x = 152, y = 278, size = 12, color = "text", max_h = 20 },
-            ing_shape_2 = { x = 152, y = 246, size = 12, color = "text", max_h = 20 },
-            ing_shape_3 = { x = 152, y = 214, size = 12, color = "text", max_h = 20 },
-            ing_shape_4 = { x = 152, y = 182, size = 12, color = "text", max_h = 20 },
-            ing_shape_5 = { x = 152, y = 150, size = 12, color = "text", max_h = 20 },
-            sel_ea_text = { x = 346, y = 404, size = 12, color = "text", max_w = 100, max_h = 40 },
-            sel_eb_text = { x = 480, y = 404, size = 12, color = "text", max_w = 100, max_h = 40 },
-            sel_shape_text = { x = 614, y = 404, size = 12, color = "text", max_w = 100, max_h = 40 },
-            preview_name = { x = 480, y = 340, size = 21, color = "text", max_h = 46 },
-            preview_detail = { x = 480, y = 314, size = 13, color = "text_dim", max_w = 400, max_h = 22 },
-            preview_quirk = { x = 480, y = 288, size = 13, color = "text", max_h = 22 },
-            preview_status = { x = 480, y = 264, size = 12, color = "text_dim", max_h = 20 },
-            reaction_hint = { x = 480, y = 238, size = 11, color = "toast", max_w = 400, max_h = 32 },
-            craft1_text = { x = 350, y = 156, size = 11, color = "text", max_w = 164, max_h = 60 },
-            craft2_text = { x = 520, y = 156, size = 11, color = "text", max_w = 164, max_h = 60 },
-            relic_title = { x = 818, y = 520, size = 16, color = "text", max_h = 26 },
-            relic_1 = { x = 818, y = 478, size = 11, color = "text", max_w = 220, max_h = 76 },
-            relic_2 = { x = 818, y = 396, size = 11, color = "text", max_w = 220, max_h = 76 },
-            relic_3 = { x = 818, y = 314, size = 11, color = "text", max_w = 220, max_h = 76 },
-            relic_4 = { x = 818, y = 232, size = 11, color = "text", max_w = 220, max_h = 76 },
-            done_text = { x = 480, y = 76,  size = 16, color = "text", max_h = 26 },
+        -- decorative art rects (bottom-left x, y). Sizes equal the PNG sizes in
+        -- assets/art/ui/cd_*.png (tools/make_cauldron_ui.py); tile art is 1:1 pixels.
+        art = {
+            cd_bg            = { x = 0,   y = 0,   w = 960, h = 640 },
+            cd_ing_panel     = { x = 16,  y = 60,  w = 230, h = 470 },
+            cd_title_banner  = { x = 310, y = 548, w = 340, h = 72 },
+            cd_scroll        = { x = 250, y = 496, w = 460, h = 44 },
+            cd_preview_panel = { x = 286, y = 84,  w = 388, h = 130 },
+            cd_done_art      = { x = 330, y = 16,  w = 300, h = 56 },
+            cd_small_box_1   = { x = 800, y = 556, w = 140, h = 34 },
+            cd_small_box_2   = { x = 800, y = 515, w = 140, h = 34 },
+            cd_gem           = { x = 807, y = 564, w = 18,  h = 18 },
+            cd_trophy        = { x = 807, y = 523, w = 18,  h = 18 },
+            cd_hl_1          = { x = 26,  y = 451, w = 210, h = 30 },   -- moved at runtime (rows)
+            cd_hl_2          = { x = 26,  y = 417, w = 210, h = 30 },
+            cd_hl_s          = { x = 26,  y = 273, w = 210, h = 30 },
+            cd_preview_icon  = { x = 306, y = 116, w = 72,  h = 72 },
+            cd_card_icon_1   = { x = 726, y = 114, w = 36,  h = 36 },
+            cd_card_icon_2   = { x = 852, y = 114, w = 36,  h = 36 },
+            cd_smoke_1       = { x = 414, y = 426, w = 72,  h = 72 },
+            cd_smoke_2       = { x = 444, y = 430, w = 72,  h = 72 },
+            cd_smoke_3       = { x = 474, y = 426, w = 72,  h = 72 },
         },
+        -- left-aligned text uses align = "w" (PIVOT_W, x = left edge); right-aligned "e".
+        -- Everything else is centred on x.
+        texts = {
+            cauldron_title = { x = 480, y = 577, size = 28, color = "text", max_w = 220, max_h = 36 },
+            cd_status      = { x = 480, y = 518, size = 11, color = "text", max_w = 390, max_h = 16 },
+            ing_title      = { x = 131, y = 515, size = 15, color = "text", max_w = 140, max_h = 22 },
+            ing_elem_1 = { x = 80, y = 466, size = 14, color = "text", align = "w", max_w = 100, max_h = 20 },
+            ing_elem_2 = { x = 80, y = 432, size = 14, color = "text", align = "w", max_w = 100, max_h = 20 },
+            ing_elem_3 = { x = 80, y = 398, size = 14, color = "text", align = "w", max_w = 100, max_h = 20 },
+            ing_elem_4 = { x = 80, y = 364, size = 14, color = "text", align = "w", max_w = 100, max_h = 20 },
+            ing_cnt_1  = { x = 226, y = 466, size = 14, color = "text", align = "e", max_w = 50, max_h = 20 },
+            ing_cnt_2  = { x = 226, y = 432, size = 14, color = "text", align = "e", max_w = 50, max_h = 20 },
+            ing_cnt_3  = { x = 226, y = 398, size = 14, color = "text", align = "e", max_w = 50, max_h = 20 },
+            ing_cnt_4  = { x = 226, y = 364, size = 14, color = "text", align = "e", max_w = 50, max_h = 20 },
+            shape_title = { x = 131, y = 322, size = 13, color = "text", max_w = 100, max_h = 20 },
+            ing_shape_1 = { x = 80, y = 288, size = 13, color = "text", align = "w", max_w = 100, max_h = 20 },
+            ing_shape_2 = { x = 80, y = 256, size = 13, color = "text", align = "w", max_w = 100, max_h = 20 },
+            ing_shape_3 = { x = 80, y = 224, size = 13, color = "text", align = "w", max_w = 100, max_h = 20 },
+            ing_shape_4 = { x = 80, y = 192, size = 13, color = "text", align = "w", max_w = 100, max_h = 20 },
+            ing_shape_5 = { x = 80, y = 160, size = 13, color = "text", align = "w", max_w = 100, max_h = 20 },
+            ing_shcnt_1 = { x = 226, y = 288, size = 13, color = "text", align = "e", max_w = 50, max_h = 20 },
+            ing_shcnt_2 = { x = 226, y = 256, size = 13, color = "text", align = "e", max_w = 50, max_h = 20 },
+            ing_shcnt_3 = { x = 226, y = 224, size = 13, color = "text", align = "e", max_w = 50, max_h = 20 },
+            ing_shcnt_4 = { x = 226, y = 192, size = 13, color = "text", align = "e", max_w = 50, max_h = 20 },
+            ing_shcnt_5 = { x = 226, y = 160, size = 13, color = "text", align = "e", max_w = 50, max_h = 20 },
+            ing_info_1 = { x = 64, y = 114, size = 11, color = "text_dim", align = "w", max_w = 170, max_h = 16 },
+            ing_info_2 = { x = 64, y = 98,  size = 11, color = "text_dim", align = "w", max_w = 170, max_h = 16 },
+            sel_ea_text    = { x = 346, y = 266, size = 11, color = "text", max_w = 100, max_h = 42 },
+            sel_eb_text    = { x = 480, y = 266, size = 11, color = "text", max_w = 100, max_h = 42 },
+            sel_shape_text = { x = 614, y = 266, size = 11, color = "text", max_w = 100, max_h = 42 },
+            reaction_hint = { x = 480, y = 225, size = 10, color = "toast", max_w = 390, max_h = 14 },
+            preview_name   = { x = 412, y = 182, size = 20, color = "text", align = "w", max_w = 250, max_h = 28 },
+            preview_detail = { x = 412, y = 135, size = 12, color = "text", align = "w", max_w = 250, max_h = 18 },
+            preview_quirk  = { x = 412, y = 116, size = 12, color = "text", align = "w", max_w = 250, max_h = 18 },
+            preview_status = { x = 412, y = 97,  size = 12, color = "text_dim", align = "w", max_w = 250, max_h = 18 },
+            craft1_text = { x = 744, y = 182, size = 10, color = "text", max_w = 110, max_h = 42 },
+            craft2_text = { x = 870, y = 182, size = 10, color = "text", max_w = 110, max_h = 42 },
+            relic_title = { x = 830, y = 573, size = 11, color = "text", align = "w", max_w = 104, max_h = 16 },
+            relic_1     = { x = 830, y = 532, size = 10, color = "text", align = "w", max_w = 104, max_h = 14 },
+            done_text = { x = 480, y = 44, size = 16, color = "text", max_w = 190, max_h = 24 },
+        },
+        -- ingredient rows (icons): element rows then shape rows
         ing_icons = {
-            { id = "ing_icon_1", x = 48, y = 464, w = 28, h = 28 },
-            { id = "ing_icon_2", x = 48, y = 420, w = 28, h = 28 },
-            { id = "ing_icon_3", x = 48, y = 376, w = 28, h = 28 },
-            { id = "ing_icon_4", x = 48, y = 332, w = 28, h = 28 },
+            { id = "ing_icon_1", x = 40, y = 454, w = 24, h = 24 },
+            { id = "ing_icon_2", x = 40, y = 420, w = 24, h = 24 },
+            { id = "ing_icon_3", x = 40, y = 386, w = 24, h = 24 },
+            { id = "ing_icon_4", x = 40, y = 352, w = 24, h = 24 },
+        },
+        ing_shape_icons = {
+            { id = "ing_shape_icon_1", x = 40, y = 276, w = 24, h = 24 },
+            { id = "ing_shape_icon_2", x = 40, y = 244, w = 24, h = 24 },
+            { id = "ing_shape_icon_3", x = 40, y = 212, w = 24, h = 24 },
+            { id = "ing_shape_icon_4", x = 40, y = 180, w = 24, h = 24 },
+            { id = "ing_shape_icon_5", x = 40, y = 148, w = 24, h = 24 },
         },
         slots = {
-            { box = "sel_ea_box",    label = "ELEM A", x = 292, y = 436, w = 108, h = 108, icon = "slot_icon_ea" },
-            { box = "sel_eb_box",    label = "ELEM B", x = 426, y = 436, w = 108, h = 108, icon = "slot_icon_eb" },
-            { box = "sel_shape_box", label = "SHAPE",  x = 560, y = 436, w = 108, h = 108, icon = "slot_icon_shape" },
+            { box = "sel_ea_box",    label = "ELEM A", x = 286, y = 236, w = 120, h = 124, icon = "slot_icon_ea" },
+            { box = "sel_eb_box",    label = "ELEM B", x = 420, y = 236, w = 120, h = 124, icon = "slot_icon_eb" },
+            { box = "sel_shape_box", label = "SHAPE",  x = 554, y = 236, w = 120, h = 124, icon = "slot_icon_shape" },
         },
-        craft1_box = { x = 264, y = 120, w = 172, h = 72 },
-        craft2_box = { x = 452, y = 120, w = 172, h = 72 },
-        done_box   = { x = 380, y = 40,  w = 200, h = 56 },
+        craft1_box = { x = 684, y = 100, w = 120, h = 114 },
+        craft2_box = { x = 810, y = 100, w = 120, h = 114 },
+        done_box   = { x = 380, y = 40,  w = 200, h = 56 },   -- hit rect (shared with HOME_EDIT)
         buttons = {
-            { id = "sel_ea_box",    action = "cauldron_cycle", label = "ELEM A", x = 292, y = 436, w = 108, h = 108, enabled = true, field = "ea",    text = { x = 346, y = 490 } },
-            { id = "sel_eb_box",    action = "cauldron_cycle", label = "ELEM B", x = 426, y = 436, w = 108, h = 108, enabled = true, field = "eb",    text = { x = 480, y = 490 } },
-            { id = "sel_shape_box", action = "cauldron_cycle", label = "SHAPE",  x = 560, y = 436, w = 108, h = 108, enabled = true, field = "shape", text = { x = 614, y = 490 } },
-            { id = "craft1_box",    action = "craft",          label = "SLOT 1", x = 264, y = 120, w = 172, h = 72,  enabled = true, slot = 1,        text = { x = 350, y = 156 } },
-            { id = "craft2_box",    action = "craft",          label = "SLOT 2", x = 452, y = 120, w = 172, h = 72,  enabled = true, slot = 2,        text = { x = 520, y = 156 } },
-            { id = "done_box",      action = "done",           label = "DONE",   x = 380, y = 40,  w = 200, h = 56,  enabled = true,                  text = { x = 480, y = 68  } },
+            { id = "sel_ea_box",    action = "cauldron_cycle", label = "ELEM A", x = 286, y = 236, w = 120, h = 124, enabled = true, field = "ea",    text = { x = 346, y = 266 } },
+            { id = "sel_eb_box",    action = "cauldron_cycle", label = "ELEM B", x = 420, y = 236, w = 120, h = 124, enabled = true, field = "eb",    text = { x = 480, y = 266 } },
+            { id = "sel_shape_box", action = "cauldron_cycle", label = "SHAPE",  x = 554, y = 236, w = 120, h = 124, enabled = true, field = "shape", text = { x = 614, y = 266 } },
+            { id = "craft1_box",    action = "craft",          label = "SLOT 1", x = 684, y = 100, w = 120, h = 114, enabled = true, slot = 1,        text = { x = 744, y = 182 } },
+            { id = "craft2_box",    action = "craft",          label = "SLOT 2", x = 810, y = 100, w = 120, h = 114, enabled = true, slot = 2,        text = { x = 870, y = 182 } },
+            { id = "done_box",      action = "done",           label = "DONE",   x = 380, y = 40,  w = 200, h = 56,  enabled = true,                  text = { x = 480, y = 44  } },
         },
-        relic_panel = { x = 700, y = 120, w = 236, h = 424 },
         reaction_lines = 2,
     },
     DEAD = {
@@ -564,8 +610,6 @@ for _, name in ipairs(M.ALL_SCREENS) do
         end
     end
 end
--- cauldron_icon sits left of the cauldron title, from the title spec
-put_center("cauldron_icon", M.SCREENS.CAULDRON.texts.cauldron_title.x - 150, M.SCREENS.CAULDRON.texts.cauldron_title.y)
 -- REWARD cards (frame = card expanded by 6 px on every side)
 for _, card in ipairs(M.SCREENS.REWARD.cards) do
     local box_id = card.id .. "_box"
@@ -598,14 +642,20 @@ for i, _ in ipairs(R.pip_ids) do
     local step = R.pips.size + R.pips.gap
     put_rect("echo_pip" .. i, { x = R.pips.x + (i - 1) * step, y = R.pips.y, w = R.pips.size, h = R.pips.size })
 end
--- CAULDRON ingredients / slots / craft buttons / done button
+-- CAULDRON art, ingredients, slots, craft cards and the done button
 local CD = M.SCREENS.CAULDRON
+for id, r in pairs(CD.art) do
+    put_rect(id, r)
+end
 for _, ic in ipairs(CD.ing_icons) do
+    put_rect(ic.id, ic)
+end
+for _, ic in ipairs(CD.ing_shape_icons) do
     put_rect(ic.id, ic)
 end
 for _, s in ipairs(CD.slots) do
     put_rect(s.box, s)
-    put_rect(s.icon, { x = s.x + s.w * 0.5 - 26, y = s.y + s.h * 0.5 - 26, w = 52, h = 52 })
+    put_rect(s.icon, { x = s.x + s.w * 0.5 - 24, y = s.y + s.h - 39 - 24, w = 48, h = 48 })
 end
 put_rect("craft1_box", CD.craft1_box)
 put_rect("craft2_box", CD.craft2_box)

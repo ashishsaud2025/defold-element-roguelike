@@ -18,5 +18,5 @@ return {
     "Spell effects: Effect and FX Pixel All Free, RPG Effect All Free, Free Smoke Fx Pixel 2 (itch.io)",
     "Cascadia Code by Microsoft (github.com/microsoft/cascadia-code, SIL OFL 1.1)",
     "Audio generated for this project by tools/make_sfx.py (original synthesis)",
-    "UI frames, keycaps, portrait and bars (tools/make_ui.py), CC0",
+    "UI frames, keycaps, portrait, bars and Cauldron screen art (tools/make_ui.py, make_cauldron_ui.py), CC0",
 }

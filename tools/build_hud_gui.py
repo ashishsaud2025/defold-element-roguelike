@@ -110,11 +110,12 @@ def emit(nodes):
             out.append('  font: "text"\n')
         out.append('  id: "%s"\n' % n["id"])
         if n["kind"] == "box":
-            out.append('  layer: "graphics"\n')
+            out.append('  layer: "%s"\n' % n.get("layer", "graphics"))
         else:
             out.append('  layer: "text"\n')
         out.append("  inherit_alpha: true\n")
         out.append("}\n\n")
+    out.append('layers { name: "cdbg" }\n')   # CAULDRON backdrop + frames: drawn first (bottom)
     out.append('layers { name: "graphics" }\n')
     out.append('layers { name: "text" }\n\n')
     out.append('material: "/builtins/materials/gui.material"\n')

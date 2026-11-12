@@ -20,7 +20,7 @@ Pixel Holy Effects Pack 01 by Sentient Dream Studio (sentient-dream-studio.itch.
 Animated spell effects (assets/art/fxa, built by tools/build_fx_anim.py) use these itch.io packs:
 - "Effect and FX Pixel All Free" - TODO: add author + licence (no licence file was included in the download)
 - "RPG Effect All Free" - TODO: add author + licence (no licence file was included in the download)
-- "Free Smoke Fx Pixel 2" - TODO: add author + licence (no licence file was included in the download)
+- "Free Smoke Fx Pixel 2" - TODO: add author + licence (no licence file was included in the download). Its smoke puffs (fxa_smoke_a) are also played over the cauldron on the CAULDRON screen (main/hud.gui_script, nodes cd_smoke_1..3).
 - Pixel fire asset pack by devkidd (flame loops for bolt heads and orbit orbs)
 Confirm each licence on its itch.io page before releasing; remove a pack (edit COMPOUNDS in the tool) if it does not allow use in a game.
 
@@ -36,4 +36,4 @@ UI frames, keycaps, portrait, health/dash bars, altar and door sprites in assets
 
 (No new art assets were generated for the v19 pause/settings/rebinding work; it reuses the existing generated UI art and the vendored Cascadia font. No third-party asset changed hands.)
 
-
+CAULDRON screen art (assets/art/ui/cd_*.png: backdrop with shelves, window, candle and cauldron; gold frames, tiles, cards, scroll, title banner, DONE button, gem and trophy icons) is generated for this project by tools/make_cauldron_ui.py with hard-edged pixel drawing and a fixed random seed (original work, CC0). No third-party art is copied into it; the only third-party art on that screen is the smoke puffs credited above, plus the existing element icons, particle sprites and fxa_headflame flame loops already credited in this file.

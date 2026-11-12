@@ -28,6 +28,8 @@ M.TILES = {
     torch     = { anim = "td_torch",     scale = 3, tint = false },   -- coloured art
     altar     = { anim = "altar",        scale = 1, tint = false },   -- Lantern Hall stations
     door      = { anim = "door",         scale = 1, tint = false },
+    chest     = { anim = "chest",        scale = 1, tint = false },   -- boss-room reward
+    bed       = { anim = "bed",          scale = 1, tint = false },   -- the sick wife
 }
 
 -- Player + enemies. Static 16 px sprites brought to life in code (src/game/anim.lua):

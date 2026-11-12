@@ -79,7 +79,14 @@ local ALL_NODES = {
     "card1_icon", "card2_icon", "card3_icon",
     "card1_tag", "card2_tag", "card3_tag",
     "card1_desc", "card2_desc", "card3_desc",
-    "cauldron_title", "cauldron_icon",
+    "cauldron_title",
+    "cd_bg", "cd_ing_panel", "cd_title_banner", "cd_scroll", "cd_preview_panel", "cd_done_art",
+    "cd_small_box_1", "cd_small_box_2", "cd_gem", "cd_trophy", "cd_hl_1", "cd_hl_2", "cd_hl_s",
+    "cd_preview_icon", "cd_card_icon_1", "cd_card_icon_2", "cd_smoke_1", "cd_smoke_2", "cd_smoke_3",
+    "cd_status", "ing_cnt_1", "ing_cnt_2", "ing_cnt_3", "ing_cnt_4",
+    "ing_shcnt_1", "ing_shcnt_2", "ing_shcnt_3", "ing_shcnt_4", "ing_shcnt_5",
+    "ing_shape_icon_1", "ing_shape_icon_2", "ing_shape_icon_3", "ing_shape_icon_4", "ing_shape_icon_5",
+    "ing_info_1", "ing_info_2",
     "ing_title", "shape_title", "ing_icon_1", "ing_icon_2", "ing_icon_3", "ing_icon_4",
     "ing_elem_1", "ing_elem_2", "ing_elem_3", "ing_elem_4",
     "ing_shape_1", "ing_shape_2", "ing_shape_3", "ing_shape_4", "ing_shape_5",
@@ -88,7 +95,7 @@ local ALL_NODES = {
     "preview_name", "preview_detail", "preview_quirk", "preview_status", "reaction_hint",
     "craft1_box", "craft1_text", "craft2_box", "craft2_text",
     "done_box", "done_text",
-    "relic_title", "relic_1", "relic_2", "relic_3", "relic_4",
+    "relic_title", "relic_1",
     "paused_title", "resume_box", "resume_text", "paused_settings_box", "paused_settings_text",
     "quit_box", "quit_text", "quit_main_box", "quit_main_text",
     "settings_title",
@@ -166,6 +173,36 @@ local function set_icon(id, elem)
         gui.play_flipbook(node, hash(art_mod.ELEMENT_ICONS[elem] or ("icon_" .. elem)))
     end
 end
+
+-- Swap a box node's atlas image only when it changes (hover skins on the CAULDRON art).
+local function skin(self, id, anim)
+    self.skins = self.skins or {}
+    if self.skins[id] ~= anim then
+        self.skins[id] = anim
+        local node = n(id)
+        if node then gui.play_flipbook(node, hash(anim)) end
+    end
+end
+
+-- Atlas flipbooks are ONCE_FORWARD, so loop by restarting from the complete callback.
+local function loop_flipbook(id, anim, offset)
+    local node = n(id)
+    if not node then return end
+    gui.play_flipbook(node, hash(anim), function(_, nd)
+        gui.play_flipbook(nd, hash(anim), function() end)
+    end, offset and { offset = offset } or nil)
+end
+
+local CD_GOLD  = vmath.vector4(1.00, 0.82, 0.30, 1.0)
+local CD_CREAM = vmath.vector4(1.00, 0.92, 0.66, 1.0)
+local CD_INK   = vmath.vector4(0.20, 0.12, 0.05, 1.0)
+local SHAPE_TINT = {
+    projectile = vmath.vector4(1.00, 0.82, 0.25, 1.0),
+    puddle     = vmath.vector4(0.40, 0.70, 1.00, 1.0),
+    orbit      = vmath.vector4(0.95, 0.70, 0.25, 1.0),
+    cone       = vmath.vector4(0.45, 0.75, 1.00, 1.0),
+    burst      = vmath.vector4(1.00, 0.65, 0.20, 1.0),
+}
 
 -- Pure-pool reaction hint for the cauldron: which different-element areas a
 -- pure pool of this element reacts with. Built from data.REACTIONS +
@@ -430,57 +467,46 @@ local function apply_layout(self)
 
     -- ===== CAULDRON =====
     local CD = layout.SCREENS.CAULDRON
-    pos("cauldron_title", CD.texts.cauldron_title.x, CD.texts.cauldron_title.y)
-    color("cauldron_title", pv(layout.palette.text))
-    pos("cauldron_icon", CD.texts.cauldron_title.x - 150, CD.texts.cauldron_title.y)
-    color("cauldron_icon", pv(layout.palette.accent_gold))
-    pos("ing_title", CD.texts.ing_title.x, CD.texts.ing_title.y)
-    color("ing_title", pv(layout.palette.text))
+    for id, r in pairs(CD.art) do
+        pos_rect(id, r)
+        color(id, vmath.vector4(1, 1, 1, 1))
+    end
+    -- every text: position, alignment (w = left edge, e = right edge, else centred), colour
+    for id, spec in pairs(CD.texts) do
+        pos(id, spec.x, spec.y)
+        local node = n(id)
+        if node then
+            gui.set_pivot(node, spec.align == "w" and gui.PIVOT_W or (spec.align == "e" and gui.PIVOT_E or gui.PIVOT_CENTER))
+            color(id, pv(layout.palette[spec.color or "text"]))
+        end
+    end
+    color("cauldron_title", CD_CREAM)
+    color("ing_title", CD_CREAM)
+    color("shape_title", CD_CREAM)
+    color("cd_status", CD_INK)
+    color("craft1_text", CD_CREAM)
+    color("craft2_text", CD_CREAM)
+    color("preview_name", CD_GOLD)
+    color("relic_title", CD_CREAM)
     for i = 1, 4 do
         pos_rect("ing_icon_" .. i, CD.ing_icons[i])
-        pos("ing_elem_" .. i, CD.texts["ing_elem_" .. i].x, CD.texts["ing_elem_" .. i].y)
     end
-    pos("shape_title", CD.texts.shape_title.x, CD.texts.shape_title.y)
-    color("shape_title", pv(layout.palette.text_dim))
     for i = 1, 5 do
-        pos("ing_shape_" .. i, CD.texts["ing_shape_" .. i].x, CD.texts["ing_shape_" .. i].y)
-        color("ing_shape_" .. i, pv(layout.palette.text))
+        pos_rect("ing_shape_icon_" .. i, CD.ing_shape_icons[i])
     end
-    for i, s in ipairs(CD.slots) do
+    for _, s in ipairs(CD.slots) do
         pos_rect(s.box, s)
-        pos(s.icon, s.x + s.w * 0.5, s.y + s.h * 0.5)
-        local tspec = CD.texts[s.box:gsub("box$", "text")]
-        pos(s.box:gsub("box$", "text"), tspec.x, tspec.y)
-        color(s.box, pv(layout.palette.box))
+        pos_rect(s.icon, layout.ALL_RECT_RECT[s.icon])
+        color(s.box, vmath.vector4(1, 1, 1, 1))
     end
-    pos("preview_name", CD.texts.preview_name.x, CD.texts.preview_name.y)
-    color("preview_name", pv(layout.palette.text))
-    pos("preview_detail", CD.texts.preview_detail.x, CD.texts.preview_detail.y)
-    color("preview_detail", pv(layout.palette.text_dim))
-    pos("preview_quirk", CD.texts.preview_quirk.x, CD.texts.preview_quirk.y)
-    color("preview_quirk", pv(layout.palette.text))
-    pos("preview_status", CD.texts.preview_status.x, CD.texts.preview_status.y)
-    color("preview_status", pv(layout.palette.text_dim))
-    pos("reaction_hint", CD.texts.reaction_hint.x, CD.texts.reaction_hint.y)
-    color("reaction_hint", pv(layout.palette.toast))
     for i = 1, 2 do
         local b = (i == 1) and CD.craft1_box or CD.craft2_box
-        pos("craft" .. i .. "_box", b.x + b.w * 0.5, b.y + b.h * 0.5)
-        color("craft" .. i .. "_box", pv(layout.palette.box_ready))
-        local tspec = CD.texts["craft" .. i .. "_text"]
-        pos("craft" .. i .. "_text", tspec.x, tspec.y)
-        color("craft" .. i .. "_text", pv(layout.palette.text))
+        pos_rect("craft" .. i .. "_box", b)
+        color("craft" .. i .. "_box", vmath.vector4(1, 1, 1, 1))
     end
-    pos("done_box", CD.done_box.x + CD.done_box.w * 0.5, CD.done_box.y + CD.done_box.h * 0.5)
+    pos_rect("done_box", CD.done_box)
     color("done_box", pv(layout.palette.box))
-    pos("done_text", CD.texts.done_text.x, CD.texts.done_text.y)
-    color("done_text", pv(layout.palette.text))
-    pos("relic_title", CD.texts.relic_title.x, CD.texts.relic_title.y)
-    color("relic_title", pv(layout.palette.text))
-    for i = 1, 4 do
-        pos("relic_" .. i, CD.texts["relic_" .. i].x, CD.texts["relic_" .. i].y)
-        color("relic_" .. i, pv(layout.palette.text))
-    end
+    pos_rect("cd_done_art", CD.art.cd_done_art)
 
     -- ===== DEAD / WIN =====
     for _, screen in ipairs({ "DEAD", "WIN" }) do
@@ -506,6 +532,14 @@ local function apply_layout(self)
     end
 end
 
+local ROLL_TEXT = "THE JOURNEY HAS JUST BEGUN\n\nThank you for playing\n\n" .. table.concat(credits_mod, "\n\n")
+
+-- long headlines (the ending) need a smaller scale than the 40 px layout size
+local function story_title_scale(t)
+    if t and #t > 18 then return 28 / 14 end
+    return 40 / 14
+end
+
 local function render(self)
     local st = self.state
     local over = (st == "DEAD" or st == "WIN")
@@ -515,13 +549,29 @@ local function render(self)
     local editor = (st == "HOME_EDIT")
     local paused = (st == "PAUSED")
     local settings = (st == "SETTINGS")
+    local story = (st == "STORY")
+    local roll = (st == "ROLL")
 
     -- Panel
-    show("panel", st == "TITLE" or st == "COMBOS" or st == "CREDITS" or over or reward or cauldron or editor or paused or settings)
+    show("panel", st == "TITLE" or st == "COMBOS" or st == "CREDITS" or over or reward or editor or paused or settings or story or roll)
     color("panel", over and C.panel_soft or C.panel)
+    -- STORY: the panel becomes a dialogue box along the bottom of the window
+    if story then
+        gui.set_size(n("panel"), vmath.vector3(880, 190, 0))
+        gui.set_position(n("panel"), vmath.vector3(480, 111, 0))
+        color("panel", C.panel)
+    else
+        gui.set_size(n("panel"), vmath.vector3(960, 640, 0))
+        gui.set_position(n("panel"), vmath.vector3(480, 320, 0))
+    end
+    if not story then
+        gui.set_pivot(n("overlay_title"), gui.PIVOT_CENTER)
+        gui.set_pivot(n("credits_body"), gui.PIVOT_CENTER)
+        gui.set_pivot(n("overlay_hint"), gui.PIVOT_CENTER)
+    end
     panel_enabled(self.panel_combos, st == "COMBOS")
     panel_enabled(self.panel_credits, st == "CREDITS")
-    panel_enabled(self.panel_cauldron, cauldron)
+    panel_enabled(self.panel_cauldron, false)   -- the CAULDRON screen is drawn by the cd_* art nodes
     panel_enabled(self.panel_home_edit, editor)
     panel_enabled(self.panel_paused, paused)
     panel_enabled(self.panel_settings, settings)
@@ -682,7 +732,6 @@ local function render(self)
 
     -- Cauldron group
     show("cauldron_title", cauldron)
-    show("cauldron_icon", cauldron)
     show("ing_title", cauldron)
     show("shape_title", cauldron)
     for _, id in ipairs({ "ing_icon_1", "ing_icon_2", "ing_icon_3", "ing_icon_4",
@@ -694,7 +743,14 @@ local function render(self)
                           "preview_name", "preview_detail", "preview_quirk", "preview_status",
                           "reaction_hint",
                           "craft1_box", "craft1_text", "craft2_box", "craft2_text",
-                          "relic_title", "relic_1", "relic_2", "relic_3", "relic_4" }) do
+                          "relic_title", "relic_1",
+                          "cd_bg", "cd_ing_panel", "cd_title_banner", "cd_scroll", "cd_preview_panel", "cd_done_art",
+                          "cd_small_box_1", "cd_small_box_2", "cd_gem", "cd_trophy", "cd_hl_1", "cd_hl_2", "cd_hl_s",
+                          "cd_preview_icon", "cd_card_icon_1", "cd_card_icon_2", "cd_smoke_1", "cd_smoke_2", "cd_smoke_3",
+                          "cd_status", "ing_cnt_1", "ing_cnt_2", "ing_cnt_3", "ing_cnt_4",
+                          "ing_shcnt_1", "ing_shcnt_2", "ing_shcnt_3", "ing_shcnt_4", "ing_shcnt_5",
+                          "ing_shape_icon_1", "ing_shape_icon_2", "ing_shape_icon_3", "ing_shape_icon_4", "ing_shape_icon_5",
+                          "ing_info_1", "ing_info_2" }) do
         show(id, cauldron)
     end
 
@@ -724,7 +780,10 @@ local function render(self)
     end
 
     -- Death / win group
-    for _, id in ipairs({ "overlay_title", "overlay_hint", "death_room", "death_relics" }) do
+    for _, id in ipairs({ "overlay_title", "overlay_hint" }) do
+        show(id, over or story)
+    end
+    for _, id in ipairs({ "death_room", "death_relics" }) do
         show(id, over)
     end
 
@@ -892,66 +951,90 @@ local function render(self)
     if cauldron then
         local inv = self.inventory
         local CD = layout.SCREENS.CAULDRON
-        -- ===== ingredients zone (icons + counts) =====
+        local c = self.cauldron or {}
+        local hx, hy = self.hover_x, self.hover_y
+        local WHITE = vmath.vector4(1, 1, 1, 1)
+        local function idx_of(list, v)
+            for i, x in ipairs(list) do if x == v then return i end end
+        end
+
+        -- ===== ingredients panel: icon, name (left), count (right); picked rows are gold =====
         for i, el in ipairs(ELEM_ORDER) do
             local count = inv and inv.elements and inv.elements[el] or 0
-            text("ing_elem_" .. i, ELEM_LABEL[el] .. "  x" .. count)
+            local picked = (c.ea == el or c.eb == el)
+            text("ing_elem_" .. i, ELEM_LABEL[el])
+            text("ing_cnt_" .. i, "x" .. count)
             set_icon("ing_icon_" .. i, el)
-            color("ing_icon_" .. i, elem_color(el))
-            color("ing_elem_" .. i, count > 0 and C.white or C.dim)
+            local ec = elem_color(el)
+            color("ing_icon_" .. i, count > 0 and ec or vmath.vector4(ec.x * 0.45, ec.y * 0.45, ec.z * 0.45, 1))
+            color("ing_elem_" .. i, picked and CD_GOLD or (count > 0 and C.white or C.dim))
+            color("ing_cnt_" .. i, count > 0 and CD_GOLD or C.dim)
         end
         for i, sh in ipairs(SHAPE_ORDER) do
             local s = data.SHAPES[sh] or {}
             local count = inv and inv.shapes and inv.shapes[sh] or 0
-            text("ing_shape_" .. i, (s.name or sh):upper() .. "  x" .. count)
-            color("ing_shape_" .. i, count > 0 and C.white or C.dim)
+            local picked = (c.shape == sh)
+            text("ing_shape_" .. i, s.name or sh)
+            text("ing_shcnt_" .. i, "x" .. count)
+            gui.play_flipbook(n("ing_shape_icon_" .. i), hash(SHAPE_ICON[sh] or "particle_flare"))
+            local t = SHAPE_TINT[sh] or C.white
+            color("ing_shape_icon_" .. i, count > 0 and t or vmath.vector4(t.x * 0.45, t.y * 0.45, t.z * 0.45, 1))
+            color("ing_shape_" .. i, picked and CD_GOLD or (count > 0 and C.white or C.dim))
+            color("ing_shcnt_" .. i, count > 0 and CD_GOLD or C.dim)
         end
+        -- gold row highlights under the picked rows
+        local hl_x = CD.art.cd_hl_1.x + CD.art.cd_hl_1.w * 0.5
+        local function hl(id, idx, prefix)
+            local node = n(id)
+            if not node then return end
+            if idx then
+                gui.set_position(node, vmath.vector3(hl_x, CD.texts[prefix .. idx].y, 0))
+                gui.set_enabled(node, true)
+            else
+                gui.set_enabled(node, false)
+            end
+        end
+        local ia, ib = idx_of(ELEM_ORDER, c.ea), idx_of(ELEM_ORDER, c.eb)
+        hl("cd_hl_1", ia, "ing_elem_")
+        hl("cd_hl_2", (ib ~= ia) and ib or nil, "ing_elem_")
+        hl("cd_hl_s", idx_of(SHAPE_ORDER, c.shape), "ing_shape_")
 
-        -- ===== the three big slots =====
-        local c = self.cauldron or {}
+        -- ===== the three ingredient tiles =====
         local slot_defs = {
-            { box = "sel_ea_box", icon = "slot_icon_ea", text_id = "sel_ea_text", field = "ea", label = "ELEM A", kind = "elem" },
-            { box = "sel_eb_box", icon = "slot_icon_eb", text_id = "sel_eb_text", field = "eb", label = "ELEM B", kind = "elem" },
-            { box = "sel_shape_box", icon = "slot_icon_shape", text_id = "sel_shape_text", field = "shape", label = "SHAPE", kind = "shape" },
+            { box = "sel_ea_box", icon = "slot_icon_ea", text_id = "sel_ea_text", field = "ea", label = "1. ELEMENT A", kind = "elem" },
+            { box = "sel_eb_box", icon = "slot_icon_eb", text_id = "sel_eb_text", field = "eb", label = "2. ELEMENT B", kind = "elem" },
+            { box = "sel_shape_box", icon = "slot_icon_shape", text_id = "sel_shape_text", field = "shape", label = "3. SHAPE", kind = "shape" },
         }
-        for _, s in ipairs(slot_defs) do
+        for k, s in ipairs(slot_defs) do
             local v = c[s.field]
             if s.kind == "elem" then
                 set_icon(s.icon, v)
                 color(s.icon, v and elem_color(v) or pv(layout.palette.pick_off))
                 local count = (v and inv and inv.elements and inv.elements[v]) or 0
-                text(s.text_id, s.label .. "\n" .. (v and ELEM_LABEL[v] or "-") .. "  x" .. count)
+                text(s.text_id, s.label .. "\n" .. (v and ELEM_LABEL[v] or "-") .. "\nowned x" .. count)
             else
                 if v then gui.play_flipbook(n(s.icon), hash(SHAPE_ICON[v] or "particle_flare")) end
-                color(s.icon, v and C.white or pv(layout.palette.pick_off))
+                color(s.icon, v and (SHAPE_TINT[v] or C.white) or pv(layout.palette.pick_off))
                 local count = (v and inv and inv.shapes and inv.shapes[v]) or 0
                 local sname = v and ((data.SHAPES[v] and data.SHAPES[v].name) or v):upper() or "-"
-                text(s.text_id, s.label .. "\n" .. sname .. "  x" .. count)
+                text(s.text_id, s.label .. "\n" .. sname .. "\nowned x" .. count)
             end
-            color(s.box, C.box)
+            local over_tile = hx and point_in_rect(CD.slots[k], hx, hy)
+            skin(self, s.box, over_tile and "cd_tile_hot" or "cd_tile")
+            color(s.box, WHITE)
         end
 
-        -- ===== the two craft buttons: what the slot holds now =====
-        local slot_names = self.slot_names or {}
-        local KEYS = { "Q", "R" }
-        for i = 1, 2 do
-            local cur = slot_names[i]
-            if type(cur) == "table" then
-                local short = string.upper(cur.quirk or "?")
-                local name = cur.name or "empty"
-                text("craft" .. i .. "_text", "SLOT " .. i .. "\n" .. name .. "\n" .. KEYS[i] .. " -> " .. short .. "\nclick to craft")
-            else
-                text("craft" .. i .. "_text", "SLOT " .. i .. "\n" .. (cur or "empty") .. "\nclick to craft")
-            end
-            color("craft" .. i .. "_box", C.box_ready)
-        end
+        -- ===== status scroll =====
+        text("cd_status", self.preview and "READY - CRAFT into a slot, then DONE to enter next room"
+                                        or "MISSING INGREDIENTS - click a tile to pick others")
 
-        -- ===== preview =====
+        -- ===== spell preview (animated element flame as the icon) =====
         local p = self.preview
+        local ico = n("cd_preview_icon")
         if p then
             text("preview_name", p.name)
-            text("preview_detail", "Power " .. (p.power or "?") .. "    Cooldown " .. string.format("%.1fs", p.cooldown or 0))
-            text("preview_quirk", p.quirk or "")
+            text("preview_detail", "Power: " .. (p.power or "?") .. "   Cooldown: " .. string.format("%.1fs", p.cooldown or 0))
+            text("preview_quirk", "Quirk: " .. (p.quirk or "-"))
             local sts = p.statuses
             text("preview_status", (sts and #sts > 0) and ("Statuses: " .. table.concat(sts, ", ")) or "No status")
             if c.shape == "puddle" and c.ea and c.ea == c.eb then
@@ -959,44 +1042,76 @@ local function render(self)
             else
                 text("reaction_hint", "")
             end
+            if ico then
+                gui.set_enabled(ico, true)
+                color("cd_preview_icon", WHITE)
+                local key = "fxa_headflame_" .. tostring(c.ea or "fire")
+                if self.cd_prev_key ~= key then
+                    self.cd_prev_key = key
+                    loop_flipbook("cd_preview_icon", key)
+                end
+            end
         else
             text("preview_name", "No ingredients")
             text("preview_detail", "")
             text("preview_quirk", "")
             text("preview_status", "Ingredients missing from inventory.")
             text("reaction_hint", "")
+            if ico then gui.set_enabled(ico, false) end
+            self.cd_prev_key = nil
         end
 
-        -- ===== owned relics (names + descriptions from relics.DEFS) =====
-        local any_relic = false
-        for i, rid in ipairs(RELIC_ORDER) do
-            local owned = self.relics and self.relics[rid]
-            if owned then
-                any_relic = true
-                local def = relics_mod.DEFS[rid] or {}
-                local desc = layout.wrap(def.desc or "", 34)
-                if #desc > 2 then desc = { desc[1], desc[2] } end
-                text("relic_" .. i, (def.name or rid) .. "\n" .. table.concat(desc, "\n"))
-                show("relic_" .. i, true)
-            else
-                show("relic_" .. i, false)
+        -- ===== the two craft cards: what the slot holds now =====
+        local slot_names = self.slot_names or {}
+        for i = 1, 2 do
+            local cur = slot_names[i]
+            local name, short = "empty", "-"
+            if type(cur) == "table" then
+                name = cur.name or "empty"
+                short = string.upper(cur.quirk or "-")
+            elseif cur then
+                name = tostring(cur)
             end
-        end
-        if not any_relic then
-            text("relic_1", "No relics yet.")
-            show("relic_1", true)
+            text("craft" .. i .. "_text", "CRAFT -> SLOT " .. i .. "\nwas: " .. string.sub(name, 1, 13) .. "\nquirk: " .. short)
+            local over_card = hx and point_in_rect(i == 1 and CD.craft1_box or CD.craft2_box, hx, hy)
+            skin(self, "craft" .. i .. "_box", over_card and "cd_card_hot" or "cd_card")
+            color("craft" .. i .. "_box", WHITE)
+            set_icon("cd_card_icon_" .. i, c.ea)
+            color("cd_card_icon_" .. i, (p and c.ea) and elem_color(c.ea) or pv(layout.palette.pick_off))
         end
 
-        -- hover highlights for the three slots
-        local hx, hy = self.hover_x, self.hover_y
-        if hx then
-            for _, s in ipairs(CD.slots) do
-                if point_in_rect(s, hx, hy) then
-                    color(s.box, pv(layout.palette.box_hover))
-                end
+        -- ===== relic summary (top-right) =====
+        local owned_n, first_name = 0, nil
+        for _, rid in ipairs(RELIC_ORDER) do
+            if self.relics and self.relics[rid] then
+                owned_n = owned_n + 1
+                if not first_name then first_name = (relics_mod.DEFS[rid] or {}).name or rid end
             end
         end
-        color("done_box", C.box)
+        text("relic_title", "Relics: " .. owned_n .. "/" .. #RELIC_ORDER)
+        text("relic_1", first_name and (first_name .. (owned_n > 1 and "+" or "")) or "None yet")
+        color("relic_1", first_name and CD_GOLD or C.dim)
+
+        -- ===== DONE button: the art is the cd_done_art node; done_box stays as the invisible hit area =====
+        color("done_box", vmath.vector4(1, 1, 1, 0))
+        local over_done = hx and point_in_rect(CD.done_box, hx, hy)
+        skin(self, "cd_done_art", over_done and "cd_btn_done_hot" or "cd_btn_done")
+        text("done_text", "DONE - ENTER ROOM")
+
+        -- ===== smoke puffs over the cauldron (Free Smoke Fx Pixel 2, looped) =====
+        if not self.cd_smoke_on then
+            self.cd_smoke_on = true
+            local tint = vmath.vector4(0.80, 0.55, 1.0, 0.85)
+            for i = 1, 3 do
+                color("cd_smoke_" .. i, tint)
+                loop_flipbook("cd_smoke_" .. i, "fxa_smoke_a", (i - 1) / 3)
+            end
+        end
+    else
+        self.cd_smoke_on = false
+        self.cd_prev_key = nil
+        if editor then color("done_box", C.box) end
+        text("done_text", "Done")
     end
 
     if editor then
@@ -1072,6 +1187,43 @@ local function render(self)
         text("overlay_hint", "Click anywhere to continue")
         color("overlay_hint", pv(layout.palette.text_dim))
     end
+
+    -- STORY: dialogue / chest / ending pages (reuses the overlay title + the credits body node)
+    if not (st == "CREDITS" or st == "COMBOS") then show("credits_title", false) end
+    if not story then gui.set_scale(n("overlay_title"), vmath.vector3(40 / 14, 40 / 14, 1)) end
+    if story then
+        -- left-aligned dialogue: speaker on top, text below, hint bottom-right
+        gui.set_pivot(n("overlay_title"), gui.PIVOT_W)
+        gui.set_position(n("overlay_title"), vmath.vector3(70, 186, 0))
+        gui.set_scale(n("overlay_title"), vmath.vector3(22 / 14, 22 / 14, 1))
+        text("overlay_title", self.story_title or "")
+        color("overlay_title", C.win)
+        show("credits_body", true)
+        gui.set_pivot(n("credits_body"), gui.PIVOT_NW)
+        gui.set_position(n("credits_body"), vmath.vector3(70, 162, 0))
+        gui.set_scale(n("credits_body"), vmath.vector3(16 / 14, 16 / 14, 1))
+        text("credits_body", self.story_body or "")
+        color("credits_body", pv(layout.palette.text))
+        gui.set_pivot(n("overlay_hint"), gui.PIVOT_E)
+        gui.set_position(n("overlay_hint"), vmath.vector3(890, 32, 0))
+        gui.set_scale(n("overlay_hint"), vmath.vector3(12 / 14, 12 / 14, 1))
+        text("overlay_hint", self.story_hint or "Click to continue")
+        color("overlay_hint", pv(layout.palette.text_dim))
+    elseif roll then
+        -- slow credits roll: the body scrolls up from below the screen
+        show("credits_body", true)
+        gui.set_scale(n("credits_body"), vmath.vector3(18 / 14, 18 / 14, 1))
+        text("credits_body", ROLL_TEXT)
+        color("credits_body", pv(layout.palette.text))
+        gui.set_position(n("credits_body"), vmath.vector3(480, -260 + (self.roll_t or 0) * 50, 0))
+    else
+        if st == "CREDITS" or st == "COMBOS" then
+            gui.set_scale(n("credits_body"), vmath.vector3(1, 1, 1))
+            gui.set_position(n("credits_body"), vmath.vector3(480, 330, 0))
+        else
+            show("credits_body", false)
+        end
+    end
 end
 
 local function send(action, extra)
@@ -1138,7 +1290,7 @@ local function on_click(self, x, y)
         end
         return
     end
-    if st == "DEAD" or st == "WIN" then
+    if st == "DEAD" or st == "WIN" or st == "STORY" or st == "ROLL" then
         send("continue")
     end
 end
@@ -1219,6 +1371,10 @@ function on_message(self, message_id, message, sender)
         self.boss_hp = message.boss_hp or 0
         self.boss_max_hp = message.boss_max_hp or 0
         self.flash = message.flash or self.flash
+        self.story_title = message.story_title
+        self.story_body = message.story_body
+        self.story_hint = message.story_hint
+        self.roll_t = message.roll_t
         self.toast = message.toast
         if not self.started then
             self.started = true

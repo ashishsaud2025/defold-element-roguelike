@@ -12,7 +12,7 @@
             0.0026364822838360023
             0.0
           ]
-          :fov-x 0.031476576004739354
+          :fov-x 0.035891472379430064
           :fov-y 0.013248530072943984
           :position [
             -8.726651307475275E-4
@@ -258,6 +258,167 @@
           ]
         }
       }
+      "/assets/art/fxa/fxa_cast13_earth_00.png" {
+        :camera {
+          :focus-point [
+            22.664769394024958
+            37.14864890521534
+            0.0
+          ]
+          :fov-x 235.23821380112287
+          :fov-y 127.43009664202725
+          :position [
+            22.664769394024958
+            37.14864890521534
+            5000.0
+          ]
+          :projection :orthographic
+          :rotation [
+            0.0
+            0.0
+            0.0
+            1.0
+          ]
+        }
+      }
+      "/assets/art/fxa/fxa_cast13_earth_01.png" {
+        :camera {
+          :focus-point [
+            33.0
+            33.0
+            0.0
+          ]
+          :fov-x 134.02088495575242
+          :fov-y 72.60000000000012
+          :position [
+            33.0
+            33.0
+            5000.0
+          ]
+          :projection :orthographic
+          :rotation [
+            0.0
+            0.0
+            0.0
+            1.0
+          ]
+        }
+      }
+      "/assets/art/fxa/fxa_cast13_earth_02.png" {
+        :camera {
+          :focus-point [
+            33.0
+            33.0
+            0.0
+          ]
+          :fov-x 134.02088495575242
+          :fov-y 72.60000000000012
+          :position [
+            33.0
+            33.0
+            5000.0
+          ]
+          :projection :orthographic
+          :rotation [
+            0.0
+            0.0
+            0.0
+            1.0
+          ]
+        }
+      }
+      "/assets/art/fxa/fxa_cast13_earth_04.png" {
+        :camera {
+          :focus-point [
+            33.0
+            33.0
+            0.0
+          ]
+          :fov-x 134.02088495575242
+          :fov-y 72.60000000000012
+          :position [
+            33.0
+            33.0
+            5000.0
+          ]
+          :projection :orthographic
+          :rotation [
+            0.0
+            0.0
+            0.0
+            1.0
+          ]
+        }
+      }
+      "/assets/art/fxa/fxa_cast13_earth_05.png" {
+        :camera {
+          :focus-point [
+            33.0
+            33.0
+            0.0
+          ]
+          :fov-x 134.02088495575242
+          :fov-y 72.60000000000012
+          :position [
+            33.0
+            33.0
+            5000.0
+          ]
+          :projection :orthographic
+          :rotation [
+            0.0
+            0.0
+            0.0
+            1.0
+          ]
+        }
+      }
+      "/assets/art/fxa/fxa_cast13_earth_06.png" {
+        :camera {
+          :focus-point [
+            33.0
+            33.0
+            0.0
+          ]
+          :fov-x 134.02088495575242
+          :fov-y 72.60000000000012
+          :position [
+            33.0
+            33.0
+            5000.0
+          ]
+          :projection :orthographic
+          :rotation [
+            0.0
+            0.0
+            0.0
+            1.0
+          ]
+        }
+      }
+      "/assets/art/fxa/fxa_cast13_earth_07.png" {
+        :camera {
+          :focus-point [
+            33.0
+            33.0
+            0.0
+          ]
+          :fov-x 134.02088495575242
+          :fov-y 72.60000000000012
+          :position [
+            33.0
+            33.0
+            5000.0
+          ]
+          :projection :orthographic
+          :rotation [
+            0.0
+            0.0
+            0.0
+            1.0
+          ]
+        }
+      }
       "/assets/art/icons/icon_cauldron.png" {
         :camera {
           :focus-point [
@@ -403,7 +564,7 @@
             32.307099221621044
             0.0
           ]
-          :fov-x 145.55057812756883
+          :fov-x 129.0634329945345
           :fov-y 69.91451547642569
           :position [
             32.15670245763731
@@ -426,7 +587,7 @@
             33.23351734172583
             0.0
           ]
-          :fov-x 168.69534145170167
+          :fov-x 149.58648861469476
           :fov-y 81.03199047680015
           :position [
             31.556140203395728
@@ -537,15 +698,15 @@
       "/assets/art/shapes.atlas" {
         :camera {
           :focus-point [
-            142.8296663643346
-            70.06846949288403
+            671.9113572623417
+            392.5208772165958
             0.0
           ]
-          :fov-x 695.9791030771856
-          :fov-y 305.03143788552705
+          :fov-x 1766.7127343158281
+          :fov-y 957.0399759237229
           :position [
-            142.8296663643346
-            70.06846949288403
+            671.9113572623417
+            392.5208772165958
             5000.0
           ]
           :projection :orthographic
@@ -564,7 +725,7 @@
             33.10156963646335
             0.0
           ]
-          :fov-x 198.89082523511274
+          :fov-x 160.91591989353805
           :fov-y 87.16921835076606
           :position [
             37.59502275786425
@@ -833,6 +994,53 @@
           ]
         }
       }
+      "/main/fx.go" {
+        :camera {
+          :focus-point [
+            -0.395880278420389
+            3.66538158876436
+            0.0
+          ]
+          :fov-x 280.8980329266395
+          :fov-y 152.16432272631957
+          :position [
+            -0.395880278420389
+            3.66538158876436
+            5000.0
+          ]
+          :projection :orthographic
+          :rotation [
+            0.0
+            0.0
+            0.0
+            1.0
+          ]
+        }
+      }
+      "/main/fx.sprite" {
+        :camera {
+          :focus-point [
+            1.9084198349862405
+            -0.005271880707628185
+            0.0
+          ]
+          :fov-x 381.4067982357437
+          :fov-y 153.22094770927768
+          :mode-2d true
+          :position [
+            1.9084198349862405
+            -0.005271880707628185
+            5000.0
+          ]
+          :projection :orthographic
+          :rotation [
+            0.0
+            0.0
+            0.0
+            1.0
+          ]
+        }
+      }
       "/main/game.go" {
         :camera {
           :focus-point [
@@ -859,15 +1067,16 @@
       "/main/hud.go" {
         :camera {
           :focus-point [
-            -156.81354886555454
-            121.91094787498409
+            -195.28769464100523
+            69.43029712562634
             0.0
           ]
-          :fov-x 2389.900665781274
-          :fov-y 1180.0564169485676
+          :fov-x 987.0184442330014
+          :fov-y 860.2107054724817
+          :mode-2d true
           :position [
-            -156.81354886555454
-            121.91094787498409
+            -195.28769464100523
+            69.43029712562634
             5000.0
           ]
           :projection :orthographic
@@ -882,15 +1091,16 @@
       "/main/hud.gui" {
         :camera {
           :focus-point [
-            240.0
-            160.0
+            -88.80935792807003
+            -95.45046490642943
             0.0
           ]
-          :fov-x 3207.9844660194176
-          :fov-y 1584.0000000000002
+          :fov-x 859.2618942311314
+          :fov-y 748.8677486635652
+          :mode-2d true
           :position [
-            240.0
-            160.0
+            -88.80935792807003
+            -95.45046490642943
             5000.0
           ]
           :projection :orthographic
@@ -905,15 +1115,16 @@
       "/main/main.collection" {
         :camera {
           :focus-point [
-            3.1249725943344684
-            1.5618079502933109
+            -28.2779083836883
+            -62.13458071934791
             0.0
           ]
-          :fov-x 35.05873136835759
-          :fov-y 17.310878863570625
+          :fov-x 908.7234903039645
+          :fov-y 791.9747389130429
+          :mode-2d true
           :position [
-            3.1249725943344684
-            1.5618079502933109
+            -28.2779083836883
+            -62.13458071934791
             5000.0
           ]
           :projection :orthographic
@@ -928,15 +1139,15 @@
       "/main/visual.go" {
         :camera {
           :focus-point [
-            -2.6405413795142745
-            18.641293751728906
+            -2.9680561172980546
+            18.084009488564444
             0.0
           ]
-          :fov-x 523.7895236520104
-          :fov-y 258.6304934619227
+          :fov-x 473.0515972126882
+          :fov-y 256.2551796981485
           :position [
-            -2.6405413795142745
-            18.641293751728906
+            -2.9680561172980546
+            18.084009488564444
             5000.0
           ]
           :projection :orthographic
@@ -951,15 +1162,15 @@
       "/main/visual.sprite" {
         :camera {
           :focus-point [
-            3.1257314382883443
-            19.4365924206593
+            15.410182648671839
+            31.61088851189442
             0.0
           ]
-          :fov-x 701.9939165197286
-          :fov-y 346.62211601884974
+          :fov-x 764.7688398299149
+          :fov-y 414.28033988868833
           :position [
-            3.1257314382883443
-            19.4365924206593
+            15.410182648671839
+            31.61088851189442
             5000.0
           ]
           :projection :orthographic
@@ -977,139 +1188,139 @@
     :open-tabs [
       [
         [
-          "/Levels-made/room1.tilemap"
-          :scene
+          "/compatible.md"
+          :html
         ]
       ]
     ]
     :recent-files [
       [
-        "/docs/particle_picker.png"
-        :scene
-      ]
-      [
-        "/docs/particle_picker.txt"
-        :code
-      ]
-      [
-        "/docs/sprite_picker_tiny_creatures.txt"
-        :code
-      ]
-      [
-        "/docs/sprite_picker_tiny_dungeon.png"
-        :scene
-      ]
-      [
-        "/docs/sprite_picker_tiny_creatures.png"
-        :scene
-      ]
-      [
-        "/docs/art_preview.png"
-        :scene
-      ]
-      [
-        "/docs/ART_GUIDE.md"
-        :html
-      ]
-      [
-        "/assets/art/tiles/tile_floor_b.png"
-        :scene
-      ]
-      [
-        "/assets/art/tiles/tile_wall_face.png"
-        :scene
-      ]
-      [
-        "/assets/art/tiles/tile_wall_top.png"
-        :scene
-      ]
-      [
-        "/assets/art/particles/particle_flare.png"
-        :scene
-      ]
-      [
         "/assets/art/particles/particle_flame.png"
         :scene
       ]
       [
-        "/assets/art/particles/particle_circle.png"
-        :scene
-      ]
-      [
-        "/assets/art/tiles/tile_torch.png"
-        :scene
-      ]
-      [
-        "/assets/art/tiles/tile_floor_a.png"
-        :scene
-      ]
-      [
-        "/assets/art/icons/icon_rune.png"
-        :scene
-      ]
-      [
-        "/assets/art/env/td_floor_b.png"
-        :scene
-      ]
-      [
-        "/assets/art/env/td_floor_a.png"
-        :scene
-      ]
-      [
-        "/assets/art/env/td_torch.png"
-        :scene
-      ]
-      [
-        "/assets/art/env/td_wall_face.png"
-        :scene
-      ]
-      [
-        "/assets/art/actors/MAPPING.md"
-        :html
-      ]
-      [
-        "/assets/art/actors/tc_boss.png"
-        :scene
-      ]
-      [
-        "/assets/art/actors/tc_brute.png"
-        :scene
-      ]
-      [
-        "/assets/art/actors/tc_charger.png"
-        :scene
-      ]
-      [
-        "/assets/art/actors/tc_slinger.png"
-        :scene
-      ]
-      [
-        "/assets/art/actors/tc_splitter.png"
-        :scene
-      ]
-      [
-        "/src/core/art.lua"
+        "/tools/build_fx_anim.py"
         :code
       ]
       [
-        "/M0_DONE.md"
+        "/game.project"
+        :text
+      ]
+      [
+        "/main/main.collection"
+        :text
+      ]
+      [
+        "/main/visual.factory"
+        :text
+      ]
+      [
+        "/main/visual.go"
+        :text
+      ]
+      [
+        "/assets/art/shapes.atlas"
+        :text
+      ]
+      [
+        "/main/visual.sprite"
+        :scene
+      ]
+      [
+        "/main/visual.go"
+        :scene
+      ]
+      [
+        "/main/visual.factory"
+        :form
+      ]
+      [
+        "/src/core/skillgen.lua"
+        :code
+      ]
+      [
+        "/src/core/relics.lua"
+        :code
+      ]
+      [
+        "/tools/run_smoke_test.py"
+        :code
+      ]
+      [
+        "/tools/add_to_atlas.py"
+        :code
+      ]
+      [
+        "/Agent Instructions/universal_pool_spell_infusion_addendum.md"
         :html
       ]
       [
-        "/builtins/assets/gltf/cube.gltf"
+        "/main/fx.sprite"
         :scene
       ]
       [
-        "/builtins/assets/images/logo/logo_256.png"
+        "/src/core/data.lua"
+        :code
+      ]
+      [
+        "/src/core/combos.lua"
+        :code
+      ]
+      [
+        "/src/core/selfcheck.lua"
+        :code
+      ]
+      [
+        "/src/game/infusion.lua"
+        :code
+      ]
+      [
+        "/game.project"
+        :form
+      ]
+      [
+        "/main/hud.gui"
         :scene
       ]
       [
-        "/PROMPT_assets_player_enemies_spells.md"
+        "/main/main.collection"
+        :scene
+      ]
+      [
+        "/main/hud.go"
+        :scene
+      ]
+      [
+        "/src/game/reaction.lua"
+        :code
+      ]
+      [
+        "/src/game/combat.lua"
+        :code
+      ]
+      [
+        "/src/core/status.lua"
+        :code
+      ]
+      [
+        "/input/game.input_binding"
+        :form
+      ]
+      [
+        "/src/ui/layout.lua"
+        :code
+      ]
+      [
+        "/src/game/rewards.lua"
+        :code
+      ]
+      [
+        "/src/core/crng.lua"
+        :code
+      ]
+      [
+        "/compatible.md"
         :html
-      ]
-      [
-        "/Levels-made/room1.tilemap"
-        :scene
       ]
     ]
   }
