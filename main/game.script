@@ -1,7 +1,8 @@
 -- /main/game.script
 -- Main simulation + state machine. See MASTER_PROMPT sections 5, 6.
--- Flow: TITLE -> PICK_START -> ROOM -> REWARD -> CAULDRON -> ROOM -> ... -> BOSS -> WIN
---                                              \-> DEAD -> TITLE
+-- Flow: TITLE -> HOME <-> HOME_EDIT -> ROOM -> REWARD -> CAULDRON -> ROOM -> ... -> BOSS -> WIN
+--                    (the Lantern Hall: altar = loadout editor, door = begin run)
+--                                  \-> DEAD -> TITLE
 local selfcheck = require "src.core.selfcheck"
 local data = require "src.core.data"
 local skillgen = require "src.core.skillgen"
