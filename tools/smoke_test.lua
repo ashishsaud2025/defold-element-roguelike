@@ -3975,7 +3975,7 @@ do
     { "KEY_Q", "cast1" }, { "KEY_R", "cast2" }, { "KEY_E", "interact" },
     { "KEY_LBRACKET", "dbg_prev" }, { "KEY_RBRACKET", "dbg_next" },
     { "KEY_SPACE", "dash" }, { "KEY_W", "up" }, { "KEY_1", "1" }, { "KEY_0", "0" },
-    { "KEY_ESC", "pause" }, { "KEY_F2", "ui_audit" },
+    { "KEY_ESC", "pause" }, { "KEY_F1", "ui_audit" },
   }
   for _, p in ipairs(required) do
     sf(bind:find("input: " .. p[1] .. "%s+action: \"" .. p[2] .. "\"") ~= nil,
