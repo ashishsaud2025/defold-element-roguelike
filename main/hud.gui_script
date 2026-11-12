@@ -1032,26 +1032,22 @@ local function render(self)
                     end
                 end
             end
-            local TAB_ACCENT = { tab_mouse_box = layout.palette.accent_gold,
-                                 tab_q_box     = { r = 0.20, g = 0.50, b = 1.00, a = 1.00 },
-                                 tab_r_box     = layout.palette.win }
             local function blend(a, b, f)
                 return vmath.vector4(a.r + (b.r - a.r) * f, a.g + (b.g - a.g) * f,
                                      a.b + (b.b - a.b) * f, 1.0)
             end
             local slot_bg = layout.palette.slot_bg
-            local text_dim = layout.palette.text_dim
             local text_white = layout.palette.text
+            local selected_text = layout.palette.accent_gold
             local tab_match = { tab_mouse_box = 3, tab_q_box = 1, tab_r_box = 2 }
             for box, slot in pairs(tab_match) do
-                local accent = TAB_ACCENT[box]
                 local text_id = box:gsub("_box$", "_text")
                 if ed.tab == slot then
-                    color(box, blend(slot_bg, accent, 0.55))
-                    color(text_id, pv(text_white))
+                    color(box, blend(slot_bg, selected_text, 0.55))
+                    color(text_id, pv(selected_text))
                 else
-                    color(box, blend(slot_bg, accent, 0.22))
-                    color(text_id, blend(text_dim, accent, 0.65))
+                    color(box, pv(slot_bg))
+                    color(text_id, pv(text_white))
                 end
             end
         end

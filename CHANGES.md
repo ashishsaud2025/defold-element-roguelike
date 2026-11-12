@@ -13,8 +13,8 @@ Branch `settings-pause-training`; never touched `main` and never built a zip.
   `RESUME` / `SETTINGS` / `QUIT` / `QUIT TO MAIN MENU`. RESUME returns to the state ESC was pressed in
   (`ROOM`, `HOME`, `HOME_EDIT`). QUIT is `sys.exit(0)`;
   QUIT TO MAIN MENU resets the run (loadout kept), like DEAD/WIN continue.
-- **Editor tabs are colored per tab**: MOUSE = gold, Q = water-blue, R = win-green. The selected tab
-  is accent-tinted on dark bg with white text; the others use dim-accent text on plain slot-bg.
+- **Editor tabs**: MOUSE / Q / R read white on the dark slot-bg; the active tab is warm gold
+  (`accent_gold`) with matching gold-tinted box.
 - **SETTINGS screen**: `MST/SFX/MUSIC` volume bars at 0.1 steps (0-100%), wired straight into
   `sfx.BUS`; live-rebindable rows for WASD / Q / R / E / SPACE / LMB↔RMB toggle.
   Master, SFX and Music values show as numbers next to the bar.
