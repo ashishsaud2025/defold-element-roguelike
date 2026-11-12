@@ -32,3 +32,6 @@ glow.png, floor.png and vignette.png are generated for this project.
 Cascadia Code by Microsoft (github.com/microsoft/cascadia-code, SIL OFL 1.1; vendored at assets/fonts/, see OFL.txt + NOTICE.txt).
 All audio in assets/sfx and assets/music is generated for this project by tools/make_sfx.py (original synthesis, no third-party samples). Replace any file with a same-named .ogg/.wav and run tools/add_sounds.py.
 
+UI frames, keycaps, portrait, health/dash bars, altar and door sprites in assets/art/ui/ are generated for this project by tools/make_ui.py (original work, CC0).
+
+

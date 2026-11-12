@@ -1,3 +1,70 @@
+# Home, Loadout and HUD (v18)
+
+Plan: `docs/superpowers/plans/2026-11-12-home-loadout-quirks-hud.md` (spec: design doc, approved).
+Branch `home-loadout-hud`; never touched `main`. **Nothing in this delivery has been verified on screen.**
+
+## What shipped
+
+- **Walkable home room**: `src/levels/home.lua` ("Lantern Hall"), entered from TITLE via START.
+  One altar and one door. The world keeps rendering behind the `HOME_EDIT` modal.
+  The altar opens the loadout editor; the door officially starts a run (`begin_run`).
+- **Ability loadout** (`main/game.script`): three slots - MOUSE = slot 3 (basic attack, Bolt only),
+  Q = slot 1, R = slot 2. Each slot carries `{ ea, eb, shape, quirk_id }` chosen at the altar.
+  Cauldron crafting keeps the slot's quirk (it never overwrites with the recipe hash pick);
+  the debug re-craft and shape keys (1-0, `[` / `]`) also keep it.
+- **Quirk registry** (`src/core/quirks.lua`): identity, labels, short forms, one-line descriptions,
+  behaviour flags, `basic_ok`, display order, `default_id(r2)`, `register`/`unregister` for future
+  quirks (two files + flags, no engine change). `skillgen.makeSkill` accepts an optional
+  `quirk_id` override; the default path is unchanged (recipe quirk order frozen).
+- **Basic attack exemptions** (user-approved): never pays the blood price, never increments the
+  Echoing Crystal echo counter; `health_cost` is not offered to the MOUSE slot (`basic_ok = false`).
+- **HUD rebuilt** (`hud.gui` grows to **154** authored nodes via `tools/build_hud_gui.py` +
+  `tools/hud_nodes.py`, emitter proven byte-identical against the old 125-node file at Task 8):
+  hotbar bottom-centre (MOUSE/Q/R keycaps, shape icon, element dots, cooldown overlay that
+  drains bottom-to-top, gold frame when ready), portrait health bar with `hp / max` and a thin
+  SPACE-dash gauge under it, relic bar + echo pips kept. `s1_name`/`s2_name` are gone.
+- **PICK_START is gone**: the state, its screen, its nodes and its actions retired with the home flow.
+- **UI art** generated for this project by `tools/make_ui.py` (CC0, see CREDITS.md): slot frames,
+  keycaps, portrait, health/dash bars, altar and door sprites. All twelve added to `shapes.atlas`.
+- **HOME music** = the calm CAULDRON pad-only stem; the basic attack reuses slot sounds; quirks
+  keep their existing sounds.
+- **Debug row** now: `[` / `]` cycle slot 1/2 compounds; 1-5 slot 1 shape, 6-0 slot 2 shape;
+  T (training room), F1 (F1 audit), O/P/L/K (audio) unchanged. All bound; harness presses them.
+
+## Harness & verification
+
+- `python tools/check_lua.py` (new): LuaJIT `loadstring` on every `.lua`/`.script`/`.gui_script`/
+  `.render_script` under `main/ src/ tools/` (33 files). RED-capable (proven on a scratch `return )` file).
+- Smoke suite extended: registry section; default-path drift checks for all 50 recipes;
+  loadout sanitisation; flag-driven cast path; input routing; home/stations/door/editor tests;
+  payload ORDER/gates updated (HOME, HOME_EDIT added; ROOM inventory removed, REWARD/CAULDRON keep it).
+- HUD harness extended: HOME and HOME_EDIT screens, three-slot hotbar, cooldown overlay, keycaps,
+  ready frame, portrait/dash bars, and the F1 audit handler run headlessly on every state.
+- `ART_TEST=1` and `ART_TEST=0` both requested before hand-off (see Verification).
+- Fail-proofs run per the plan (see Verification).
+- Determinism held: results `WIN,WIN,DEAD,DEAD,DEAD`, pathing room 6 = 8/8, room 8 = 14/12 - the home
+  room consumes no gameplay RNG (the tile builder draws none; the mote seeding runs once at init before any room enters).
+- UI payload under the 2048 B `msg.post` cap in every state (worst measured: CAULDRON 1974 B).
+
+## Controls
+
+WASD move  |  mouse aim  |  LMB hold = basic Bolt  |  Q = slot 1  |  R = slot 2  |  SPACE dash  |  E interact
+
+## Verification
+
+- `python tools/run_smoke_test.py`: 70 486 checks, 0 failed; pathing 8/8, 14/12; results WIN,WIN,DEAD,DEAD,DEAD; `RESULT: PASS (mock only)`; HUD result `2363` checks, `0 failed`.
+- `python tools/validate_rooms.py`: 11 room(s), 0 problem(s) (10 rooms + the peaceful home).
+- `python tools/validate_ui.py`: 154 node(s), 154/154 positions mapped, 0 problem(s).
+- NOT VERIFIED: rendering, blending, z-order, the generated art's look, editor parsing of
+  `hud.gui` / `shapes.atlas` / `home.lua`, the bracket keys on a real keyboard, editor behaviour of
+  the door art (48x48, top wall cell), and whether the prompt reads at 960x640 in motion.
+  Human hand-off steps: compile, F1 on HOME and HOME_EDIT, walk into a wall/into the door, cast all
+  three slots, craft something at the cauldron and confirm the crafted skill keeps the slot quirk.
+
+## Deliveries
+
+This section is the v18 entry. No delivery zip was built - ask first.
+
 # Audio layer (ported from the `effects` branch) (v17)
 
 Audio ported from the `effects` branch (squashed into one commit on branch `audio-sfx`;
