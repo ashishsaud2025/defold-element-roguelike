@@ -42,7 +42,7 @@ local STING_BY_STATE = {
 }
 
 -- Calm states: pad only
-local CALM_STATES = { CAULDRON = true, REWARD = true }
+local CALM_STATES = { CAULDRON = true, REWARD = true, HOME = true }
 
 local current_state = nil
 local current_loop = nil      -- id of the active looping music

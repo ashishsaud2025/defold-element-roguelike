@@ -2751,9 +2751,8 @@ function on_input(self, action_id, action)
     -- TITLE / DEAD / WIN: the HUD owns the buttons, it hit-tests and replies
     -- with a "ui_action" message (handled in on_message).
 
-    -- M3 debug row (removed/hidden at the end via TUNING.DEBUG):
-    --   1-5 = slot 1 shape, 6-0 = slot 2 shape (same order), Q = cycle slot 1 compound,
-    --   E = cycle slot 2 compound, T = training arena
+    -- M3 debug row (hidden in public builds via TUNING.DEBUG):
+    --   1-5 = slot 1 shape, 6-0 = slot 2 shape (same order), [/] = cycle compounds, T = training arena
     if data.TUNING.DEBUG and self.state ~= "REWARD" then
         if action_id == hash("1") and action.pressed then self.slot1_shape = "projectile"; rebuild_skills(self) end
         if action_id == hash("2") and action.pressed then self.slot1_shape = "puddle"; rebuild_skills(self) end
@@ -2765,8 +2764,8 @@ function on_input(self, action_id, action)
         if action_id == hash("8") and action.pressed then self.slot2_shape = "orbit"; rebuild_skills(self) end
         if action_id == hash("9") and action.pressed then self.slot2_shape = "cone"; rebuild_skills(self) end
         if action_id == hash("0") and action.pressed then self.slot2_shape = "burst"; rebuild_skills(self) end
-        if action_id == hash("q") and action.pressed then cycle_compound(self, 1) end
-        if action_id == hash("e") and action.pressed then cycle_compound(self, 2) end
+        if action_id == hash("dbg_prev") and action.pressed then cycle_compound(self, 1) end
+        if action_id == hash("dbg_next") and action.pressed then cycle_compound(self, 2) end
         if action_id == hash("t") and action.pressed then toggle_training_room(self) end
         if action_id == hash("ui_audit") and action.pressed then
             msg.post("/hud#gui", "ui_audit", {})
@@ -2813,6 +2812,9 @@ function on_input(self, action_id, action)
     elseif action_id == hash("cast2") then
         if action.pressed and self.state == "ROOM" then self.hold2 = true
         elseif action.released then self.hold2 = false end
+    elseif action_id == hash("basic") then
+        if action.pressed and self.state == "ROOM" then self.hold3 = true
+        elseif action.released then self.hold3 = false end
     end
 
     -- SPACE: dash (short invulnerable burst toward the move direction, or the aim point)
@@ -2834,13 +2836,13 @@ function on_input(self, action_id, action)
         print("Dash")
     end
 
-    -- LMB: cast in ROOM, otherwise hand the click to the HUD (menus)
-    if action_id == hash("cast1") and action.pressed then
+    -- LMB: cast the MOUSE basic in ROOM, otherwise hand the click to the HUD (menus)
+    if action_id == hash("basic") and action.pressed then
         if self.state == "ROOM" then
-            if self.slot1_cooldown <= 0 then
-                do_cast(self, 1)
+            if self.slot3_cooldown <= 0 then
+                do_cast(self, 3)
             else
-                print(string.format("Slot 1 on cooldown (%.2fs)", self.slot1_cooldown))
+                print(string.format("Basic on cooldown (%.2fs)", self.slot3_cooldown))
             end
         else
             local dx, dy = to_design(action.x, action.y)
@@ -2848,7 +2850,16 @@ function on_input(self, action_id, action)
         end
     end
 
-    -- Cast slot 2 (RMB)
+    -- Cast slot 1 (Q)
+    if self.state == "ROOM" and action_id == hash("cast1") and action.pressed then
+        if self.slot1_cooldown <= 0 then
+            do_cast(self, 1)
+        else
+            print(string.format("Slot 1 on cooldown (%.2fs)", self.slot1_cooldown))
+        end
+    end
+
+    -- Cast slot 2 (R)
     if self.state == "ROOM" and action_id == hash("cast2") and action.pressed then
         if self.slot2_cooldown <= 0 then
             do_cast(self, 2)

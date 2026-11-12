@@ -178,7 +178,7 @@ init(self)
 local baseline = 0 local base_ids = {} for id in pairs(live) do baseline = baseline + 1 base_ids[id]=true end
 
 local function ui(a) on_message(self, "ui_action", a, nil) end
-local function act(id, pressed, released) on_input(self, id, {pressed=pressed, released=released}) end
+local function act(id, pressed, released, ax, ay) on_input(self, id, {pressed = pressed, released = released, x = ax or 480, y = ay or 320}) end
 local dt = 1/60
 local max_anims = 0
 local function frame()
@@ -3952,6 +3952,59 @@ if begin_room() then
   act("2", false, true)
   sf(self.slot1.quirk_id == "split_in_two", "debug: shape key dropped the slot quirk")
   sf(self.slot1.shape_key == "puddle", "debug: shape key did not rebuild slot 1")
+end
+
+-- ===== Input map: Q/R spells, LMB basic, E interact, bracket debug cycle =====
+do
+  local bind = io.open(ROOT .. "input/game.input_binding", "r"):read("*a")
+  local required = {
+    { "KEY_Q", "cast1" }, { "KEY_R", "cast2" }, { "KEY_E", "interact" },
+    { "KEY_LBRACKET", "dbg_prev" }, { "KEY_RBRACKET", "dbg_next" },
+    { "KEY_SPACE", "dash" }, { "KEY_W", "up" }, { "KEY_1", "1" }, { "KEY_0", "0" },
+    { "KEY_T", "t" }, { "KEY_F1", "ui_audit" },
+  }
+  for _, p in ipairs(required) do
+    sf(bind:find("input: " .. p[1] .. "%s+action: \"" .. p[2] .. "\"") ~= nil,
+       "input: binding " .. p[1] .. " -> " .. p[2] .. " missing")
+  end
+  sf(bind:find('MOUSE_BUTTON_1%s+action: "basic"') ~= nil,
+     "input: LMB is not the basic action")
+  sf(bind:find("MOUSE_BUTTON_2", 1, true) == nil,
+     "input: RMB must stay unbound")
+  -- Q and R cast their slots in ROOM
+  if begin_room() then
+    local b0 = #self.bolts
+    self.slot1_cooldown = 0
+    act("cast1", true, false); act("cast1", false, true)
+    sf(#self.bolts == b0 + 1, "input: cast1 (Q) did not cast slot 1")
+    local b1 = #self.bolts
+    self.slot2_cooldown = 0
+    act("cast2", true, false); act("cast2", false, true)
+    sf(#self.bolts == b1 + 1, "input: cast2 (R) did not cast slot 2")
+    local b2 = #self.bolts
+    self.slot3_cooldown = 0
+    act("basic", true, false); act("basic", false, true)
+    sf(#self.bolts == b2 + 1, "input: basic (LMB) did not cast slot 3")
+  end
+  -- LMB outside ROOM forwards a click instead of casting
+  self.state = "TITLE"
+  local clicks = hud_clicks
+  act("basic", true, false, 300, 200)
+  sf(hud_clicks == clicks + 1, "input: LMB did not forward a click outside ROOM")
+  -- the debug cycle lives on the brackets now
+  if begin_room() then
+    local c0 = self.slot1.compound
+    act("dbg_prev", true, false); act("dbg_prev", false, true)
+    sf(self.slot1.compound ~= c0, "input: dbg_prev did not cycle slot 1")
+    local c1 = self.slot2.compound
+    act("dbg_next", true, false); act("dbg_next", false, true)
+    sf(self.slot2.compound ~= c1, "input: dbg_next did not cycle slot 2")
+  end
+  -- Q does nothing outside ROOM
+  self.state = "TITLE"
+  local c2 = self.slot1.compound
+  act("cast1", true, false); act("cast1", false, true)
+  sf(self.slot1.compound == c2, "input: cast1 acted outside ROOM")
 end
 
 -- ===== HUD message budget: every state's ui message must fit the 2 KB msg.post limit =====

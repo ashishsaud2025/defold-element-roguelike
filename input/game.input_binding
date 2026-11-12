@@ -16,11 +16,7 @@ key_trigger {
 }
 mouse_trigger {
   input: MOUSE_BUTTON_1
-  action: "cast1"
-}
-mouse_trigger {
-  input: MOUSE_BUTTON_2
-  action: "cast2"
+  action: "basic"
 }
 key_trigger {
   input: KEY_1
@@ -64,11 +60,23 @@ key_trigger {
 }
 key_trigger {
   input: KEY_Q
-  action: "q"
+  action: "cast1"
+}
+key_trigger {
+  input: KEY_R
+  action: "cast2"
 }
 key_trigger {
   input: KEY_E
-  action: "e"
+  action: "interact"
+}
+key_trigger {
+  input: KEY_LBRACKET
+  action: "dbg_prev"
+}
+key_trigger {
+  input: KEY_RBRACKET
+  action: "dbg_next"
 }
 key_trigger {
   input: KEY_T
