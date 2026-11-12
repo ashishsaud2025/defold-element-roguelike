@@ -197,8 +197,8 @@ print("ALL_NODES: %d id(s)" % len(re.findall(r'"([a-z0-9_]+)"', m.group(1))))
 if len(gui_set) != len(re.findall(r'"([a-z0-9_]+)"', m.group(1))):
     problems.append("node count mismatch: hud.gui has %d, ALL_NODES has %d" % (
         len(gui_set), len(re.findall(r'"([a-z0-9_]+)"', m.group(1)))))
-if len(gui_set) != 270:
-    problems.append("hud.gui node count changed: expected 270, got %d (update this constant with the change)" % len(gui_set))
+if len(gui_set) != 272:
+    problems.append("hud.gui node count changed: expected 272, got %d (update this constant with the change)" % len(gui_set))
 
 if problems:
     for p in problems:

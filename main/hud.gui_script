@@ -119,6 +119,7 @@ local ALL_NODES = {
     "touch_btn_1", "touch_btn_2", "touch_btn_3", "touch_btn_dash", "touch_btn_interact", "touch_btn_pause",
     "touch_icon_1", "touch_icon_2", "touch_icon_3",
     "touch_dash_text", "touch_interact_text", "touch_pause_text",
+    "tap_dbg_box", "tap_dbg_text",
 }
 
 -- Only ids authored in main/hud.gui may be touched by the uniform text-scale
@@ -564,6 +565,14 @@ local function apply_layout(self)
     show("touch_pause_text", false)
     show("touch_stick_base", false)
     show("touch_stick_nub", false)
+
+    -- ===== Tap diagnostics (temporary on-device probe; always on) =====
+    pos("tap_dbg_box", 125, 620)
+    color("tap_dbg_box", vmath.vector4(0.10, 0.10, 0.14, 0.92))
+    pos("tap_dbg_text", 125, 612)
+    color("tap_dbg_text", vmath.vector4(1, 1, 1, 1))
+    show("tap_dbg_box", true)
+    show("tap_dbg_text", true)
 
     -- One source of truth for text scale: spec.size / 14 (the builtin font
     -- renders 14 px at scale 1). Only authored ids participate. The fixed-advance
@@ -1522,6 +1531,12 @@ function on_message(self, message_id, message, sender)
     if message_id == hash("ui") then
         self.state = message.state or self.state
         if message.touch ~= nil then self.touch_ui = message.touch end
+        if message.tap_dbg then
+            local d = message.tap_dbg
+            text("tap_dbg_text", string.format("sys=%s touch=%d basic=%d %s%s",
+                tostring(d.sys), tonumber(d.touch) or 0, tonumber(d.basic) or 0,
+                tostring(d.last), d.xy or ""))
+        end
         self.hp = message.hp or self.hp
         self.max_hp = message.max_hp or self.max_hp
         self.s1 = message.s1

@@ -4411,6 +4411,52 @@ do
   sf(ui_msg_max <= 2048, string.format("ui msg: worst ui message anywhere is %d bytes (> 2048 engine limit) [state=%s]", ui_msg_max, ui_msg_max_state))
 end
 
+-- ===== Touch machine: stick moves, tap casts, drag-aim redirects (ROOM only) =====
+-- The file-scope TOUCH_ENABLED derives from sys.get_sys_info() at load time (absent in the
+-- mock), so flip the per-instance flag like a phone would present itself.
+do
+  begin_room()
+  self.touch_enabled = true
+  local function touch(pressed, released, id, x, y)
+    on_input(self, "touch", { pressed = pressed, released = released, x = x, y = y,
+      touch = { { id = id, x = x, y = y, pressed = pressed, released = released, tap_count = 1 } } })
+  end
+  -- slot 1 -> nova via the debug row (act("5") sets burst)
+  act("5", true, false); act("5", false, true)
+  local b0 = (self.bursts and #self.bursts) or 0
+  touch(true, false, 41, 836, 396)
+  sf(self.touches[41] ~= nil and self.touches[41].button == "s1", "touch: press on slot 1 was not captured as the s1 button")
+  touch(false, true, 41, 836, 396)
+  for _ = 1, 20 do frame() end
+  sf(((self.bursts and #self.bursts) or 0) > b0, "touch: tap on slot 1 did not cast")
+  -- slot 2 -> projectile: press, drag right, release; aim must become +x of the player
+  act("6", true, false); act("6", false, true)
+  local ax0 = self.aim.x
+  touch(true, false, 42, 836, 292)
+  for _, p in ipairs({ {850,292},{875,292},{900,292},{920,292} }) do
+    touch(false, false, 42, p[1], p[2])
+  end
+  touch(false, true, 42, 920, 292)
+  sf(self.aim.x > ax0, "touch: drag-aim did not move the aim (aim.x stuck at " .. tostring(self.aim.x) .. " vs player at " .. tostring(self.player_pos.x) .. ")")
+  -- stick: tap-drag upward; player must move up (+y)
+  local py0 = self.player_pos.y
+  touch(true, false, 43, 200, 300)
+  sf(self.stick_id == 43, "touch: left-half drag did not grab the stick (stick_id=" .. tostring(self.stick_id) .. ")")
+  touch(false, false, 43, 200, 400)
+  for _ = 1, 30 do frame() end
+  sf(self.player_pos.y > py0, "touch: vertical stick drag did not move the player (y " .. tostring(py0) .. " -> " .. tostring(self.player_pos.y) .. ")")
+  touch(false, true, 43, 200, 400)
+  for _ = 1, 10 do frame() end
+  sf(self.stick_id == nil, "touch: stick id not released after finger lifted")
+  -- tap in TITLE state must land in the HUD click path (mouse emulation parity)
+  self.state = "TITLE"
+  local cb = hud_clicks
+  touch(true, false, 44, 480, 360)
+  touch(false, true, 44, 480, 360)
+  sf(hud_clicks == cb + 1, "touch: tap on the TITLE screen did not forward a click (clicks=" .. tostring(hud_clicks) .. " vs " .. tostring(cb) .. ")")
+  self.touch_enabled = false
+end
+
 -- return to the title screen (room 1 tiles) so the object count is comparable with the baseline
 self.state = "WIN"; ui({action="continue"}); for i=1,5 do frame() end
 sf(ui_msg_max > 0, "ui msg: no ui message ever sent (msg-size guards are vacuous)")

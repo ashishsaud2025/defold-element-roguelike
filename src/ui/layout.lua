@@ -712,6 +712,8 @@ end
 -- full-screen nodes
 put_rect("panel", M.FULL_SCREEN)
 put_rect("flash_box", M.FULL_SCREEN)
+put_rect("tap_dbg_box", { x = 0, y = 600, w = 250, h = 40 })
+put_center("tap_dbg_text", 125, 612)
 
 -- Touch controls (authored, positioned here so the map stays complete)
 for _, id in ipairs(M.TOUCH_ORDER) do
