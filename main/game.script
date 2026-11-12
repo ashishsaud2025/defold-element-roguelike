@@ -52,11 +52,9 @@ local ELEMENT_LIST = { "fire", "water", "wind", "earth" }
 local SHAPE_LIST = { "projectile", "puddle", "orbit", "cone", "burst" }
 local SHAPE_DISPLAY = { projectile = "Bolt", puddle = "Pool", orbit = "Orbit", cone = "Spray", burst = "Nova" }
 
--- Quirk display text -> stable id (generated skills carry quirk_id; this is the fallback).
--- Identity comes from the registry, so a newly registered quirk is mapped automatically.
+-- Quirk identity lives in the registry; labels are `skill.quirk` and ids `skill.quirk_id`.
 local quirks_mod = require "src.core.quirks"
-local QUIRK_ID_BY_TEXT = {}
-for _, d in ipairs(quirks_mod.list()) do QUIRK_ID_BY_TEXT[d.label] = d.id end
+
 
 local PLAYER_RADIUS = 12
 local ENEMY_BASE_TINT = { r = 0.5, g = 0.5, b = 0.5 }
@@ -636,8 +634,10 @@ local function rebuild_skills(self)
         self.cooldown_ready[2][self.slot2.key] = self.clock + self.slot2_cooldown
     end
 
-    self.slot1 = skillgen.makeSkill(self.slot1_elem_a, self.slot1_elem_b, self.slot1_shape)
-    self.slot2 = skillgen.makeSkill(self.slot2_elem_a, self.slot2_elem_b, self.slot2_shape)
+    self.slot1 = skillgen.makeSkill(self.slot1_elem_a, self.slot1_elem_b, self.slot1_shape,
+        nil, self.loadout and self.loadout[1] and self.loadout[1].quirk_id)
+    self.slot2 = skillgen.makeSkill(self.slot2_elem_a, self.slot2_elem_b, self.slot2_shape,
+        nil, self.loadout and self.loadout[2] and self.loadout[2].quirk_id)
 
     local function remaining(slot, skill)
         local ready = self.cooldown_ready[slot][skill.key]
@@ -850,10 +850,18 @@ local function send_ui(self)
     if st == "CAULDRON" then
         ui.cauldron = self.cauldron
         ui.preview = preview
-        -- slim slot names for the craft buttons (what each slot holds / will replace)
-        local s1 = self.slot1 and (self.slot1.compound .. " " .. (SHAPE_DISPLAY[self.slot1.shape] or self.slot1.shape)) or nil
-        local s2 = self.slot2 and (self.slot2.compound .. " " .. (SHAPE_DISPLAY[self.slot2.shape] or self.slot2.shape)) or nil
-        ui.slots = { s1 or "empty", s2 or "empty" }
+        -- slim slot info for the craft buttons (what each slot holds / will replace)
+        local function short_of(sk)
+            if not sk then return "-" end
+            local def = (sk.quirk_id and quirks_mod.get(sk.quirk_id))
+                or (sk.quirk and quirks_mod.by_label(sk.quirk))
+            return def and def.short or "-"
+        end
+        local function name_of(sk)
+            return sk and (sk.compound .. " " .. (SHAPE_DISPLAY[sk.shape_key] or sk.shape)) or "empty"
+        end
+        ui.slots = { { name = name_of(self.slot1), quirk = short_of(self.slot1) },
+                     { name = name_of(self.slot2), quirk = short_of(self.slot2) } }
     end
     msg.post("/hud#gui", "ui", ui)
 end
@@ -1248,16 +1256,9 @@ local function craft_skill(self, slot, ea, eb, shape)
     self.inventory.elements[ea] = self.inventory.elements[ea] - 1
     self.inventory.elements[eb] = self.inventory.elements[eb] - 1
     self.inventory.shapes[shape] = self.inventory.shapes[shape] - 1
-    local skill = skillgen.makeSkill(ea, eb, shape)
-    if slot == 1 then
-        self.slot1_elem_a = ea; self.slot1_elem_b = eb; self.slot1_shape = shape
-        self.slot1 = skill; self.slot1_cooldown = 0; self.slot1_cd_max = skill.cooldown
-        self.cooldown_ready[1] = {}
-    else
-        self.slot2_elem_a = ea; self.slot2_elem_b = eb; self.slot2_shape = shape
-        self.slot2 = skill; self.slot2_cooldown = 0; self.slot2_cd_max = skill.cooldown
-        self.cooldown_ready[2] = {}
-    end
+    local qid = (self.loadout and self.loadout[slot] and self.loadout[slot].quirk_id) or nil
+    local skill = skillgen.makeSkill(ea, eb, shape, nil, qid)
+    equip_skill(self, slot, skill, qid)
     print("Crafted " .. skill.compound .. " " .. skill.shape .. " -> Slot " .. slot)
     sfx.play("ui_craft")
     local compound = tostring(skill.compound or ""):lower():gsub("%s+", "_")
@@ -2862,8 +2863,12 @@ do_cast = function(self, slot_num, is_repeat, ctx)
     -- A repeat/echo carries the ORIGINAL cast's skill, position and aim (ctx).
     local skill = (ctx and ctx.skill) or (slot_num == 1 and self.slot1) or (slot_num == 2 and self.slot2) or (slot_num == 3 and self.slot3)
     if not skill then return false end
-    local qid = skill.quirk_id or QUIRK_ID_BY_TEXT[skill.quirk]
-    local qd = data.QUIRK_DATA[qid] or {}
+    -- Quirk identity comes from the registry: flags decide the branch, tuning lives in def.data.
+    local qdef = (skill.quirk_id and quirks_mod.get(skill.quirk_id))
+        or (skill.quirk and quirks_mod.by_label(skill.quirk)) or nil
+    local qd = (qdef and qdef.data) or {}
+    local flags = (qdef and qdef.flags) or {}
+    local is_basic = (slot_num == 3 and not ctx)
 
     -- Relic: Inferno Heart (+15% power) only for spells containing Fire.
     -- D4: first fire-affected cast per room shows the banner, then silent;
@@ -2893,7 +2898,7 @@ do_cast = function(self, slot_num, is_repeat, ctx)
 
     -- Quirk: costs 5% health. Paid ONCE per successful player cast (never for a repeat
     -- or an echo), and refused when it would drop the player below 1 HP.
-    if qid == "health_cost" and not is_repeat then
+    if flags.hp_cost and not is_repeat and not is_basic then
         local cost = math.ceil(self.player.max_hp * qd.hp_frac)
         if not player_mod.spend_health(self.player, cost, qd.min_hp) then
             -- Gate the message: hold-to-fire would otherwise print every frame.
@@ -2909,7 +2914,7 @@ do_cast = function(self, slot_num, is_repeat, ctx)
 
     -- Quirk: bigger but slower (size +30%, delivery speed -20%; player speed untouched)
     local size_mul, speed_mul = 1.0, 1.0
-    if qid == "bigger_slower" then
+    if flags.bigger then
         size_mul = qd.size_mul or 1.3
         speed_mul = qd.speed_mul or 0.8
     end
@@ -2929,9 +2934,9 @@ do_cast = function(self, slot_num, is_repeat, ctx)
     -- Audio: cast event + elemental/quirk cues (repeat casts are quieter).
     events.emit("cast", { self = self, skill = skill, slot = slot_num, is_repeat = is_repeat, x = sx, y = sy })
 
-    local split = qid == "split_in_two"
-    local trail = qid == "leaves_trail"
-    local repeat_once = qid == "repeat_once"
+    local split = flags.split
+    local trail = flags.trail
+    local repeat_once = flags.repeat_delay
     local shape_key = skill.shape_key or "projectile"
 
     if skill.quirk then
@@ -3013,7 +3018,7 @@ do_cast = function(self, slot_num, is_repeat, ctx)
             local pud = make_puddle(self, pd.x, pd.y, pd.radius, skill.duration, pd.power, statuses,
                 skill, skill.elements, sc,
                 { style = fxanim.COMPOUND[skill.compound], compound = skill.compound })
-            if qid == "bigger_slower" then
+            if flags.bigger then
                 -- Slower delivery for a pool = its tick interval grows (same total, slower cadence)
                 pud.tick_interval = pud.tick_interval * (qd.puddle_tick_mul or 1.25)
             end
@@ -3262,10 +3267,14 @@ do_cast = function(self, slot_num, is_repeat, ctx)
         end
 
         -- Relic: Echoing Crystal — every 5th successful player cast echoes at 50%.
+        -- The basic attack never counts as a cast for the echo counter.
         -- D4: "ECHO" banner; at most once per room (further echoes still fire);
         -- never overwrites another banner; no gameplay RNG consumed.
-        self.cast_count = (self.cast_count or 0) + 1
-        local echo = relics_mod.echo_strength(self.relics, self.cast_count)
+        local echo = nil
+        if not is_basic then
+            self.cast_count = (self.cast_count or 0) + 1
+            echo = relics_mod.echo_strength(self.relics, self.cast_count)
+        end
         if echo then
             table.insert(self.repeat_casts, {
                 slot = slot_num, time = 0.25,

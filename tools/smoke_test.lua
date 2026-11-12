@@ -63,8 +63,11 @@ local ui_seen, ui_worst = {}, {}
 local ui_big_str, ui_big_str_state = nil, "?"
 local ui_field_leak, ui_field_leak_state = nil, "?"
 local ui_msg_max, ui_msg_max_state = 0, "?"
+local last_ui, hud_clicks = nil, 0
 msg = { url = function(sock, path, frag) return {path=path, frag=frag} end, post = function(target, id, message)
+  if id == "click" then hud_clicks = hud_clicks + 1; return end
   if type(message) ~= "table" then return end
+  if id == "ui" then last_ui = message end
   local st = tostring(message.state)
   local enc = enc_upper(message)
   if enc > ui_msg_max then ui_msg_max = enc; ui_msg_max_state = st end
@@ -78,6 +81,7 @@ msg = { url = function(sock, path, frag) return {path=path, frag=frag} end, post
                   slots     = { CAULDRON = true },
                   s1        = { ROOM = true, DEAD = true, WIN = true },
                   s2        = { ROOM = true, DEAD = true, WIN = true },
+                  s3        = { ROOM = true, DEAD = true, WIN = true },
                   credits   = { CREDITS = true } }
   for field, ok_states in pairs(gated) do
     if message[field] ~= nil and not ok_states[st] then
@@ -3890,6 +3894,64 @@ do
   -- and it keeps its quirk across rooms
   local quirk3 = self.loadout[3].quirk_id
   sf(self.slot3.quirk_id == quirk3, "slot3: quirk changed after a room reset")
+end
+
+-- ===== Basic exemptions and quirk inheritance (flag-driven cast path) =====
+if begin_room() then
+  -- forged: a basic carrying the blood price still never pays
+  local blood = mk("projectile", "health_cost")
+  equip_skill(self, 3, blood, "health_cost")
+  self.player.hp, self.player.max_hp = 100, 100
+  self.player.alive, self.player.invuln = true, 0
+  self.slot3_cooldown = 0
+  self.hold3 = true; frame(); self.hold3 = false
+  sf(self.player.hp == 100, "basic: paid the blood price")
+  -- and it cannot be refused at 1 HP either (the hp gate is ignored for slot 3)
+  local b1 = #self.bolts
+  self.player.hp = 1
+  self.slot3_cooldown = 0
+  self.hold3 = true; frame(); self.hold3 = false
+  sf(#self.bolts == b1 + 1, "basic: refused to cast at 1 HP")
+  -- the echo counter never moves for basics
+  self.player.hp, self.player.max_hp = 100, 100
+  self.cast_count = 0
+  for _ = 1, 10 do
+    self.slot3_cooldown = 0
+    self.hold3 = true; frame(); self.hold3 = false
+  end
+  sf(self.cast_count == 0, "basic: incremented cast_count")
+  -- Q still pays and still counts (its cast counter feeds Echoing Crystal)
+  self.loadout[1].quirk_id = "health_cost"
+  apply_loadout(self)
+  self.player.hp, self.player.max_hp = 100, 100
+  self.slot1_cooldown = 0
+  self.cast_count = 0
+  cast1()
+  sf(self.player.hp < 100, "Q: did not pay the blood price")
+  sf(self.cast_count == 1, "Q: did not increment cast_count")
+  -- craft keeps the slot's quirk
+  self.loadout[1].quirk_id = "split_in_two"
+  apply_loadout(self)
+  self.state = "CAULDRON"
+  self.cauldron = { ea = "fire", eb = "water", shape = "puddle" }
+  self.inventory.elements = { fire = 2, water = 2, wind = 2, earth = 2 }
+  self.inventory.shapes = { projectile = 2, puddle = 2, orbit = 2, cone = 2, burst = 2 }
+  ui({ action = "craft", slot = 1 })
+  sf(self.slot1.quirk_id == "split_in_two", "craft: recipe quirk overwrote the slot quirk")
+  sf(self.slot1.compound == "Steam", "craft: slot skill was not replaced")
+  -- cauldron payload carries each target slot's quirk short form
+  self.state = "CAULDRON"
+  frame()
+  sf(type(last_ui and last_ui.slots and last_ui.slots[1]) == "table" and last_ui.slots[1].quirk == "splits",
+     "cauldron: slot 1 quirk short form missing from the payload")
+  sf(type(last_ui and last_ui.slots and last_ui.slots[2]) == "table" and last_ui.slots[2].quirk ~= nil,
+     "cauldron: slot 2 quirk short form missing from the payload")
+  -- debug shape key keeps it too (in a room, where the debug row is live)
+  begin_room()
+  act("2", true, false)
+  act("2", false, true)
+  sf(self.slot1.quirk_id == "split_in_two", "debug: shape key dropped the slot quirk")
+  sf(self.slot1.shape_key == "puddle", "debug: shape key did not rebuild slot 1")
 end
 
 -- ===== HUD message budget: every state's ui message must fit the 2 KB msg.post limit =====

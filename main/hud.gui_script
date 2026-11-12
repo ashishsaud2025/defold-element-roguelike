@@ -781,9 +781,16 @@ local function render(self)
 
         -- ===== the two craft buttons: what the slot holds now =====
         local slot_names = self.slot_names or {}
+        local KEYS = { "Q", "R" }
         for i = 1, 2 do
             local cur = slot_names[i]
-            text("craft" .. i .. "_text", "SLOT " .. i .. "\n" .. (cur or "empty") .. "\nclick to craft")
+            if type(cur) == "table" then
+                local short = string.upper(cur.quirk or "?")
+                local name = cur.name or "empty"
+                text("craft" .. i .. "_text", "SLOT " .. i .. "\n" .. name .. "\n" .. KEYS[i] .. " -> " .. short .. "\nclick to craft")
+            else
+                text("craft" .. i .. "_text", "SLOT " .. i .. "\n" .. (cur or "empty") .. "\nclick to craft")
+            end
             color("craft" .. i .. "_box", C.box_ready)
         end
 
