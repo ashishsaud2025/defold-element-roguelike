@@ -1,4 +1,4 @@
-# Element Roguelike
+# Quintessence: The Fifth Element
 
 A top-down **elemental roguelite** built with [Defold](https://defold.com/) (960×640, nearest-neighbour pixel art).
 
