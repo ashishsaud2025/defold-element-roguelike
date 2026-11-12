@@ -1268,7 +1268,7 @@ local function render(self)
         dn.y = dn.y + (dn.vy or 60) * dt
         local alpha = math.max(0, dn.life / (dn.max_life or 0.8))
         if dn.node then
-            gui.set_position(dn.node, vmath.vector3(dn.x, dn.y, 0))
+            gui.set_position(dn.node, vmath.vector3(dn.x, dn.y, 10))
             gui.set_color(dn.node, vmath.vector4(1, 1, 1, alpha))
         end
         if dn.life <= 0 then
@@ -1434,9 +1434,11 @@ function on_message(self, message_id, message, sender)
         if message.damage_number then
             local dn = message.damage_number
             local gen_id = "__dn" .. (#self.damage_numbers + 1)
-            local node = gui.new_text_node(vmath.vector3(dn.x, dn.y, 0), tostring(dn.amount))
+            local node = gui.new_text_node(vmath.vector3(dn.x, dn.y, 10), tostring(dn.amount))
             gui.set_scale(node, vmath.vector3(1, 1, 1))
+            gui.set_font(node, "text")
             gui.set_color(node, vmath.vector4(1, 1, 1, 1))
+            gui.set_layer(node, "text")
             self.damage_numbers[#self.damage_numbers + 1] = {
                 node = node, id = gen_id,
                 x = dn.x, y = dn.y, amount = dn.amount,

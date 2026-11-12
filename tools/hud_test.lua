@@ -127,6 +127,7 @@ gui = {
   get_size = function(node) return node and node.size or vmath.vector3(0, 0, 0) end,
   get_scale = function(node) return node and node.scale or vmath.vector3(1, 1, 1) end,
   set_layer = function(node, layer) end,
+  set_font = function(node, font) if node then node.font = font end end,
   play_flipbook = function(node, id)
     if id == nil or id == "" then err("gui.play_flipbook: empty animation id") end
     if node then node.flipbook = id end
