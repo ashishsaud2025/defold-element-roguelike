@@ -319,8 +319,8 @@ key_trigger {
   action: "k_right"
 }
 key_trigger {
-  input: KEY_SPACE
-  action: "k_space"
+  input: KEY_BACKSPACE
+  action: "k_backspace"
 }
 key_trigger {
   input: KEY_TAB
@@ -366,7 +366,6 @@ key_trigger {
   input: KEY_LALT
   action: "k_lalt"
 }
-key_trigger {
-  input: KEY_RALT
-  action: "k_ralt"
+text_trigger {
+  action: "text"
 }

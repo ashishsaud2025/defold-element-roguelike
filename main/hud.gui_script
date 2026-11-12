@@ -551,9 +551,10 @@ local function render(self)
     local settings = (st == "SETTINGS")
     local story = (st == "STORY")
     local roll = (st == "ROLL")
+    local name_input = (st == "NAME_INPUT")
 
     -- Panel
-    show("panel", st == "TITLE" or st == "COMBOS" or st == "CREDITS" or over or reward or editor or paused or settings or story or roll)
+    show("panel", st == "TITLE" or st == "COMBOS" or st == "CREDITS" or over or reward or editor or paused or settings or story or roll or name_input)
     color("panel", over and C.panel_soft or C.panel)
     -- STORY: the panel becomes a dialogue box along the bottom of the window
     if story then
@@ -786,7 +787,7 @@ local function render(self)
 
     -- Death / win group
     for _, id in ipairs({ "overlay_title", "overlay_hint" }) do
-        show(id, over or story)
+        show(id, over or story or name_input)
     end
     for _, id in ipairs({ "death_room", "death_relics" }) do
         show(id, over)
@@ -1225,6 +1226,24 @@ local function render(self)
         gui.set_scale(n("overlay_hint"), vmath.vector3(12 / 14, 12 / 14, 1))
         text("overlay_hint", self.story_hint or "Click to continue")
         color("overlay_hint", pv(layout.palette.text_dim))
+    elseif name_input then
+        -- Name entry: reuse the overlay nodes as a centered prompt
+        gui.set_pivot(n("overlay_title"), gui.PIVOT_CENTER)
+        gui.set_position(n("overlay_title"), vmath.vector3(480, 360, 0))
+        gui.set_scale(n("overlay_title"), vmath.vector3(40 / 14, 40 / 14, 1))
+        text("overlay_title", "ENTER YOUR NAME")
+        color("overlay_title", C.win)
+        show("credits_body", true)
+        gui.set_pivot(n("credits_body"), gui.PIVOT_CENTER)
+        gui.set_position(n("credits_body"), vmath.vector3(480, 320, 0))
+        gui.set_scale(n("credits_body"), vmath.vector3(28 / 14, 28 / 14, 1))
+        text("credits_body", (self.name_buffer or "") .. "_")
+        color("credits_body", pv(layout.palette.text))
+        gui.set_pivot(n("overlay_hint"), gui.PIVOT_CENTER)
+        gui.set_position(n("overlay_hint"), vmath.vector3(480, 260, 0))
+        gui.set_scale(n("overlay_hint"), vmath.vector3(14 / 14, 14 / 14, 1))
+        text("overlay_hint", "Type your name, press ENTER to confirm")
+        color("overlay_hint", pv(layout.palette.text_dim))
     elseif roll then
         -- slow credits roll: the body scrolls up from below the screen
         show("credits_body", true)
@@ -1328,6 +1347,7 @@ function init(self)
     self.boss_max_hp = 0
     self.flash = 0
     self.toast = nil
+    self.name_buffer = nil
     self.casts = 0
     self.relic_tip = nil
     self.started = false
@@ -1392,6 +1412,7 @@ function on_message(self, message_id, message, sender)
         self.story_hint = message.story_hint
         self.roll_t = message.roll_t
         self.toast = message.toast
+        if message.name_buffer ~= nil then self.name_buffer = message.name_buffer end
         if not self.started then
             self.started = true
             print("HUD ready")

@@ -13,20 +13,24 @@ M.INGREDIENTS = {
     "Tear of the Archmage",
 }
 
-M.INTRO = {
-    { title = "WIFE",   body = "*cough* ... Is that you, my love?\nI am so tired. I can barely lift my head." },
-    { title = "WIZARD", body = "Rest, my dear. I have read the old tomes all night.\nThere is a cure, but the ingredients are rare." },
-    { title = "WIZARD", body = "I need:\n" .. "the " .. M.INGREDIENTS[1] .. ",\n" .. M.INGREDIENTS[2] .. ",\n"
-        .. M.INGREDIENTS[3] .. ",\n" .. M.INGREDIENTS[4] .. " and the " .. M.INGREDIENTS[5] .. "." },
-    { title = "WIFE",   body = "But those can only be found in...\nthe Dungeon of Lucas? Nobody ever returns from there!" },
-    { title = "WIZARD", body = "Then I will be the first.\nI will enter the Dungeon of Lucas tonight and bring them back." },
-    { title = "WIFE",   body = "Please... come back to me." },
-}
+-- Intro dialogue. `wizard` is the player's chosen name; the wife is Valerie.
+function M.intro(wizard)
+    wizard = wizard or "Wizard"
+    return {
+        { title = "Valerie", body = "*cough* ... Is that you, my love?\nI am so tired. I can barely lift my head." },
+        { title = wizard, body = "Rest, my dear. I have read the old tomes all night.\nThere is a cure, but the ingredients are rare." },
+        { title = wizard, body = "I need:\n" .. "the " .. M.INGREDIENTS[1] .. ",\n" .. M.INGREDIENTS[2] .. ",\n"
+            .. M.INGREDIENTS[3] .. ",\n" .. M.INGREDIENTS[4] .. " and the " .. M.INGREDIENTS[5] .. "." },
+        { title = "Valerie", body = "But those can only be found in...\nthe Dungeon of Lucas? Nobody ever returns from there!" },
+        { title = wizard, body = "Then I will be the first.\nI will enter the Dungeon of Lucas tonight and bring them back." },
+        { title = "Valerie", body = "Please... come back to me." },
+    }
+end
 
--- Shown when the chest is opened (the boss only gives one ingredient).
+-- Shown when the chest is opened (the boss only drops one ingredient).
 function M.chest_pages()
     return {
-        { title = "THE CHEST OPENS", body = "Inside you find the " .. M.INGREDIENTS[1] .. "!\n\nIngredient 1 of " .. #M.INGREDIENTS .. " collected.\nThe cure is still incomplete." },
+        { title = "THE CHEST OPENS", body = "Inside you find the " .. M.INGREDIENTS[1] .. "!\n\nThe cure is still incomplete." },
     }
 end
 

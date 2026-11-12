@@ -178,6 +178,8 @@ local data = require "src.core.data"
 
 local self = {}
 init(self)
+self.player_name = "TEST"
+self.intro_seen = true
 local baseline = 0 local base_ids = {} for id in pairs(live) do baseline = baseline + 1 base_ids[id]=true end
 
 local function ui(a) on_message(self, "ui_action", a, nil) end
@@ -4216,7 +4218,7 @@ do
 end
 
 -- ===== Pause: freeze boundaries, resume, quit, quit-to-main =====
-sys = { exit = function() sys_exit_calls = (sys_exit_calls or 0) + 1 end }
+sys = { exit = function() sys_exit_calls = (sys_exit_calls or 0) + 1 end, save = function() return true end, load = function() return {} end }
 do
   begin_room()
   act("pause", true, false); act("pause", false, true)

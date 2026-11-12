@@ -101,7 +101,7 @@ local STATIC_KEY_IDS = {
     "k_0", "k_1", "k_2", "k_3", "k_4", "k_5", "k_6", "k_7", "k_8", "k_9",
     "k_f1", "k_f2", "k_f3", "k_f4", "k_f5", "k_f6", "k_f7", "k_f8", "k_f9", "k_f10", "k_f11", "k_f12",
     "k_up", "k_down", "k_left", "k_right",
-    "k_space", "k_tab", "k_enter", "k_lbracket", "k_rbracket", "k_minus", "k_equals",
+    "k_space", "k_tab", "k_enter", "k_backspace", "k_lbracket", "k_rbracket", "k_minus", "k_equals",
     "k_lshift", "k_rshift", "k_lctrl", "k_rctrl", "k_lalt", "k_ralt",
 }
 
@@ -723,6 +723,14 @@ function init(self)
     self.hold3 = false
     apply_loadout(self)
 
+    -- Player name: loaded from save (or empty -> name input on first launch)
+    self.player_name = ""
+    local ok, data = pcall(function() return sys.load("name.sav") end)
+    if ok and type(data) == "table" and type(data.name) == "string" and #data.name > 0 then
+        self.player_name = data.name
+    end
+    self.intro_seen = false
+
     -- Live-rebindable input: hash lookup table rebuilt only on rebind
     self.bind = {}
     self.bind_hash = {}
@@ -1050,6 +1058,9 @@ local function send_ui(self)
     end
     if st == "HOME" or (st == "ROOM" and (self.room_altar_pos or self.boss_loot or self.room_exit_pos)) then
         ui.prompt = self.home_prompt
+    end
+    if st == "NAME_INPUT" then
+        ui.name_buffer = self.name_buffer or ""
     end
     if st == "STORY" and self.story then
         local pg = self.story.pages[self.story.idx]
@@ -1615,15 +1626,22 @@ local function handle_ui_action(self, msg)
     local action = msg and msg.action
     if action == "start" then
         if self.state == "TITLE" then
-            enter_home(self)
-            sfx.play("ui_click")
-            if not self.intro_seen then
-                self.intro_seen = true
-                -- spawn right next to the wife's bed for the opening dialogue
-                local sx, sy = level_mod.cell_center(16, 4)
-                self.player_pos.x, self.player_pos.y = sx, sy
-                go.set_position(self.player_pos, self.player_visual)
-                start_story(self, story_mod.INTRO, "home")
+            if self.player_name == "" then
+                -- First launch: ask for the player's name before entering the hall
+                self.state = "NAME_INPUT"
+                self.name_buffer = ""
+                print("State: NAME_INPUT")
+            else
+                enter_home(self)
+                sfx.play("ui_click")
+                if not self.intro_seen then
+                    self.intro_seen = true
+                    -- spawn right next to the wife's bed for the opening dialogue
+                    local sx, sy = level_mod.cell_center(16, 4)
+                    self.player_pos.x, self.player_pos.y = sx, sy
+                    go.set_position(self.player_pos, self.player_visual)
+                    start_story(self, story_mod.intro(self.player_name), "home")
+                end
             end
         end
     elseif action == "begin_run" then
@@ -3212,6 +3230,40 @@ function on_input(self, action_id, action)
                     return
                 end
             end
+        end
+        return
+    end
+
+    -- NAME_INPUT: type a name, backspace to delete, ENTER to confirm
+    if self.state == "NAME_INPUT" then
+        if action.text and type(action.text) == "string" and #action.text > 0 then
+            if #self.name_buffer < 12 then
+                self.name_buffer = self.name_buffer .. action.text
+            end
+            return
+        end
+        if action_id == hash("k_backspace") and action.pressed then
+            self.name_buffer = self.name_buffer:sub(1, #self.name_buffer - 1)
+            return
+        end
+        if action_id == hash("k_enter") and action.pressed then
+            local name = self.name_buffer
+            if #name == 0 then name = "Wizard" end
+            self.player_name = name
+            -- persist
+            pcall(function() sys.save("name.sav", { name = name }) end)
+            self.name_buffer = ""
+            self.intro_seen = false
+            -- go to home + intro story
+            enter_home(self)
+            sfx.play("ui_click")
+            self.intro_seen = true
+            local sx, sy = level_mod.cell_center(16, 4)
+            self.player_pos.x, self.player_pos.y = sx, sy
+            go.set_position(self.player_pos, self.player_visual)
+            start_story(self, story_mod.intro(self.player_name), "home")
+            print("State: STORY")
+            return
         end
         return
     end
