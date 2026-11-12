@@ -429,6 +429,45 @@ Format: **what happened / why / rule for agents.** These are the assistant's own
 - **Fix:** `send_ui` now attaches only the heavy nested tables the current state renders (`inventory`/`relics` on ROOM/REWARD/CAULDRON, `reward_options` on REWARD, `cauldron`/`preview` on CAULDRON, `credits` as one pre-joined string on CREDITS); every HUD field has an `or` fallback (or is guarded by `if message.credits`) except `reward_options`, which is only read on REWARD. The harness's `msg.post` now tracks ui-message payloads and enforces two model-free content gates: no >512 B string outside CREDITS, and the heavy fields only on their states. Observed firing against a deliberately broken `send_ui` (`RESULT: FAIL`, "heavy field attached to the wrong screen: cauldron @ ROOM"), clean after restore.
 - **Rule:** any field in a per-frame `msg.post` table is suspect; count its bytes against 2048 (the Messaging API docs are explicit: "There is a 2 kilobyte limit to the message parameter table size" — it is NOT a game.project setting). Send only what the receiver's current state renders; prefer pre-joined strings over arrays of short strings; keep the mock's `msg.post` size/gating check honest — a mock that accepts everything is how this shipped. The mock still cannot verify the engine's encoding exactly, so the console stays the authority: after any HUD-protocol change, ask the human to run and read the FIRST error.
 
+### 73. The interaction banner could never render — on_message never copied message.toast
+- **What:** `on_message` assigned every field the HUD reads except `toast`. The Phase 3 feature
+  (banner on BURNING MUD / FIRE CYCLONE / DENSE CLOUD) was dead code on screen: the log showed the
+  logic fired, the human said "i cant tell if the spells are interacting", and the HUD kept showing the
+  control hint forever. Same family as #53 (announce shipped unreadable) — the toast path was tested
+  for LOG output, never for the HUD's consumption of it.
+- **Fix:** `self.toast = message.toast` in `on_message`; the banner reuses the control-hint node with a
+  never-overwrite rule. The headless HUD harness now asserts the banner text arrives on
+  `help_text` when a toast is sent.
+- **Rule:** every field the HUD reads must have a test that proves the value crosses the msg boundary
+  (game → ui message → HUD render → node text). A "banner is implemented" claim without that chain
+  is untested.
+
+### 74. The mock cannot execute the HUD — GUI work needs a headless harness, always
+- **What:** the smoke harness stubs `go.*`, `factory.*`, etc. but not `gui.*`, so the GUI shipped with
+  zero executable tests. That is how items 71 (pv() plain table crash), 72 (2 KB msg.post overflow at
+  REWARD), 73 (dead banner) and the version_text F1 crash (engine `gui.get_node` raises on unknown
+  ids) all reached the human's screen undetected.
+- **Fix:** `tools/hud_test.lua` (headless, wired into `run_smoke_test.py`): loads the real
+  `main/hud.gui_script` under a stub `gui.*`, runs `init()`, renders every state, clicks every button
+  through the real `click` path, asserts vector types, enabled ids, text fit, full position coverage,
+  and executes the F1 audit handler headlessly. Fail-proof shown against deliberately broken code
+  each time it was extended.
+- **Rule:** every GUI change must pass the HUD harness; when the stub is extended, prove the new check
+  fails against deliberately broken code, then restore. The engine remains the authority for anything
+  the stub cannot see (rendering, blending, draw order, .gui parsing by the editor).
+
+### 75. Do not write that anything fits — and do not write that anything is verified that is not
+- **What:** repeated claims went out this session that cannot be true headlessly: "fits", "readable",
+  "looks good", "no overlap", and one "zero errors" from a mock that could not see the bug. The human
+  must judge the screen; the agent can only judge measurements against models (fixed-advance math,
+  assumed `LINE_HEIGHT = 1.2` em, honest bounds checks).
+- **Fix:** every layout claim is reported as measured-vs-not; the F1 audit prints violations against
+  the fixed-advance model; fit is never asserted as fact, only as "audit 0 problems" (a model result)
+  or NOT VERIFIED.
+- **Rule:** never write "fits", "reads well" or "looks good". Report what was measured, against which
+  model, and what needs the human's eyes. If a check fails in CI, it fails; if it passes, it is a
+  model result, not a screen verdict.
+
 ---
 ## Definition of Done (run before telling the human a change is finished)
 1. Syntax-check every Lua file you touched (`loadstring` in LuaJIT or `luac -p` for 5.1). No `goto`, `//`, bit operators.

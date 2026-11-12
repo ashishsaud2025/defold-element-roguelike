@@ -3453,6 +3453,213 @@ do
   sf(seq_str(got_a) == seq_str(got_b), "reaction rng: the reaction path consumed gameplay RNG")
 end
 
+-- ===== Phase D: Relic v2 — offer schedule, echo progress, trigger toasts =====
+do
+  local rewards_mod = require "src.game.rewards"
+  local function count_relics(opts)
+    local n = 0
+    for _, o in ipairs(opts) do if o.kind == "relic" then n = n + 1 end end
+    return n
+  end
+  local function find_relic(opts)
+    for _, o in ipairs(opts) do if o.kind == "relic" then return o end end
+    return nil
+  end
+  local OWN = {
+    {},
+    { inferno_heart = true },
+    { echoing_crystal = true, orbital_crown = true },
+    { inferno_heart = true, echoing_crystal = true, ancient_catalyst = true, orbital_crown = true },
+  }
+  -- 500 seeded runs: relic exactly on milestones 3/6/9 while unowned remain,
+  -- never elsewhere, never owned, at most one per screen, payload complete.
+  for seed = 1, 500 do
+    for _, owned in ipairs(OWN) do
+      math.randomseed(seed)
+      for room = 1, 10 do
+        local opts = rewards_mod.offer(room, owned, math.random)
+        sf(#opts == 3, "offer: must always return 3 options (room " .. room .. ")")
+        sf(count_relics(opts) <= 1, "offer: at most one relic per screen (room " .. room .. ")")
+        local milestone = (room == 3 or room == 6 or room == 9)
+        local relic = find_relic(opts)
+        if milestone then
+          local unowned = 0
+          for _, id in ipairs(relics_mod.ORDER) do if not owned[id] then unowned = unowned + 1 end end
+          if unowned > 0 then
+            sf(relic ~= nil, "offer: milestone room " .. room .. " must offer a relic (unowned remain)")
+            sf(relic and not owned[relic.id], "offer: offered an owned relic (room " .. room .. ")")
+            sf(relic and type(relic.name) == "string" and type(relic.desc) == "string" and type(relic.icon) == "string",
+              "offer: relic payload must carry name/desc/icon (room " .. room .. ")")
+          else
+            sf(relic == nil, "offer: no unowned relics remain but one was offered (room " .. room .. ")")
+          end
+        else
+          sf(relic == nil, "offer: relic offered on non-milestone room " .. room)
+        end
+      end
+    end
+  end
+  sf(true, "relic offer schedule (500 seeds x 4 ownership sets x rooms 1..10)")
+  -- determinism for a seed
+  do
+    math.randomseed(42)
+    local a = rewards_mod.offer(6, {}, math.random)
+    math.randomseed(42)
+    local b = rewards_mod.offer(6, {}, math.random)
+    local same = #a == #b
+    if same then
+      for i, o in ipairs(a) do
+        if b[i] == nil or b[i].id ~= o.id or b[i].kind ~= o.kind then same = false end
+      end
+    end
+    sf(same, "offer: same seed must produce the same screen")
+  end
+  -- echo_progress: done in [0, 5], wraps
+  do
+    local owned = { echoing_crystal = true }
+    local cases = { { 0, 0 }, { 1, 1 }, { 2, 2 }, { 3, 3 }, { 4, 4 }, { 5, 5 }, { 6, 1 }, { 9, 4 }, { 10, 5 }, { 11, 1 }, { 25, 5 }, { 26, 1 } }
+    for _, c in ipairs(cases) do
+      local d, t = relics_mod.echo_progress(owned, c[1])
+      sf(d == c[2] and t == 5, string.format("echo_progress: cast %d -> (%d, 5), expected (%d, 5)", c[1], d, c[2]))
+    end
+    local d0, t0 = relics_mod.echo_progress({}, 7)
+    sf(d0 == 0 and t0 == 5, "echo_progress: no relic -> (0, 5)")
+  end
+  -- engine: player casts advance the counter; echo casts do not
+  do
+    begin_room()
+    self.relics = { echoing_crystal = true }
+    equip(mk("projectile", "", "water", "water"))   -- no quirk repeats to muddy the count
+    for _ = 1, 12 do
+      cast1()
+      self.slot1_cooldown = 0                       -- reset CD so every cast lands (0.6 s > 2 frames)
+      frames(2)
+    end
+    sf(self.cast_count == 12, "echo: 12 player casts -> cast_count 12 (got " .. tostring(self.cast_count) .. ")")
+    frames(30)   -- let both echoes execute (0.25 s delay)
+    sf(self.cast_count == 12, "echo: echo casts must not advance the counter (got " .. tostring(self.cast_count) .. ")")
+    local d = relics_mod.echo_progress(self.relics, self.cast_count)
+    sf(d == 2, "echo: cast 12 -> 2 pips filled")
+  end
+  -- trigger toasts: once per room, banner preserved, no gameplay RNG
+  do
+    begin_room()
+    self.relics = { inferno_heart = true }
+    self.toast_text, self.toast_t = "FIRE CYCLONE", 1.4
+    equip(mk("projectile", "", "fire", "fire"))
+    cast1()
+    sf(self.toast_text == "FIRE CYCLONE", "inferno heart: never overwrites a live banner")
+  end
+  do
+    begin_room()
+    self.relics = { inferno_heart = true }
+    equip(mk("projectile", "", "fire", "fire"))
+    cast1()
+    sf(self.toast_text == relics_mod.DEFS.inferno_heart.trigger_text,
+      "inferno heart: first fire-affected cast shows the trigger toast")
+    self.room_flags = { heart = self.room_flags and self.room_flags.heart }
+    self.slot1_cooldown = 0
+    self.toast_t = 0
+    cast1()
+    sf(self.toast_t == 0, "inferno heart: trigger toast is at most once per room")
+  end
+  do
+    begin_room()
+    self.relics = { ancient_catalyst = true }
+    self.status_dur_mul = relics_mod.status_duration_mul(self.relics)
+    -- put an enemy directly on the aim line so the hit (and its statuses) lands
+    for _, e in ipairs(self.enemies) do
+      if e.alive then e.telegraph = 0; e.x, e.y = self.player_pos.x + 120, self.player_pos.y break end
+    end
+    equip(mk("projectile", "", "fire", "water"))    -- Steam: applies statuses on hit
+    cast1()
+    frames(30)                                       -- let the bolt land on the enemy
+    sf(self.toast_text == relics_mod.DEFS.ancient_catalyst.trigger_text,
+      "catalyst: first catalyst-affected status application shows the trigger toast")
+  end
+  do
+    begin_room()
+    self.relics = { echoing_crystal = true }
+    equip(mk("projectile", "", "water", "water"))
+    for _ = 1, 5 do cast1(); self.slot1_cooldown = 0; frames(2) end
+    frames(30)
+    sf(self.toast_text == relics_mod.DEFS.echoing_crystal.trigger_text,
+      "echoing crystal: the echo firing shows the trigger toast")
+  end
+  do
+    begin_room()
+    self.relics = { inferno_heart = true }
+    equip(mk("projectile", "", "fire", "fire"))
+    local draws = 0
+    local real_random = math.random
+    math.random = function(...) draws = draws + 1 return real_random(...) end
+    act("cast1", true, false)
+    act("cast1", false, true)
+    math.random = real_random
+    sf(draws == 0, "inferno heart: trigger toast consumed gameplay RNG")
+  end
+  -- room/run reset leaves no relic UI state or announced flags
+  do
+    begin_room()
+    self.relics = { inferno_heart = true, echoing_crystal = true }
+    self.cast_count = 7
+    self.room_flags = { heart = true, echo = true, catalyst = true }
+    self.toast_text, self.toast_t = "INFERNO HEART +15%", 1.4
+    self.state = "DEAD"
+    ui({ action = "continue" })   -- run reset -> TITLE
+    sf(next(self.relics) == nil, "reset: relics cleared on run reset")
+    sf(self.cast_count == 0, "reset: cast_count cleared on run reset")
+    sf((self.room_flags or {}).heart == nil and (self.room_flags or {}).echo == nil and (self.room_flags or {}).catalyst == nil,
+      "reset: per-room announced flags cleared on run reset")
+    sf(self.toast_text == nil, "reset: toast cleared on run reset")
+  end
+  do
+    begin_room()
+    self.room_flags = { heart = true, echo = true }
+    ui({ action = "pick", element = "fire" })   -- begin_room already picked; harmless extra
+    begin_room()
+    sf((self.room_flags or {}).heart == nil and (self.room_flags or {}).echo == nil,
+      "reset: per-room announced flags cleared on room transition")
+  end
+  -- milestone reward screens through the engine path
+  do
+    begin_room()
+    self.room_number = 3
+    self.relics = {}
+    self.reward_options = rewards_mod.offer(self.room_number, self.relics, math.random)
+    local relic = find_relic(self.reward_options)
+    sf(relic ~= nil, "engine: milestone room 3 offers a relic")
+    self.state = "REWARD"
+    local relic_index = nil
+    for i, o in ipairs(self.reward_options) do if o.kind == "relic" then relic_index = i end end
+    ui({ action = "reward_pick", index = relic_index })
+    sf(self.relics[relic.id] == true, "engine: picking the milestone relic stores it")
+  end
+  do
+    begin_room()
+    self.room_number = 6
+    self.relics = {}
+    local opts = rewards_mod.offer(self.room_number, self.relics, math.random)
+    local relic = find_relic(opts)
+    sf(relic ~= nil, "engine: milestone room 6 offers a relic")
+  end
+  do
+    begin_room()
+    self.room_number = 9
+    self.relics = {}
+    local opts = rewards_mod.offer(self.room_number, self.relics, math.random)
+    local relic = find_relic(opts)
+    sf(relic ~= nil, "engine: milestone room 9 offers a relic")
+  end
+  do
+    begin_room()
+    self.room_number = 4
+    self.relics = {}
+    local opts = rewards_mod.offer(self.room_number, self.relics, math.random)
+    sf(find_relic(opts) == nil, "engine: room 4 offers no relic")
+  end
+end
+
 for i=1,300 do frame() end
 -- flush leftover timers
 for _, t in ipairs(timers) do t.fn() end
@@ -3491,7 +3698,7 @@ do
     self.reward_options = {
       { kind = "element", id = "fire" },
       { kind = "shape", id = "puddle" },
-      { kind = "relic", id = "inferno_heart" },
+      { kind = "relic", id = "inferno_heart", name = "Inferno Heart", desc = "Fire spells +15% power", icon = "icon_fire" },
     }
   end)
   force("CAULDRON", function()

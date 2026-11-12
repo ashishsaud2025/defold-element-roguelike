@@ -7,15 +7,21 @@ local M = {}
 -- Stable ids, display order for the reward pool.
 M.ORDER = { "inferno_heart", "echoing_crystal", "ancient_catalyst", "orbital_crown" }
 
+-- `icon` is an atlas image id from assets/art/shapes.atlas (no new art).
+-- `trigger_text` is the D4 banner text; orbital_crown's is unused (it has no trigger).
 M.DEFS = {
     inferno_heart = {
         name = "Inferno Heart",
         desc = "Fire spells +15% power",
+        icon = "icon_fire",
+        trigger_text = "INFERNO HEART +15%",
         power_mul = 1.15,
     },
     echoing_crystal = {
         name = "Echoing Crystal",
         desc = "Every 5th cast echoes at 50%",
+        icon = "particle_circle",
+        trigger_text = "ECHO",
         every = 5,
         echo_strength = 0.50,
         delay = 0.25,
@@ -23,11 +29,15 @@ M.DEFS = {
     ancient_catalyst = {
         name = "Ancient Catalyst",
         desc = "Statuses last 20% longer",
+        icon = "icon_cauldron",
+        trigger_text = "CATALYST +20%",
         duration_mul = 1.20,
     },
     orbital_crown = {
         name = "Orbital Crown",
         desc = "Orbit spells gain +1 orb",
+        icon = "particle_twirl",
+        trigger_text = "ORBITAL CROWN +1 ORB",
         extra_orbs = 1,
     },
 }
@@ -66,6 +76,24 @@ function M.echo_strength(owned, cast_count)
         return d.echo_strength
     end
     return nil
+end
+
+-- Echo pip state: (done, total) for the relic bar. done is in [0, total] and
+-- wraps after `every` casts. Player casts only — callers must not count echoes
+-- or repeats. Without the relic: (0, total).
+function M.echo_progress(owned, cast_count)
+    local every = M.DEFS.echoing_crystal.every
+    if not M.has(owned, "echoing_crystal") then return 0, every end
+    local done = (cast_count or 0) % every
+    if cast_count and cast_count > 0 and done == 0 then done = every end
+    return done, every
+end
+
+-- "Name — desc" single line for hover tooltips. Pure.
+function M.describe(id)
+    local def = M.DEFS[id]
+    if not def then return tostring(id) end
+    return def.name .. " — " .. def.desc
 end
 
 return M

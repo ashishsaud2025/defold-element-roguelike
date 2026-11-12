@@ -1,3 +1,74 @@
+# UI Overhaul + Relic v2 (v16)
+
+Plan: `Agent Instructions/ui_and_relics_master_prompt.md` (Phases 0–E; branch `ui-relics`).
+This is the UI rebuild on top of v15 (Pool Reactions): the layout system is now a single
+source of truth, the HUD is headlessly testable, and relics v2 replace the 60% roll with
+a milestone schedule. **Nothing in this delivery has been verified on screen** — see the
+NOT VERIFIED section.
+
+## What shipped
+
+- **Font**: vendored Cascadia Code (`assets/fonts/`, SIL OFL 1.1 — `OFL.txt` + `NOTICE.txt`,
+  byte-copied from upstream). All text renders through the existing `cascadia.font`;
+  fixed advance 1200/2048 em, exact for this monospace face.
+- **`src/ui/layout.lua`**: single source of truth for every screen — palette, rects,
+  components (panel/card/icon_slot/button), `M.VERSION` (now "v16"), `M.wrap`, mono-advance
+  text width, button registry + `hit_enabled` (with dynamic ctx), `audit_screen` /
+  `audit_text_fit` (width AND vertical fit, `M.LINE_HEIGHT = 1.2` assumed, documented as an
+  estimate), `M.ALL_RECT_RECT` position map for all 125 nodes.
+- **`tools/validate_ui.py`**: now audits all nine screens (inside, overlap, 40×100 min,
+  panel inside bounds, all box sizes match their rects, all authored positions zero,
+  full-screen nodes mapped to the full screen, exact 125-node count) and passes the
+  COMBOS/CREDITS panel bodies built inside Lua.
+- **`tools/hud_test.lua`** (new): headless HUD harness — loads the real `hud.gui_script`
+  under a stub `gui.*`, renders every state, clicks every button through the real click
+  path, asserts vector types, enabled ids, text fit, rect geometry (a)–(d), positions every
+  node, and executes the F1 (`ui_audit`) handler headlessly. Wired into `run_smoke_test.py`.
+- **2 KB `msg.post` fix**: the engine's message buffer overflowed at element #18 at REWARD.
+  Long static text (credits/combos) is now built inside `hud.gui_script` from data, never
+  sent; heavy payloads are state-gated per screen; permanant per-state 2048-byte test
+  (`enc_upper` upper-bound model) in the smoke suite. Worst measured frame: **1762 bytes**.
+- **Phase C gameplay screens** converted: PICK_START (role lines from data, wrapped at
+  render time to the tile width), ROOM HUD (HP bar + number, slots with icon/quirk/cooldown/
+  bar, room counter, relic bar, ROOM CLEARED banner on last-enemy death), REWARD (cards with
+  icon/name/kind tag/desc from data, gold frame on relic cards), CAULDRON (ingredients with
+  icons+counts, three slots Elem A/Elem B/Shape, preview with compound/shape/power/cooldown/
+  quirk/statuses, pool-reaction hint only for pure pools, owned-relic panel from DEFS, craft
+  buttons show current slot contents), DEAD/WIN (title, room reached, relics owned, hint).
+  **Inventory string removed from the room HUD.**
+- **Phase D — relics v2**: milestone offer schedule (reward screens after rooms 3, 6, 9
+  offer exactly one unowned relic + two normal cards; all other screens offer none;
+  deterministic for a seed; `src/game/rewards.lua`, pure, `rewards.offer(room_index, owned,
+  rng_draw)`); relics carry `icon` + `trigger_text` in `DEFS` (single desc source);
+  `relics.echo_progress` / `relics.describe`; relic bar shows one icon per owned relic with
+  **hover tooltip** (name — desc) reusing the control-hint line; **5 Echoing Crystal pips**
+  advancing on the player's own casts only (echoes never count); per-room, at-most-once
+  trigger banners via the existing announce path (ECHO / INFERNO HEART +15% / CATALYST +20%,
+  never overwrites another banner, no gameplay RNG, flags reset in `clear_world`).
+- **Fixed (found by the console, not by review)**: the interaction banner could never render
+  — `on_message` never copied `message.toast` to `self.toast`; `version_text` crashed the
+  F1 audit (engine `gui.get_node` raises on unknown ids; it was the only runtime-created
+  text node; it is now authored statically); the full-screen `panel`/`flash_box` were
+  positioned at the screen's bottom-left corner (the `+480/+320` offset was removed with
+  nothing replacing it) — the dark quarter on the title screen.
+
+## Harness & verification
+
+- 2129+ checks green in all three smoke modes (default/AR_TEST=1/ART_TEST=0), pathing
+  room 6 = 8/8, room 8 = 14/12; HUD harness 1808 checks; `validate_ui.py` 0 problems
+  (125/125); editor compile clean.
+- 500 seeded runs assert the relic schedule; echo counter 0..5 wraps; trigger toasts once
+  per room and consume no gameplay RNG; room/run reset leaves no relic UI state.
+
+## Verification
+
+- `python tools/run_smoke_test.py` (default / ART_TEST=1 / ART_TEST=0): `WIN,WIN,DEAD,
+  DEAD,DEAD`, **70180 checks, 0 failed**, RESULT PASS, HUD RESULT PASS; pathing 8/8, 14/12.
+- **NOT VERIFIED on screen**: every layout, font, click, hover, banner and fit claim —
+  the mock cannot see the screen. Concrete steps are in the task report (F1 on every screen,
+  hover the relic bar, trigger each relic, take a hit for the flash, reward screens via the
+  debug key, default and a larger window).
+
 # Pool Reactions (v15)
 
 Plan: `pool_reactions_addendum.md` — one generic, data-driven rule giving six new named combos:

@@ -17,12 +17,20 @@ local M = {}
 
 -- ===== Design space & tuning =====
 M.DESIGN_W, M.DESIGN_H = 960, 640
+M.ALL_SCREENS = { "TITLE", "COMBOS", "CREDITS", "PICK_START", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN" }
+-- Full-screen nodes (panel, flash_box) get this explicit rect: centre 480,320.
+M.FULL_SCREEN = { x = 0, y = 0, w = M.DESIGN_W, h = M.DESIGN_H }
 M.MARGIN = 16
 M.GAP = 12
 M.BUTTON_W, M.BUTTON_H = 280, 56
 M.BUTTON_MIN_H = 40
 M.BUTTON_MIN_W = 100
 M.MONO_ADVANCE = 1200 / 2048            -- measured from assets/fonts/CascadiaCode.ttf
+-- Assumed line spacing, in ems, for vertical-fit math: 1 line x font size x
+-- LINE_HEIGHT. The engine may space lines differently (the value is not
+-- exposed to scripts and cannot be measured headlessly), so a vertical pass
+-- here is an ESTIMATE and the human's rendered screen stays the authority.
+M.LINE_HEIGHT = 1.2
 
 -- Width of the widest line. Callers that pass multi-line text (e.g. the F1
 -- audit reading gui.get_text of credits_body) get the longest line measured,
@@ -91,7 +99,7 @@ end
 function M.card(id, x, y, w, h)
     return {
         id = id, x = x, y = y, w = w, h = h,
-        icon = { x = x + 16, y = y + h - 64, w = 48, h = 48 },
+        icon = { x = x + 16, y = y + h - 72, w = 56, h = 56 },
         name = { x = x + 76, y = y + h - 40, w = w - 92, h = 28 },
         tag  = { x = x + w - 74, y = y + h - 40, w = 56, h = 18 },
         desc = { x = x + 16, y = y + 18, w = w - 32, h = 34 },
@@ -136,7 +144,7 @@ end
 
 -- ===== Screens (Phase B proof set: TITLE, COMBOS, CREDITS) =====
 -- All rects inside the 960x640 design area; text positions are node centres.
-M.VERSION = "v15"
+M.VERSION = "v16"
 M.SCREENS = {
     TITLE = {
         buttons = {
@@ -145,17 +153,17 @@ M.SCREENS = {
             M.button("credits_box", "credits", 340, 126, 280, 56, "CREDITS", true),
         },
         texts = {
-            title_text    = { x = 480, y = 470, size = 36, color = "text",     text = "ELEMENT ROGUE" },
-            subtitle_text = { x = 480, y = 380, size = 14, color = "text_dim", text = "Mix two elements. Pick a shape. Survive." },
-            version_text  = { x = 900, y = 24,  size = 14, color = "text_dim", text = M.VERSION },
+            title_text = { x = 480, y = 470, size = 36, color = "text",     text = "ELEMENT ROGUE", max_h = 46 },
+            subtitle_text = { x = 480, y = 380, size = 14, color = "text_dim", text = "Mix two elements. Pick a shape. Survive.", max_h = 24 },
+            version_text = { x = 900, y = 24,  size = 14, color = "text_dim", text = M.VERSION, max_h = 24 },
         },
         panel = M.panel(0, 0, M.DESIGN_W, M.DESIGN_H, nil),
     },
     COMBOS = {
         panel = M.panel(40, 20, 880, 600, "COMBOS"),
         texts = {
-            credits_title = { x = 480, y = 576, size = 24, color = "text" },
-            credits_body  = { x = 480, y = 330, size = 14, color = "text" },
+            credits_title = { x = 480, y = 576, size = 24, color = "text", max_h = 34 },
+            credits_body = { x = 480, y = 330, size = 14, color = "text", max_h = 400 },
         },
         buttons = {
             M.button("back_box", "back", 420, 34, 120, 48, "BACK", true),
@@ -165,8 +173,8 @@ M.SCREENS = {
     CREDITS = {
         panel = M.panel(40, 20, 880, 600, "CREDITS"),
         texts = {
-            credits_title = { x = 480, y = 576, size = 24, color = "text" },
-            credits_body  = { x = 480, y = 330, size = 14, color = "text" },
+            credits_title = { x = 480, y = 576, size = 24, color = "text", max_h = 34 },
+            credits_body = { x = 480, y = 330, size = 14, color = "text", max_h = 400 },
         },
         buttons = {
             M.button("back_box", "back", 420, 34, 120, 48, "BACK", true),
@@ -177,18 +185,18 @@ M.SCREENS = {
     PICK_START = {
         panel = M.panel(0, 0, M.DESIGN_W, M.DESIGN_H, nil),
         texts = {
-            pick_title  = { x = 480, y = 566, size = 28, color = "text" },
-            pick_hint   = { x = 480, y = 534, size = 13, color = "text_dim", max_w = 900 },
-            pick_status = { x = 480, y = 196, size = 20, color = "text" },
-            enter_text  = { x = 480, y = 116, size = 17, color = "text" },
-            e1_text = { x = 195, y = 306, size = 17, color = "text" },
-            e2_text = { x = 385, y = 306, size = 17, color = "text" },
-            e3_text = { x = 575, y = 306, size = 17, color = "text" },
-            e4_text = { x = 765, y = 306, size = 17, color = "text" },
-            e1_role = { x = 195, y = 274, size = 11, color = "text_dim", max_w = 150 },
-            e2_role = { x = 385, y = 274, size = 11, color = "text_dim", max_w = 150 },
-            e3_role = { x = 575, y = 274, size = 11, color = "text_dim", max_w = 150 },
-            e4_role = { x = 765, y = 274, size = 11, color = "text_dim", max_w = 150 },
+            pick_title = { x = 480, y = 566, size = 28, color = "text", max_h = 38 },
+            pick_hint = { x = 480, y = 534, size = 13, color = "text_dim", max_w = 900, max_h = 22 },
+            pick_status = { x = 480, y = 196, size = 20, color = "text", max_h = 30 },
+            enter_text = { x = 480, y = 116, size = 17, color = "text", max_h = 26 },
+            e1_text = { x = 195, y = 306, size = 17, color = "text", max_h = 26 },
+            e2_text = { x = 385, y = 306, size = 17, color = "text", max_h = 26 },
+            e3_text = { x = 575, y = 306, size = 17, color = "text", max_h = 26 },
+            e4_text = { x = 765, y = 306, size = 17, color = "text", max_h = 26 },
+            e1_role = { x = 195, y = 274, size = 11, color = "text_dim", max_w = 126, max_h = 48, role_element = "fire" },
+            e2_role = { x = 385, y = 274, size = 11, color = "text_dim", max_w = 126, max_h = 48, role_element = "water" },
+            e3_role = { x = 575, y = 274, size = 11, color = "text_dim", max_w = 126, max_h = 48, role_element = "wind" },
+            e4_role = { x = 765, y = 274, size = 11, color = "text_dim", max_w = 126, max_h = 48, role_element = "earth" },
         },
         buttons = {
             { id = "e1_box", action = "pick", label = "FIRE",  x = 120, y = 330, w = 150, h = 150, enabled = true, element = "fire",  text = { x = 195, y = 405 } },
@@ -207,13 +215,13 @@ M.SCREENS = {
     ROOM = {
         -- no panel: this is the in-combat HUD, not a menu screen
         texts = {
-            hp_text   = { x = 164, y = 601, size = 13, color = "text", max_w = 280 },
-            room_text = { x = 480, y = 601, size = 16, color = "text", max_w = 340 },
-            s1_name   = { x = 169, y = 96,  size = 13, color = "text", max_w = 258 },
-            s1_quirk  = { x = 169, y = 78,  size = 11, color = "text_dim", max_w = 258 },
-            s2_name   = { x = 791, y = 96,  size = 13, color = "text", max_w = 258 },
-            s2_quirk  = { x = 791, y = 78,  size = 11, color = "text_dim", max_w = 258 },
-            help_text = { x = 480, y = 14,  size = 13, color = "text_dim", max_w = 900 },
+            hp_text = { x = 164, y = 601, size = 13, color = "text", max_w = 280, max_h = 22 },
+            room_text = { x = 480, y = 601, size = 16, color = "text", max_w = 340, max_h = 26 },
+            s1_name = { x = 169, y = 96,  size = 13, color = "text", max_w = 258, max_h = 22 },
+            s1_quirk = { x = 169, y = 78,  size = 11, color = "text_dim", max_w = 258, max_h = 20 },
+            s2_name = { x = 791, y = 96,  size = 13, color = "text", max_w = 258, max_h = 22 },
+            s2_quirk = { x = 791, y = 78,  size = 11, color = "text_dim", max_w = 258, max_h = 20 },
+            help_text = { x = 480, y = 14,  size = 13, color = "text_dim", max_w = 900, max_h = 24 },
         },
         hp_bar    = { x = 24, y = 590, w = 280, h = 22 },
         slot_s1   = { x = 24,  y = 24, w = 290, h = 88 },
@@ -226,20 +234,22 @@ M.SCREENS = {
         dot2_s2 = { x = 754, y = 44, w = 28, h = 28 },
         relic_bar = { x = 776, y = 590, slot = 34, gap = 8 },
         relic_slots = { "relic1", "relic2", "relic3", "relic4" },
+        pips = { x = 776, y = 566, size = 14, gap = 8 },
+        pip_ids = { "echo_pip1", "echo_pip2", "echo_pip3", "echo_pip4", "echo_pip5" },
     },
     REWARD = {
         panel = M.panel(0, 0, M.DESIGN_W, M.DESIGN_H, nil),
         texts = {
-            reward_title = { x = 480, y = 552, size = 30, color = "text" },
-            card1_text = { x = 250, y = 330, size = 16, color = "text", max_w = 180 },
-            card2_text = { x = 480, y = 330, size = 16, color = "text", max_w = 180 },
-            card3_text = { x = 710, y = 330, size = 16, color = "text", max_w = 180 },
-            card1_tag  = { x = 250, y = 294, size = 11, color = "text_dim", max_w = 120 },
-            card2_tag  = { x = 480, y = 294, size = 11, color = "text_dim", max_w = 120 },
-            card3_tag  = { x = 710, y = 294, size = 11, color = "text_dim", max_w = 120 },
-            card1_desc = { x = 250, y = 216, size = 12, color = "text_dim", max_w = 170 },
-            card2_desc = { x = 480, y = 216, size = 12, color = "text_dim", max_w = 170 },
-            card3_desc = { x = 710, y = 216, size = 12, color = "text_dim", max_w = 170 },
+            reward_title = { x = 480, y = 552, size = 30, color = "text", max_h = 42 },
+            card1_text = { x = 250, y = 330, size = 16, color = "text", max_w = 180, max_h = 26 },
+            card2_text = { x = 480, y = 330, size = 16, color = "text", max_w = 180, max_h = 26 },
+            card3_text = { x = 710, y = 330, size = 16, color = "text", max_w = 180, max_h = 26 },
+            card1_tag = { x = 250, y = 294, size = 11, color = "text_dim", max_w = 120, max_h = 18 },
+            card2_tag = { x = 480, y = 294, size = 11, color = "text_dim", max_w = 120, max_h = 18 },
+            card3_tag = { x = 710, y = 294, size = 11, color = "text_dim", max_w = 120, max_h = 18 },
+            card1_desc = { x = 250, y = 216, size = 12, color = "text_dim", max_w = 170, max_h = 60 },
+            card2_desc = { x = 480, y = 216, size = 12, color = "text_dim", max_w = 170, max_h = 60 },
+            card3_desc = { x = 710, y = 216, size = 12, color = "text_dim", max_w = 170, max_h = 60 },
         },
         cards = {
             M.card("card1", 150, 150, 200, 280),
@@ -256,34 +266,34 @@ M.SCREENS = {
     CAULDRON = {
         panel = M.panel(0, 0, M.DESIGN_W, M.DESIGN_H, "CAULDRON"),
         texts = {
-            cauldron_title = { x = 480, y = 590, size = 26, color = "text" },
-            ing_title      = { x = 152, y = 520, size = 16, color = "text" },
-            ing_elem_1     = { x = 152, y = 478, size = 13, color = "text" },
-            ing_elem_2     = { x = 152, y = 434, size = 13, color = "text" },
-            ing_elem_3     = { x = 152, y = 390, size = 13, color = "text" },
-            ing_elem_4     = { x = 152, y = 346, size = 13, color = "text" },
-            shape_title    = { x = 152, y = 306, size = 14, color = "text_dim" },
-            ing_shape_1    = { x = 152, y = 278, size = 12, color = "text" },
-            ing_shape_2    = { x = 152, y = 246, size = 12, color = "text" },
-            ing_shape_3    = { x = 152, y = 214, size = 12, color = "text" },
-            ing_shape_4    = { x = 152, y = 182, size = 12, color = "text" },
-            ing_shape_5    = { x = 152, y = 150, size = 12, color = "text" },
-            sel_ea_text    = { x = 346, y = 404, size = 12, color = "text", max_w = 100 },
-            sel_eb_text    = { x = 480, y = 404, size = 12, color = "text", max_w = 100 },
-            sel_shape_text = { x = 614, y = 404, size = 12, color = "text", max_w = 100 },
-            preview_name   = { x = 480, y = 340, size = 21, color = "text" },
-            preview_detail = { x = 480, y = 314, size = 13, color = "text_dim", max_w = 400 },
-            preview_quirk  = { x = 480, y = 288, size = 13, color = "text" },
-            preview_status = { x = 480, y = 264, size = 12, color = "text_dim" },
-            reaction_hint  = { x = 480, y = 238, size = 11, color = "toast", max_w = 400 },
-            craft1_text    = { x = 350, y = 156, size = 11, color = "text", max_w = 164 },
-            craft2_text    = { x = 520, y = 156, size = 11, color = "text", max_w = 164 },
-            relic_title    = { x = 818, y = 520, size = 16, color = "text" },
-            relic_1        = { x = 818, y = 478, size = 11, color = "text", max_w = 220 },
-            relic_2        = { x = 818, y = 396, size = 11, color = "text", max_w = 220 },
-            relic_3        = { x = 818, y = 314, size = 11, color = "text", max_w = 220 },
-            relic_4        = { x = 818, y = 232, size = 11, color = "text", max_w = 220 },
-            done_text      = { x = 480, y = 76,  size = 16, color = "text" },
+            cauldron_title = { x = 480, y = 590, size = 26, color = "text", max_h = 36 },
+            ing_title = { x = 152, y = 520, size = 16, color = "text", max_h = 26 },
+            ing_elem_1 = { x = 152, y = 478, size = 13, color = "text", max_h = 22 },
+            ing_elem_2 = { x = 152, y = 434, size = 13, color = "text", max_h = 22 },
+            ing_elem_3 = { x = 152, y = 390, size = 13, color = "text", max_h = 22 },
+            ing_elem_4 = { x = 152, y = 346, size = 13, color = "text", max_h = 22 },
+            shape_title = { x = 152, y = 306, size = 14, color = "text_dim", max_h = 24 },
+            ing_shape_1 = { x = 152, y = 278, size = 12, color = "text", max_h = 20 },
+            ing_shape_2 = { x = 152, y = 246, size = 12, color = "text", max_h = 20 },
+            ing_shape_3 = { x = 152, y = 214, size = 12, color = "text", max_h = 20 },
+            ing_shape_4 = { x = 152, y = 182, size = 12, color = "text", max_h = 20 },
+            ing_shape_5 = { x = 152, y = 150, size = 12, color = "text", max_h = 20 },
+            sel_ea_text = { x = 346, y = 404, size = 12, color = "text", max_w = 100, max_h = 40 },
+            sel_eb_text = { x = 480, y = 404, size = 12, color = "text", max_w = 100, max_h = 40 },
+            sel_shape_text = { x = 614, y = 404, size = 12, color = "text", max_w = 100, max_h = 40 },
+            preview_name = { x = 480, y = 340, size = 21, color = "text", max_h = 46 },
+            preview_detail = { x = 480, y = 314, size = 13, color = "text_dim", max_w = 400, max_h = 22 },
+            preview_quirk = { x = 480, y = 288, size = 13, color = "text", max_h = 22 },
+            preview_status = { x = 480, y = 264, size = 12, color = "text_dim", max_h = 20 },
+            reaction_hint = { x = 480, y = 238, size = 11, color = "toast", max_w = 400, max_h = 32 },
+            craft1_text = { x = 350, y = 156, size = 11, color = "text", max_w = 164, max_h = 60 },
+            craft2_text = { x = 520, y = 156, size = 11, color = "text", max_w = 164, max_h = 60 },
+            relic_title = { x = 818, y = 520, size = 16, color = "text", max_h = 26 },
+            relic_1 = { x = 818, y = 478, size = 11, color = "text", max_w = 220, max_h = 76 },
+            relic_2 = { x = 818, y = 396, size = 11, color = "text", max_w = 220, max_h = 76 },
+            relic_3 = { x = 818, y = 314, size = 11, color = "text", max_w = 220, max_h = 76 },
+            relic_4 = { x = 818, y = 232, size = 11, color = "text", max_w = 220, max_h = 76 },
+            done_text = { x = 480, y = 76,  size = 16, color = "text", max_h = 26 },
         },
         ing_icons = {
             { id = "ing_icon_1", x = 48, y = 464, w = 28, h = 28 },
@@ -313,22 +323,29 @@ M.SCREENS = {
     DEAD = {
         panel = M.panel(0, 0, M.DESIGN_W, M.DESIGN_H, nil),
         texts = {
-            overlay_title = { x = 480, y = 430, size = 40, color = "warning" },
-            death_room    = { x = 480, y = 352, size = 18, color = "text" },
-            death_relics  = { x = 480, y = 310, size = 14, color = "text_dim", max_w = 720 },
-            overlay_hint  = { x = 480, y = 180, size = 14, color = "text_dim" },
+            overlay_title = { x = 480, y = 430, size = 40, color = "warning", max_h = 52 },
+            death_room = { x = 480, y = 352, size = 18, color = "text", max_h = 28 },
+            death_relics = { x = 480, y = 310, size = 14, color = "text_dim", max_w = 720, max_h = 40 },
+            overlay_hint = { x = 480, y = 180, size = 14, color = "text_dim", max_h = 24 },
         },
     },
     WIN = {
         panel = M.panel(0, 0, M.DESIGN_W, M.DESIGN_H, nil),
         texts = {
-            overlay_title = { x = 480, y = 430, size = 40, color = "win" },
-            death_room    = { x = 480, y = 352, size = 18, color = "text" },
-            death_relics  = { x = 480, y = 310, size = 14, color = "text_dim", max_w = 720 },
-            overlay_hint  = { x = 480, y = 180, size = 14, color = "text_dim" },
+            overlay_title = { x = 480, y = 430, size = 40, color = "win", max_h = 52 },
+            death_room = { x = 480, y = 352, size = 18, color = "text", max_h = 28 },
+            death_relics = { x = 480, y = 310, size = 14, color = "text_dim", max_w = 720, max_h = 40 },
+            overlay_hint = { x = 480, y = 180, size = 14, color = "text_dim", max_h = 24 },
         },
     },
 }
+-- Role lines: the audit measures the exact strings the HUD will draw.
+for _, spec in pairs(M.SCREENS.PICK_START.texts) do
+    if spec.role_element then
+        spec.text = data.ELEMENTS[spec.role_element].role
+    end
+end
+
 -- ENTER ROOM needs two picks: the HUD passes ctx = { picks = self.picks }.
 M.SCREENS.PICK_START.buttons[5].requires = "two_picks"
 
@@ -364,17 +381,21 @@ function M.audit_screen(screen_name)
     return problems
 end
 
--- All texts on every screen must fit the panel rect they sit in (mono width math).
--- Measures only specs carrying a literal .text (TITLE-style) plus the COMBOS/CREDITS
--- bodies; everything else is measured live by the F1 audit in hud.gui_script.
-function M.audit_text_fit()
+-- Every static text on every screen must fit its container, both ways:
+--   width:   the widest rendered line <= the container width (mono advance math);
+--   height:  line count x font size x LINE_HEIGHT <= the container height (max_h).
+-- LINE_HEIGHT is an assumed 1.2 em (the engine's value is not measurable
+-- headlessly); a vertical pass here is an estimate. Runtime-built bodies
+-- (COMBOS/CREDITS panels) can be passed as bodies = { "COMBOS:credits_body" = text }.
+function M.audit_text_fit(bodies)
+    bodies = bodies or {}
     local problems = {}
-    for _, name in ipairs({ "TITLE", "PICK_START", "ROOM", "REWARD", "CAULDRON", "COMBOS", "CREDITS", "DEAD", "WIN" }) do
+    for _, name in ipairs(M.ALL_SCREENS) do
         local scr = M.SCREENS[name]
         if scr and scr.texts then
             local panel_inner = ((scr.panel and scr.panel.w) or M.DESIGN_W) - 32
             for id, spec in pairs(scr.texts) do
-                local body_text = spec.text
+                local body_text = spec.text or bodies[name .. ":" .. id]
                 if body_text then
                     local inner = spec.max_w or panel_inner
                     local fs = spec.size or 14
@@ -383,6 +404,14 @@ function M.audit_text_fit()
                     for i, line in ipairs(lines) do
                         if M.text_width(line, fs) > inner then
                             problems[#problems + 1] = name .. ": " .. id .. " line " .. i .. " wider than its container"
+                        end
+                    end
+                    if spec.max_h then
+                        local h = #lines * fs * M.LINE_HEIGHT
+                        if h > spec.max_h then
+                            problems[#problems + 1] = string.format(
+                                "%s: %s vertical overflow: %d line(s) x %.1fpx = %.0fpx, container %dpx",
+                                name, id, #lines, fs * M.LINE_HEIGHT, h, spec.max_h)
                         end
                     end
                 end
@@ -421,6 +450,91 @@ function M.hit_enabled(screen, x, y, ctx)
         if not picks or #picks < 2 then return nil end
     end
     return b
+end
+
+-- ===== Full position map for EVERY authored node id (used by the harness and
+-- validate_ui.py to prove every node is positioned from a layout rect) =====
+-- ALL_RECT_RECT[id] = { x, y, w, h }   (x,y = BOTTOM-LEFT, as everywhere here)
+-- ALL_RECTS[id]     = centre position { x, y }
+M.ALL_RECT_RECT = {}
+local function put(id, x, y, w, h)
+    if id then M.ALL_RECT_RECT[id] = { x = x, y = y, w = w or 0, h = h or 0 } end
+end
+local function put_rect(id, r)
+    if r then put(id, r.x, r.y, r.w, r.h) end
+end
+local function put_center(id, cx, cy)
+    if id then put(id, cx, cy, 0, 0) end
+end
+
+-- texts (node position = spec.x, spec.y; no w/h)
+for _, name in ipairs(M.ALL_SCREENS) do
+    local scr = M.SCREENS[name]
+    for id, spec in pairs(scr.texts or {}) do
+        put_center(id, spec.x, spec.y)
+    end
+end
+-- buttons on every screen
+for _, name in ipairs(M.ALL_SCREENS) do
+    local scr = M.SCREENS[name]
+    for _, b in ipairs(scr.buttons or {}) do
+        put_rect(b.id, b)
+        -- button label nodes position from b.text (node ids follow the
+        -- <button>_text convention; credits_box is the one exception)
+        if b.text and b.text.x then
+            local LABEL_OF = { credits_box = "credits_text_btn" }
+            put_center(LABEL_OF[b.id] or b.id:gsub("_box$", "_text"), b.text.x, b.text.y)
+        end
+    end
+end
+-- cauldron_icon sits left of the cauldron title, from the title spec
+put_center("cauldron_icon", M.SCREENS.CAULDRON.texts.cauldron_title.x - 150, M.SCREENS.CAULDRON.texts.cauldron_title.y)
+-- REWARD cards (frame = card expanded by 6 px on every side)
+for _, card in ipairs(M.SCREENS.REWARD.cards) do
+    local box_id = card.id .. "_box"
+    put_rect(box_id, card)
+    put_rect(card.id .. "_frame", { x = card.x - 6, y = card.y - 6, w = card.w + 12, h = card.h + 12 })
+    put_rect(card.id .. "_icon", card.icon)
+end
+-- ROOM HUD
+local R = M.SCREENS.ROOM
+put_rect("hp_bg", R.hp_bar)
+put_rect("hp_fill", R.hp_bar)
+for i = 1, 2 do
+    local prefix = "s" .. i
+    put_rect(prefix .. "_bg", R["slot_" .. prefix])
+    put_rect(prefix .. "_cd", R["slot_" .. prefix])
+    put_rect(prefix .. "_shape_icon", R["shape_icon_" .. prefix])
+    put_rect(prefix .. "_dot1", R["dot1_" .. prefix])
+    put_rect(prefix .. "_dot2", R["dot2_" .. prefix])
+end
+for i, _ in ipairs(R.relic_slots) do
+    local step = R.relic_bar.slot + R.relic_bar.gap
+    put_rect("relic" .. i, { x = R.relic_bar.x + (i - 1) * step, y = R.relic_bar.y, w = R.relic_bar.slot, h = R.relic_bar.slot })
+end
+for i, _ in ipairs(R.pip_ids) do
+    local step = R.pips.size + R.pips.gap
+    put_rect("echo_pip" .. i, { x = R.pips.x + (i - 1) * step, y = R.pips.y, w = R.pips.size, h = R.pips.size })
+end
+-- CAULDRON ingredients / slots / craft buttons / done button
+local CD = M.SCREENS.CAULDRON
+for _, ic in ipairs(CD.ing_icons) do
+    put_rect(ic.id, ic)
+end
+for _, s in ipairs(CD.slots) do
+    put_rect(s.box, s)
+    put_rect(s.icon, { x = s.x + s.w * 0.5 - 26, y = s.y + s.h * 0.5 - 26, w = 52, h = 52 })
+end
+put_rect("craft1_box", CD.craft1_box)
+put_rect("craft2_box", CD.craft2_box)
+put_rect("done_box", CD.done_box)
+-- full-screen nodes
+put_rect("panel", M.FULL_SCREEN)
+put_rect("flash_box", M.FULL_SCREEN)
+
+M.ALL_RECTS = {}
+for id, r in pairs(M.ALL_RECT_RECT) do
+    M.ALL_RECTS[id] = { x = r.x + r.w * 0.5, y = r.y + r.h * 0.5 }
 end
 
 return M

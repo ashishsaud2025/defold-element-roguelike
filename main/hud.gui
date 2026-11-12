@@ -21,7 +21,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: 150.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "ELEMENT ROGUE"
   font: "text"
@@ -31,7 +31,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: 96.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "Mix two elements. Pick a shape. Survive."
   font: "text"
@@ -41,8 +41,18 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: 10.0 }
-  size { x: 260.0 y: 56.0 }
+  position { x: 0.0 y: 0.0 }
+  type: TYPE_TEXT
+  text: ""
+  font: "text"
+  id: "version_text"
+  layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 280.0 y: 56.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "start_box"
@@ -51,7 +61,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: 10.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "START"
   font: "text"
@@ -61,8 +71,8 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: -70.0 }
-  size { x: 260.0 y: 56.0 }
+  position { x: 0.0 y: 0.0 }
+  size { x: 280.0 y: 56.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "combos_box"
@@ -71,7 +81,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: -70.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "COMBOS"
   font: "text"
@@ -81,8 +91,8 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: -150.0 }
-  size { x: 260.0 y: 56.0 }
+  position { x: 0.0 y: 0.0 }
+  size { x: 280.0 y: 56.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "credits_box"
@@ -91,7 +101,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: -150.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "CREDITS"
   font: "text"
@@ -101,7 +111,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: 190.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "CREDITS"
   font: "text"
@@ -111,7 +121,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: 60.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "Code and game design: Ash"
   font: "text"
@@ -121,8 +131,8 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: -120.0 }
-  size { x: 220.0 y: 52.0 }
+  position { x: 0.0 y: 0.0 }
+  size { x: 120.0 y: 48.0 }
   type: TYPE_BOX
   texture: "ui/square"
   id: "back_box"
@@ -131,7 +141,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: -120.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "BACK"
   font: "text"
@@ -141,7 +151,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: 230.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "PICK TWO ELEMENTS"
   font: "text"
@@ -151,7 +161,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: 190.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "Click an element twice to double it."
   font: "text"
@@ -161,7 +171,7 @@ nodes {
 }
 
 nodes {
-  position { x: -270.0 y: 30.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 150.0 y: 150.0 }
   type: TYPE_BOX
   texture: "ui/icon_fire"
@@ -171,7 +181,7 @@ nodes {
 }
 
 nodes {
-  position { x: -270.0 y: -62.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "FIRE"
   font: "text"
@@ -181,7 +191,7 @@ nodes {
 }
 
 nodes {
-  position { x: -90.0 y: 30.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 150.0 y: 150.0 }
   type: TYPE_BOX
   texture: "ui/icon_water"
@@ -191,7 +201,7 @@ nodes {
 }
 
 nodes {
-  position { x: -90.0 y: -62.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "WATER"
   font: "text"
@@ -201,7 +211,7 @@ nodes {
 }
 
 nodes {
-  position { x: 90.0 y: 30.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 150.0 y: 150.0 }
   type: TYPE_BOX
   texture: "ui/icon_wind"
@@ -211,7 +221,7 @@ nodes {
 }
 
 nodes {
-  position { x: 90.0 y: -62.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "WIND"
   font: "text"
@@ -221,7 +231,7 @@ nodes {
 }
 
 nodes {
-  position { x: 270.0 y: 30.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 150.0 y: 150.0 }
   type: TYPE_BOX
   texture: "ui/icon_earth"
@@ -231,7 +241,7 @@ nodes {
 }
 
 nodes {
-  position { x: 270.0 y: -62.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "EARTH"
   font: "text"
@@ -241,7 +251,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: -110.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "Picked: -"
   font: "text"
@@ -251,7 +261,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: -200.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 280.0 y: 56.0 }
   type: TYPE_BOX
   texture: "ui/square"
@@ -261,7 +271,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: -200.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "ENTER ROOM"
   font: "text"
@@ -271,7 +281,7 @@ nodes {
 }
 
 nodes {
-  position { x: -330.0 y: 288.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 280.0 y: 22.0 }
   type: TYPE_BOX
   texture: "ui/square"
@@ -281,7 +291,7 @@ nodes {
 }
 
 nodes {
-  position { x: -330.0 y: 288.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 280.0 y: 22.0 }
   type: TYPE_BOX
   texture: "ui/square"
@@ -291,7 +301,7 @@ nodes {
 }
 
 nodes {
-  position { x: -330.0 y: 288.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "100 / 100"
   font: "text"
@@ -301,7 +311,7 @@ nodes {
 }
 
 nodes {
-  position { x: -330.0 y: -268.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 290.0 y: 88.0 }
   type: TYPE_BOX
   texture: "ui/square"
@@ -311,7 +321,7 @@ nodes {
 }
 
 nodes {
-  position { x: -330.0 y: -268.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 290.0 y: 88.0 }
   type: TYPE_BOX
   texture: "ui/square"
@@ -321,7 +331,7 @@ nodes {
 }
 
 nodes {
-  position { x: -330.0 y: -252.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "Slot 1"
   font: "text"
@@ -331,7 +341,7 @@ nodes {
 }
 
 nodes {
-  position { x: -330.0 y: -284.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: ""
   font: "text"
@@ -341,7 +351,7 @@ nodes {
 }
 
 nodes {
-  position { x: -452.0 y: -268.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 28.0 y: 28.0 }
   type: TYPE_BOX
   texture: "ui/circle"
@@ -351,7 +361,7 @@ nodes {
 }
 
 nodes {
-  position { x: -412.0 y: -268.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 28.0 y: 28.0 }
   type: TYPE_BOX
   texture: "ui/circle"
@@ -361,7 +371,7 @@ nodes {
 }
 
 nodes {
-  position { x: 330.0 y: -268.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 290.0 y: 88.0 }
   type: TYPE_BOX
   texture: "ui/square"
@@ -371,7 +381,7 @@ nodes {
 }
 
 nodes {
-  position { x: 330.0 y: -268.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 290.0 y: 88.0 }
   type: TYPE_BOX
   texture: "ui/square"
@@ -381,7 +391,7 @@ nodes {
 }
 
 nodes {
-  position { x: 330.0 y: -252.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "Slot 2"
   font: "text"
@@ -391,7 +401,7 @@ nodes {
 }
 
 nodes {
-  position { x: 330.0 y: -284.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: ""
   font: "text"
@@ -401,7 +411,7 @@ nodes {
 }
 
 nodes {
-  position { x: 208.0 y: -268.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 28.0 y: 28.0 }
   type: TYPE_BOX
   texture: "ui/circle"
@@ -411,7 +421,7 @@ nodes {
 }
 
 nodes {
-  position { x: 248.0 y: -268.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 28.0 y: 28.0 }
   type: TYPE_BOX
   texture: "ui/circle"
@@ -421,7 +431,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: -316.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "WASD move   Mouse aim   Hold LMB / RMB cast   SPACE dash"
   font: "text"
@@ -431,7 +441,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: 80.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "YOU DIED"
   font: "text"
@@ -441,7 +451,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: 20.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "Click to continue"
   font: "text"
@@ -451,7 +461,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: 300.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "Room 1"
   font: "text"
@@ -461,7 +471,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: 200.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "REWARD"
   font: "text"
@@ -501,7 +511,7 @@ nodes {
 }
 
 nodes {
-  position { x: -270.0 y: 30.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 200.0 y: 280.0 }
   type: TYPE_BOX
   texture: "ui/square"
@@ -511,7 +521,7 @@ nodes {
 }
 
 nodes {
-  position { x: -270.0 y: 30.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: ""
   font: "text"
@@ -521,7 +531,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: 30.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 200.0 y: 280.0 }
   type: TYPE_BOX
   texture: "ui/square"
@@ -531,7 +541,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: 30.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: ""
   font: "text"
@@ -541,7 +551,7 @@ nodes {
 }
 
 nodes {
-  position { x: 270.0 y: 30.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 200.0 y: 280.0 }
   type: TYPE_BOX
   texture: "ui/square"
@@ -551,7 +561,7 @@ nodes {
 }
 
 nodes {
-  position { x: 270.0 y: 30.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: ""
   font: "text"
@@ -561,7 +571,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: 220.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "CAULDRON"
   font: "text"
@@ -571,7 +581,7 @@ nodes {
 }
 
 nodes {
-  position { x: -60.0 y: 220.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 48.0 y: 48.0 }
   type: TYPE_BOX
   texture: "ui/icon_cauldron"
@@ -581,7 +591,7 @@ nodes {
 }
 
 nodes {
-  position { x: -270.0 y: 60.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 108.0 y: 108.0 }
   type: TYPE_BOX
   texture: "ui/square"
@@ -591,7 +601,7 @@ nodes {
 }
 
 nodes {
-  position { x: -270.0 y: 60.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "Elem A"
   font: "text"
@@ -601,7 +611,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: 60.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 108.0 y: 108.0 }
   type: TYPE_BOX
   texture: "ui/square"
@@ -611,7 +621,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: 60.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "Elem B"
   font: "text"
@@ -621,7 +631,7 @@ nodes {
 }
 
 nodes {
-  position { x: 270.0 y: 60.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 108.0 y: 108.0 }
   type: TYPE_BOX
   texture: "ui/square"
@@ -631,7 +641,7 @@ nodes {
 }
 
 nodes {
-  position { x: 270.0 y: 60.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "Shape"
   font: "text"
@@ -641,7 +651,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: -20.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: ""
   font: "text"
@@ -651,7 +661,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: -50.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: ""
   font: "text"
@@ -661,7 +671,7 @@ nodes {
 }
 
 nodes {
-  position { x: -120.0 y: -160.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 172.0 y: 72.0 }
   type: TYPE_BOX
   texture: "ui/square"
@@ -671,7 +681,7 @@ nodes {
 }
 
 nodes {
-  position { x: -120.0 y: -160.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "To Slot 1"
   font: "text"
@@ -681,7 +691,7 @@ nodes {
 }
 
 nodes {
-  position { x: 120.0 y: -160.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 172.0 y: 72.0 }
   type: TYPE_BOX
   texture: "ui/square"
@@ -691,7 +701,7 @@ nodes {
 }
 
 nodes {
-  position { x: 120.0 y: -160.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "To Slot 2"
   font: "text"
@@ -701,7 +711,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: -230.0 }
+  position { x: 0.0 y: 0.0 }
   size { x: 200.0 y: 56.0 }
   type: TYPE_BOX
   texture: "ui/square"
@@ -711,7 +721,7 @@ nodes {
 }
 
 nodes {
-  position { x: 0.0 y: -230.0 }
+  position { x: 0.0 y: 0.0 }
   type: TYPE_TEXT
   text: "Done"
   font: "text"
@@ -1187,6 +1197,56 @@ nodes {
   font: "text"
   id: "relic_4"
   layer: "text"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 14.0 y: 14.0 }
+  type: TYPE_BOX
+  texture: "ui/circle"
+  id: "echo_pip1"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 14.0 y: 14.0 }
+  type: TYPE_BOX
+  texture: "ui/circle"
+  id: "echo_pip2"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 14.0 y: 14.0 }
+  type: TYPE_BOX
+  texture: "ui/circle"
+  id: "echo_pip3"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 14.0 y: 14.0 }
+  type: TYPE_BOX
+  texture: "ui/circle"
+  id: "echo_pip4"
+  layer: "graphics"
+  inherit_alpha: true
+}
+
+nodes {
+  position { x: 0.0 y: 0.0 }
+  size { x: 14.0 y: 14.0 }
+  type: TYPE_BOX
+  texture: "ui/circle"
+  id: "echo_pip5"
+  layer: "graphics"
   inherit_alpha: true
 }
 

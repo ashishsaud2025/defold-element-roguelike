@@ -50,7 +50,7 @@ local ALL_NODES = {
     "panel", "title_text", "subtitle_text", "start_box", "start_text",
     "combos_box", "combos_text",
     "credits_box", "credits_text_btn", "credits_title", "credits_body",
-    "back_box", "back_text", "pick_title", "pick_hint",
+    "back_box", "back_text", "version_text", "pick_title", "pick_hint",
     "e1_box", "e1_text", "e1_role", "e2_box", "e2_text", "e2_role",
     "e3_box", "e3_text", "e3_role", "e4_box", "e4_text", "e4_role",
     "pick_status", "enter_box", "enter_text",
@@ -60,6 +60,7 @@ local ALL_NODES = {
     "s2_bg", "s2_cd", "s2_name", "s2_quirk", "s2_dot1", "s2_dot2",
     "s1_shape_icon", "s2_shape_icon",
     "relic1", "relic2", "relic3", "relic4",
+    "echo_pip1", "echo_pip2", "echo_pip3", "echo_pip4", "echo_pip5",
     "help_text", "overlay_title", "overlay_hint",
     "death_room", "death_relics",
     "room_text",
@@ -80,6 +81,11 @@ local ALL_NODES = {
     "done_box", "done_text",
     "relic_title", "relic_1", "relic_2", "relic_3", "relic_4",
 }
+
+-- Only ids authored in main/hud.gui may be touched by the uniform text-scale
+-- pass; specs for ids that do not exist in hud.gui are skipped.
+local ALL_SET = {}
+for _, id in ipairs(ALL_NODES) do ALL_SET[id] = true end
 
 local function n(id)
     return gui.get_node(id)
@@ -189,48 +195,49 @@ end
 local function pv(t) return vmath.vector4(t.r, t.g, t.b, t.a) end
 
 local function apply_layout(self)
-    -- TITLE
     local T = layout.SCREENS.TITLE.texts
     local function pos(id, x, y) if n(id) then gui.set_position(n(id), vmath.vector3(x, y, 0)) end end
     local function pos_rect(id, r) if r then pos(id, r.x + r.w * 0.5, r.y + r.h * 0.5) end end
-    local function scale(id, s) if n(id) then gui.set_scale(n(id), vmath.vector3(s, s, 1)) end end
-    pos("title_text", T.title_text.x, T.title_text.y); scale("title_text", 2.4)
+    -- Full-screen nodes: always the full 960x640 rect (centre 480,320).
+    -- Never rely on the authored position.
+    pos_rect("panel", layout.FULL_SCREEN)
+    pos_rect("flash_box", layout.FULL_SCREEN)
+
+    -- TITLE
+    pos("title_text", T.title_text.x, T.title_text.y)
     color("title_text", pv(layout.palette.text))
-    pos("subtitle_text", T.subtitle_text.x, T.subtitle_text.y); scale("subtitle_text", 1.0)
+    pos("subtitle_text", T.subtitle_text.x, T.subtitle_text.y)
     color("subtitle_text", pv(layout.palette.text_dim))
-    if not self.version_text_node then
-        self.version_text_node = gui.new_text_node(vmath.vector3(T.version_text.x, T.version_text.y, 0), T.version_text.text)
-        gui.set_layer(self.version_text_node, hash("text"))
-        gui.set_color(self.version_text_node, pv(layout.palette.text_dim))
-        gui.set_enabled(self.version_text_node, false)
-    end
+    pos("version_text", T.version_text.x, T.version_text.y)
+    text("version_text", T.version_text.text)
+    color("version_text", pv(layout.palette.text_dim))
     for _, b in ipairs(layout.SCREENS.TITLE.buttons) do
         local text_id = (b.id == "start_box" and "start_text") or (b.id == "combos_box" and "combos_text") or "credits_text_btn"
         pos_rect(b.id, b)
         color(b.id, pv(layout.palette.box))
-        if n(text_id) then pos(text_id, b.text.x, b.text.y); scale(text_id, 1.1) end
+        if n(text_id) then pos(text_id, b.text.x, b.text.y) end
     end
 
     -- COMBOS / CREDITS share the panel component
     for _, screen in ipairs({ "COMBOS", "CREDITS" }) do
         local S = layout.SCREENS[screen]
-        pos("credits_title", S.texts.credits_title.x, S.texts.credits_title.y); scale("credits_title", 1.7)
+        pos("credits_title", S.texts.credits_title.x, S.texts.credits_title.y)
         color("credits_title", pv(layout.palette.text))
-        pos("credits_body", S.texts.credits_body.x, S.texts.credits_body.y); scale("credits_body", 1.0)
+        pos("credits_body", S.texts.credits_body.x, S.texts.credits_body.y)
         color("credits_body", pv(layout.palette.text))
         local bb = S.buttons[1]
         pos_rect(bb.id, bb)
         color("back_box", pv(layout.palette.box))
-        pos("back_text", bb.text.x, bb.text.y); scale("back_text", 1.1)
+        pos("back_text", bb.text.x, bb.text.y)
     end
 
     -- ===== PICK_START =====
     local P = layout.SCREENS.PICK_START
-    pos("pick_title", P.texts.pick_title.x, P.texts.pick_title.y); scale("pick_title", 2.0)
+    pos("pick_title", P.texts.pick_title.x, P.texts.pick_title.y)
     color("pick_title", pv(layout.palette.text))
-    pos("pick_hint", P.texts.pick_hint.x, P.texts.pick_hint.y); scale("pick_hint", 0.95)
+    pos("pick_hint", P.texts.pick_hint.x, P.texts.pick_hint.y)
     color("pick_hint", pv(layout.palette.text_dim))
-    pos("pick_status", P.texts.pick_status.x, P.texts.pick_status.y); scale("pick_status", 1.3)
+    pos("pick_status", P.texts.pick_status.x, P.texts.pick_status.y)
     color("pick_status", pv(layout.palette.text))
     for _, b in ipairs(P.buttons) do
         pos_rect(b.id, b)
@@ -240,16 +247,16 @@ local function apply_layout(self)
     end
     for _, t in ipairs(P.tiles) do
         local spec = P.texts[t.text_id]
-        pos(t.text_id, spec.x, spec.y); scale(t.text_id, 1.25)
+        pos(t.text_id, spec.x, spec.y)
         color(t.text_id, pv(layout.palette.text))
         local rspec = P.texts[t.role_id]
-        pos(t.role_id, rspec.x, rspec.y); scale(t.role_id, 0.8)
+        pos(t.role_id, rspec.x, rspec.y)
         color(t.role_id, pv(layout.palette.text_dim))
     end
     local enter = P.buttons[5]
     pos_rect(enter.id, enter)
     color(enter.id, pv(layout.palette.box_dim))
-    pos("enter_text", P.texts.enter_text.x, P.texts.enter_text.y); scale("enter_text", 1.15)
+    pos("enter_text", P.texts.enter_text.x, P.texts.enter_text.y)
     color("enter_text", pv(layout.palette.text_dim))
 
     -- ===== ROOM HUD =====
@@ -259,9 +266,9 @@ local function apply_layout(self)
     color("hp_bg", pv(layout.palette.hp_bg))
     pos("hp_fill", hp.x + hp.w * 0.5, hp.y + hp.h * 0.5)
     color("hp_fill", pv(layout.palette.hp))
-    pos("hp_text", R.texts.hp_text.x, R.texts.hp_text.y); scale("hp_text", 0.95)
+    pos("hp_text", R.texts.hp_text.x, R.texts.hp_text.y)
     color("hp_text", pv(layout.palette.text))
-    pos("room_text", R.texts.room_text.x, R.texts.room_text.y); scale("room_text", 1.15)
+    pos("room_text", R.texts.room_text.x, R.texts.room_text.y)
     color("room_text", pv(layout.palette.text))
     for i = 1, 2 do
         local prefix = "s" .. i
@@ -273,21 +280,26 @@ local function apply_layout(self)
         pos_rect(prefix .. "_shape_icon", R["shape_icon_" .. prefix])
         pos_rect(prefix .. "_dot1", R["dot1_" .. prefix])
         pos_rect(prefix .. "_dot2", R["dot2_" .. prefix])
-        pos(prefix .. "_name", R.texts[prefix .. "_name"].x, R.texts[prefix .. "_name"].y); scale(prefix .. "_name", 0.95)
+        pos(prefix .. "_name", R.texts[prefix .. "_name"].x, R.texts[prefix .. "_name"].y)
         color(prefix .. "_name", pv(layout.palette.text))
-        pos(prefix .. "_quirk", R.texts[prefix .. "_quirk"].x, R.texts[prefix .. "_quirk"].y); scale(prefix .. "_quirk", 0.8)
+        pos(prefix .. "_quirk", R.texts[prefix .. "_quirk"].x, R.texts[prefix .. "_quirk"].y)
         color(prefix .. "_quirk", pv(layout.palette.text_dim))
     end
     for i = 1, 4 do
         local step = R.relic_bar.slot + R.relic_bar.gap
         pos("relic" .. i, R.relic_bar.x + R.relic_bar.slot * 0.5 + (i - 1) * step, R.relic_bar.y + R.relic_bar.slot * 0.5)
     end
-    pos("help_text", R.texts.help_text.x, R.texts.help_text.y); scale("help_text", 0.95)
+    for i = 1, 5 do
+        local step = R.pips.size + R.pips.gap
+        pos("echo_pip" .. i, R.pips.x + R.pips.size * 0.5 + (i - 1) * step, R.pips.y + R.pips.size * 0.5)
+        color("echo_pip" .. i, pv(layout.palette.box_dim))
+    end
+    pos("help_text", R.texts.help_text.x, R.texts.help_text.y)
     color("help_text", pv(layout.palette.text_dim))
 
     -- ===== REWARD =====
     local RW = layout.SCREENS.REWARD
-    pos("reward_title", RW.texts.reward_title.x, RW.texts.reward_title.y); scale("reward_title", 2.1)
+    pos("reward_title", RW.texts.reward_title.x, RW.texts.reward_title.y)
     color("reward_title", pv(layout.palette.text))
     for i = 1, 3 do
         local card = RW.cards[i]
@@ -297,78 +309,91 @@ local function apply_layout(self)
         local icon = RW.cards[i].icon
         pos("card" .. i .. "_icon", icon.x + icon.w * 0.5, icon.y + icon.h * 0.5)
         local name = RW.texts["card" .. i .. "_text"]
-        pos("card" .. i .. "_text", name.x, name.y); scale("card" .. i .. "_text", 1.15)
+        pos("card" .. i .. "_text", name.x, name.y)
         color("card" .. i .. "_text", pv(layout.palette.text))
         local tag = RW.texts["card" .. i .. "_tag"]
-        pos("card" .. i .. "_tag", tag.x, tag.y); scale("card" .. i .. "_tag", 0.8)
+        pos("card" .. i .. "_tag", tag.x, tag.y)
         color("card" .. i .. "_tag", pv(layout.palette.text_dim))
         local desc = RW.texts["card" .. i .. "_desc"]
-        pos("card" .. i .. "_desc", desc.x, desc.y); scale("card" .. i .. "_desc", 0.85)
+        pos("card" .. i .. "_desc", desc.x, desc.y)
         color("card" .. i .. "_desc", pv(layout.palette.text_dim))
     end
 
     -- ===== CAULDRON =====
     local CD = layout.SCREENS.CAULDRON
-    pos("cauldron_title", CD.texts.cauldron_title.x, CD.texts.cauldron_title.y); scale("cauldron_title", 1.85)
+    pos("cauldron_title", CD.texts.cauldron_title.x, CD.texts.cauldron_title.y)
     color("cauldron_title", pv(layout.palette.text))
     pos("cauldron_icon", CD.texts.cauldron_title.x - 150, CD.texts.cauldron_title.y)
     color("cauldron_icon", pv(layout.palette.accent_gold))
-    pos("ing_title", CD.texts.ing_title.x, CD.texts.ing_title.y); scale("ing_title", 1.15)
+    pos("ing_title", CD.texts.ing_title.x, CD.texts.ing_title.y)
     color("ing_title", pv(layout.palette.text))
     for i = 1, 4 do
         pos_rect("ing_icon_" .. i, CD.ing_icons[i])
-        pos("ing_elem_" .. i, CD.texts["ing_elem_" .. i].x, CD.texts["ing_elem_" .. i].y); scale("ing_elem_" .. i, 1.0)
+        pos("ing_elem_" .. i, CD.texts["ing_elem_" .. i].x, CD.texts["ing_elem_" .. i].y)
     end
-    pos("shape_title", CD.texts.shape_title.x, CD.texts.shape_title.y); scale("shape_title", 0.95)
+    pos("shape_title", CD.texts.shape_title.x, CD.texts.shape_title.y)
     color("shape_title", pv(layout.palette.text_dim))
     for i = 1, 5 do
-        pos("ing_shape_" .. i, CD.texts["ing_shape_" .. i].x, CD.texts["ing_shape_" .. i].y); scale("ing_shape_" .. i, 0.9)
+        pos("ing_shape_" .. i, CD.texts["ing_shape_" .. i].x, CD.texts["ing_shape_" .. i].y)
         color("ing_shape_" .. i, pv(layout.palette.text))
     end
     for i, s in ipairs(CD.slots) do
         pos_rect(s.box, s)
         pos(s.icon, s.x + s.w * 0.5, s.y + s.h * 0.5)
         local tspec = CD.texts[s.box:gsub("box$", "text")]
-        pos(s.box:gsub("box$", "text"), tspec.x, tspec.y); scale(s.box:gsub("box$", "text"), 0.9)
+        pos(s.box:gsub("box$", "text"), tspec.x, tspec.y)
         color(s.box, pv(layout.palette.box))
     end
-    pos("preview_name", CD.texts.preview_name.x, CD.texts.preview_name.y); scale("preview_name", 1.5)
+    pos("preview_name", CD.texts.preview_name.x, CD.texts.preview_name.y)
     color("preview_name", pv(layout.palette.text))
-    pos("preview_detail", CD.texts.preview_detail.x, CD.texts.preview_detail.y); scale("preview_detail", 0.95)
+    pos("preview_detail", CD.texts.preview_detail.x, CD.texts.preview_detail.y)
     color("preview_detail", pv(layout.palette.text_dim))
-    pos("preview_quirk", CD.texts.preview_quirk.x, CD.texts.preview_quirk.y); scale("preview_quirk", 0.95)
+    pos("preview_quirk", CD.texts.preview_quirk.x, CD.texts.preview_quirk.y)
     color("preview_quirk", pv(layout.palette.text))
-    pos("preview_status", CD.texts.preview_status.x, CD.texts.preview_status.y); scale("preview_status", 0.9)
+    pos("preview_status", CD.texts.preview_status.x, CD.texts.preview_status.y)
     color("preview_status", pv(layout.palette.text_dim))
-    pos("reaction_hint", CD.texts.reaction_hint.x, CD.texts.reaction_hint.y); scale("reaction_hint", 0.85)
+    pos("reaction_hint", CD.texts.reaction_hint.x, CD.texts.reaction_hint.y)
     color("reaction_hint", pv(layout.palette.toast))
     for i = 1, 2 do
         local b = (i == 1) and CD.craft1_box or CD.craft2_box
         pos("craft" .. i .. "_box", b.x + b.w * 0.5, b.y + b.h * 0.5)
         color("craft" .. i .. "_box", pv(layout.palette.box_ready))
         local tspec = CD.texts["craft" .. i .. "_text"]
-        pos("craft" .. i .. "_text", tspec.x, tspec.y); scale("craft" .. i .. "_text", 0.8)
+        pos("craft" .. i .. "_text", tspec.x, tspec.y)
         color("craft" .. i .. "_text", pv(layout.palette.text))
     end
     pos("done_box", CD.done_box.x + CD.done_box.w * 0.5, CD.done_box.y + CD.done_box.h * 0.5)
     color("done_box", pv(layout.palette.box))
-    pos("done_text", CD.texts.done_text.x, CD.texts.done_text.y); scale("done_text", 1.15)
+    pos("done_text", CD.texts.done_text.x, CD.texts.done_text.y)
     color("done_text", pv(layout.palette.text))
-    pos("relic_title", CD.texts.relic_title.x, CD.texts.relic_title.y); scale("relic_title", 1.15)
+    pos("relic_title", CD.texts.relic_title.x, CD.texts.relic_title.y)
     color("relic_title", pv(layout.palette.text))
     for i = 1, 4 do
-        pos("relic_" .. i, CD.texts["relic_" .. i].x, CD.texts["relic_" .. i].y); scale("relic_" .. i, 0.8)
+        pos("relic_" .. i, CD.texts["relic_" .. i].x, CD.texts["relic_" .. i].y)
         color("relic_" .. i, pv(layout.palette.text))
     end
 
     -- ===== DEAD / WIN =====
     for _, screen in ipairs({ "DEAD", "WIN" }) do
         local D = layout.SCREENS[screen]
-        pos("overlay_title", D.texts.overlay_title.x, D.texts.overlay_title.y); scale("overlay_title", 2.6)
-        pos("death_room", D.texts.death_room.x, D.texts.death_room.y); scale("death_room", 1.25)
-        pos("death_relics", D.texts.death_relics.x, D.texts.death_relics.y); scale("death_relics", 1.0)
-        pos("overlay_hint", D.texts.overlay_hint.x, D.texts.overlay_hint.y); scale("overlay_hint", 0.95)
+        pos("overlay_title", D.texts.overlay_title.x, D.texts.overlay_title.y)
+        pos("death_room", D.texts.death_room.x, D.texts.death_room.y)
+        pos("death_relics", D.texts.death_relics.x, D.texts.death_relics.y)
+        pos("overlay_hint", D.texts.overlay_hint.x, D.texts.overlay_hint.y)
         color("overlay_hint", pv(layout.palette.text_dim))
+    end
+
+    -- One source of truth for text scale: spec.size / 14 (the builtin font
+    -- renders 14 px at scale 1). Only authored ids participate. The fixed-advance
+    -- width and vertical fit math in the F1 audit, tools/validate_ui.py and
+    -- tools/hud_test.lua is exact against this scale.
+    for _, scr in pairs(layout.SCREENS) do
+        for id, spec in pairs(scr.texts or {}) do
+            if ALL_SET[id] then
+                local node = n(id)
+                if node then gui.set_scale(node, vmath.vector3(spec.size / 14, spec.size / 14, 1)) end
+            end
+        end
     end
 end
 
@@ -400,14 +425,12 @@ local function render(self)
                 color(node_id, pv(layout.palette.box))
             end
         end
-        if self.version_text_node then gui.set_enabled(self.version_text_node, true) end
-    elseif self.version_text_node then
-        gui.set_enabled(self.version_text_node, false)
     end
 
     -- Title group
     show("title_text", st == "TITLE")
     show("subtitle_text", st == "TITLE")
+    show("version_text", st == "TITLE")
     show("start_box", st == "TITLE")
     show("start_text", st == "TITLE")
     show("combos_box", st == "TITLE")
@@ -460,6 +483,7 @@ local function render(self)
                           "s2_bg", "s2_cd", "s2_name", "s2_quirk", "s2_dot1", "s2_dot2",
                           "s1_shape_icon", "s2_shape_icon",
                           "relic1", "relic2", "relic3", "relic4",
+                          "echo_pip1", "echo_pip2", "echo_pip3", "echo_pip4", "echo_pip5",
                           "help_text" }) do
         show(id, hud)
     end
@@ -544,13 +568,30 @@ local function render(self)
         end
         text("room_text", self.boss and ("Boss: " .. math.floor(self.boss_hp + 0.5) .. " / " .. self.boss_max_hp) or ("Room " .. (self.room or 0)))
 
-        -- Owned relics (icons of the relics carried this run).
+        -- Owned relics (one icon per owned relic, icon from relics.DEFS).
         for i, rid in ipairs(RELIC_ORDER) do
             local owned = self.relics and self.relics[rid]
             show("relic" .. i, st == "ROOM" and owned ~= nil)
             if owned then
-                gui.play_flipbook(n("relic" .. i), hash("icon_rune"))
+                local def = relics_mod.DEFS[rid]
+                gui.play_flipbook(n("relic" .. i), hash(def and def.icon or "icon_rune"))
                 color("relic" .. i, pv(layout.palette.accent_gold))
+            end
+        end
+
+        -- Echoing Crystal: 5 pips, advance on the player's own casts only.
+        local has_echo = (st == "ROOM" and self.relics ~= nil and self.relics["echoing_crystal"] == true)
+        for i = 1, 5 do
+            show("echo_pip" .. i, has_echo)
+        end
+        if has_echo then
+            local done, total = relics_mod.echo_progress(self.relics, self.casts or 0)
+            for i = 1, 5 do
+                if i <= done then
+                    color("echo_pip" .. i, pv(layout.palette.accent_gold))
+                else
+                    color("echo_pip" .. i, pv(layout.palette.box_dim))
+                end
             end
         end
 
@@ -563,6 +604,37 @@ local function render(self)
             color("help_text", toast and C.toast or C.dim)
             local s = toast and 0.95 or 0.7
             gui.set_scale(n("help_text"), vmath.vector3(s, s, 1))
+        end
+
+        -- Relic hover tooltip: name + desc via the control-hint line. Runs AFTER
+        -- the banner branch; a live banner always wins (banner_active above).
+        local hover_rid = nil
+        local hx, hy = self.hover_x, self.hover_y
+        if st == "ROOM" and hx and hy and self.relics then
+            for i, rid in ipairs(RELIC_ORDER) do
+                if self.relics[rid] then
+                    local step = room_layout.relic_bar.slot + room_layout.relic_bar.gap
+                    local rect = { x = room_layout.relic_bar.x + (i - 1) * step, y = room_layout.relic_bar.y,
+                                   w = room_layout.relic_bar.slot, h = room_layout.relic_bar.slot }
+                    if point_in_rect(rect, hx, hy) then hover_rid = rid; break end
+                end
+            end
+        end
+        local banner_active = (self.toast ~= nil)
+        if banner_active then
+            self.relic_tip = nil                      -- banner owns the line; drop the tip silently
+        elseif hover_rid then
+            if self.relic_tip ~= hover_rid then
+                self.relic_tip = hover_rid
+                text("help_text", relics_mod.describe(hover_rid))
+                color("help_text", pv(layout.palette.text))
+                gui.set_scale(n("help_text"), vmath.vector3(0.7, 0.7, 1))
+            end
+        elseif self.relic_tip ~= nil then
+            self.relic_tip = nil
+            text("help_text", self.help_default or "")
+            color("help_text", pv(layout.palette.text_dim))
+            gui.set_scale(n("help_text"), vmath.vector3(0.7, 0.7, 1))
         end
     end
 
@@ -579,10 +651,18 @@ local function render(self)
         while #parts < 2 do parts[#parts + 1] = "?" end
         text("pick_status", "Picked: " .. parts[1] .. " + " .. parts[2])
         local P = layout.SCREENS.PICK_START
-        -- Role lines (from data.ELEMENTS[x].role)
+        -- Role lines (from data.ELEMENTS[x].role): wrapped at render time to the
+        -- role node's inner width. max_chars is derived from the fixed-advance
+        -- math against the spec's size and max_w, never hard-coded; the data
+        -- string itself is unchanged.
         for _, t in ipairs(P.tiles) do
             local el = t.element
-            text(t.role_id, data.ELEMENTS[el] and data.ELEMENTS[el].role or "")
+            local spec = P.texts[t.role_id] or {}
+            local fs = spec.size or 11
+            local inner = spec.max_w or 126
+            local max_chars = math.max(1, math.floor(inner / (fs * layout.MONO_ADVANCE)))
+            local role = data.ELEMENTS[el] and data.ELEMENTS[el].role or ""
+            text(t.role_id, table.concat(layout.wrap(role, max_chars), "\n"))
         end
         local ready = (#self.picks >= 2)
         local hx, hy = self.hover_x, self.hover_y
@@ -637,7 +717,7 @@ local function render(self)
                     name = def and string.upper(def.name) or string.upper(opt.id)
                     tag = "RELIC"
                     desc = (def and def.desc) or ""
-                    gui.play_flipbook(n(i_id .. "_icon"), hash("icon_rune"))
+                    gui.play_flipbook(n(i_id .. "_icon"), hash(opt.icon or (def and def.icon) or "icon_rune"))
                     color(i_id .. "_icon", pv(layout.palette.accent_gold))
                 else
                     name, tag, desc = "???", "?", ""
@@ -846,6 +926,8 @@ function init(self)
     self.boss_max_hp = 0
     self.flash = 0
     self.toast = nil
+    self.casts = 0
+    self.relic_tip = nil
     self.started = false
 
     -- The authored control hint (keep in sync with main/hud.gui -> help_text).
@@ -886,6 +968,7 @@ function on_message(self, message_id, message, sender)
         self.reward_options = message.reward_options
         self.cauldron = message.cauldron or self.cauldron
         self.slot_names = message.slots
+        self.casts = message.casts or (self.casts or 0)
         self.preview = message.preview
         self.boss = message.boss
         self.boss_hp = message.boss_hp or 0
@@ -906,8 +989,12 @@ function on_message(self, message_id, message, sender)
         --     size (size = base 14px x f mult, never averages glyph widths);
         --   * the container is the panel rect minus 32 px inner padding
         --     (16 px per side); DESIGN_W - 32 for full-screen panels;
-        --   * a text is reported only if its WIDEST LINE exceeds that inner
-        --     width (multi-line nodes are measured per line, not end-to-end).
+        --     or the spec's max_w when set (narrow slots/cards);
+        --   * vertical: line count x font size x LINE_HEIGHT (assumed 1.2 em)
+        --     must fit the spec's max_h; a text is reported only if its WIDEST
+        --     LINE exceeds max_w or its line block exceeds max_h;
+        --   * node scale == spec.size / 14 everywhere (uniform pass in
+        --     apply_layout), so width/height math is exact, not estimated.
         -- The human MUST press F1 on every converted screen and paste the
         -- printed UI AUDIT lines into the task log.
         local st = self.state
@@ -928,6 +1015,14 @@ function on_message(self, message_id, message, sender)
                 local container = spec.max_w or ((scr.panel and scr.panel.w or layout.DESIGN_W) - 32)
                 if w > container then
                     problems[#problems + 1] = st .. ": " .. id .. " overflows its panel (" .. string.format("%.0f", w) .. "px > " .. container .. "px)"
+                end
+                if spec.max_h then
+                    local line_count = 1
+                    for _ in s:gmatch("\n") do line_count = line_count + 1 end
+                    local h = line_count * fs * layout.LINE_HEIGHT
+                    if h > spec.max_h then
+                        problems[#problems + 1] = st .. ": " .. id .. " vertical overflow (" .. line_count .. " line(s), " .. string.format("%.0f", h) .. "px > " .. spec.max_h .. "px)"
+                    end
                 end
             end
         end

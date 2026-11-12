@@ -78,7 +78,7 @@ local function node_of(id)
       pos = vmath.vector3(spec.px or 0, spec.py or 0, 0),
       size = vmath.vector3(spec.w or 0, spec.h or 0, 0),
       scale = vmath.vector3(1, 1, 1),
-      text = "", enabled = true, color = nil, flipbook = nil }
+      text = "", enabled = true, color = nil, flipbook = nil, positioned = false }
   end
   return nodes[id]
 end
@@ -88,7 +88,7 @@ gui = {
   set_enabled = function(node, b) if type(b) ~= "boolean" then err("gui.set_enabled: expected boolean") end; if node then node.enabled = b end end,
   set_position = function(node, p)
     if not is_vec3(p) then err("gui.set_position: expected vmath.vector3, got " .. tostring(p)); return end
-    if node then node.pos = p end
+    if node then node.pos = p; node.positioned = true end
   end,
   set_scale = function(node, s)
     if not is_vec3(s) then err("gui.set_scale: expected vmath.vector3, got " .. tostring(s)); return end
@@ -124,7 +124,7 @@ gui = {
     gen = gen + 1
     local id = new_known_id("__gen" .. gen)
     local n = node_of(id)
-    n.pos, n.size = pos, size
+    n.pos, n.size, n.positioned = pos, size, true
     return n
   end,
   new_text_node = function(pos, text)
@@ -132,7 +132,7 @@ gui = {
     gen = gen + 1
     local id = new_known_id("__gen" .. gen)
     local n = node_of(id)
-    n.pos, n.text = pos, tostring(text or "")
+    n.pos, n.text, n.positioned = pos, tostring(text or ""), true
     return n
   end,
 }
@@ -182,7 +182,7 @@ local function example_ui(state)
     ui.s2 = { name = "Tide Pool",   quirk = "repeats once",  cd = 0,   cd_max = 4.0, ea = "water", eb = "water" }
   end
   if state == "ROOM" or state == "REWARD" or state == "CAULDRON" or state == "DEAD" or state == "WIN" then
-    ui.relics = { inferno_heart = true, echoing_crystal = true }
+    ui.relics = { inferno_heart = true, echoing_crystal = true, ancient_catalyst = true, orbital_crown = true }
   end
   if state == "ROOM" or state == "REWARD" or state == "CAULDRON" then
     ui.inventory = { elements = { fire = 3, water = 2, wind = 1, earth = 0 },
@@ -192,7 +192,8 @@ local function example_ui(state)
     ui.reward_options = {
       { kind = "element", id = "fire" },
       { kind = "shape", id = "puddle" },
-      { kind = "relic", id = "inferno_heart" },
+      -- icon deliberately differs from DEFS[inferno_heart].icon to prove the payload is used
+      { kind = "relic", id = "inferno_heart", name = "Inferno Heart", desc = "Fire spells +15% power", icon = "icon_cauldron" },
     }
   end
   if state == "CAULDRON" then
@@ -202,12 +203,109 @@ local function example_ui(state)
   return ui
 end
 
+-- ===== Geometry audits: every node is positioned from a layout rect, inside
+-- the 960x640 design area, and the visible union covers what the layout says =====
+local TEXT_SPEC = {}
+for _, scr in pairs(layout.SCREENS) do
+  for id, spec in pairs(scr.texts or {}) do
+    TEXT_SPEC[id] = TEXT_SPEC[id] or spec
+  end
+end
+
+-- Approximate each node's screen rect. Boxes: authored size x scale, centred on
+-- the node position. Texts: width from fixed-advance math against the spec's
+-- size; height = line count x size x LINE_HEIGHT.
+local function compute_rect(id, node)
+  if not node then return nil end
+  local p, s, sc = node.pos, node.size, node.scale
+  if s.x > 0 and s.y > 0 then
+    local w, h = s.x * sc.x, s.y * sc.y
+    return { x = p.x - w * 0.5, y = p.y - h * 0.5, w = w, h = h }
+  end
+  local fs = (TEXT_SPEC[id] and TEXT_SPEC[id].size) or 14
+  local lines = 1
+  for _ in tostring(node.text):gmatch("\n") do lines = lines + 1 end
+  local w = layout.text_width(node.text, fs)
+  local h = lines * fs * layout.LINE_HEIGHT
+  return { x = p.x - w * 0.5, y = p.y - h * 0.5, w = w, h = h }
+end
+
+-- E minus R -> list of uncovered rectangles
+local function subtract_rect(E, R)
+  local ix = math.max(E.x, R.x)
+  local iy = math.max(E.y, R.y)
+  local ix2 = math.min(E.x + E.w, R.x + R.w)
+  local iy2 = math.min(E.y + E.h, R.y + R.h)
+  if ix >= ix2 or iy >= iy2 then return { E } end
+  local out = {}
+  if E.x < ix then out[#out + 1] = { x = E.x, y = E.y, w = ix - E.x, h = E.h } end
+  if E.x + E.w > ix2 then out[#out + 1] = { x = ix2, y = E.y, w = (E.x + E.w) - ix2, h = E.h } end
+  if E.y < iy then out[#out + 1] = { x = ix, y = E.y, w = ix2 - ix, h = iy - E.y } end
+  if E.y + E.h > iy2 then out[#out + 1] = { x = ix, y = iy2, w = ix2 - ix, h = (E.y + E.h) - iy2 } end
+  return out
+end
+
+-- Is E fully covered by the union of rects?
+local function rect_covered(E, rects)
+  local pieces = { E }
+  for _, r in ipairs(rects) do
+    local next_pieces = {}
+    for _, p in ipairs(pieces) do
+      for _, q in ipairs(subtract_rect(p, r)) do next_pieces[#next_pieces + 1] = q end
+    end
+    pieces = next_pieces
+    if #pieces == 0 then return true end
+  end
+  return #pieces == 0
+end
+
+local function assert_geometry(state)
+  -- (a) every node ends with a position set by apply_layout/render/creation,
+  -- never the authored default
+  for id, node in pairs(nodes) do
+    sf(node.positioned == true,
+      state .. ": node '" .. id .. "' was never positioned (authored position kept)")
+  end
+  -- collect visible rects; assert all inside 960x640 (b)
+  local visible = {}
+  for id, node in pairs(nodes) do
+    if node.enabled then
+      local r = compute_rect(id, node)
+      if r then
+        visible[#visible + 1] = r
+        sf(r.x >= -0.01 and r.y >= -0.01 and r.x + r.w <= layout.DESIGN_W + 0.01 and r.y + r.h <= layout.DESIGN_H + 0.01,
+          string.format("%s: visible node '%s' leaves 960x640 (x=%.1f y=%.1f %.0fx%.0f)", state, id, r.x, r.y, r.w, r.h))
+      end
+    end
+  end
+  -- (c) the two full-screen nodes are exactly the screen
+  for _, id in ipairs({ "panel", "flash_box" }) do
+    local r = compute_rect(id, nodes[id])
+    sf(r ~= nil and r.x == 0 and r.y == 0 and r.w == layout.DESIGN_W and r.h == layout.DESIGN_H,
+      string.format("%s: %s must cover the full 960x640 screen (x=%.1f y=%.1f %.0fx%.0f)",
+        state, id, r and r.x or -1, r and r.y or -1, r and r.w or -1, r and r.h or -1))
+  end
+  -- (d) the visible union covers the regions the layout requires
+  local scr = layout.SCREENS[state]
+  local expected = {}
+  if scr and scr.panel then
+    expected = { scr.panel }
+  elseif state == "ROOM" then
+    expected = { layout.SCREENS.ROOM.hp_bar, layout.SCREENS.ROOM.slot_s1, layout.SCREENS.ROOM.slot_s2 }
+  end
+  for _, E in ipairs(expected) do
+    sf(rect_covered(E, visible),
+      string.format("%s: visible nodes do not cover the expected region (x=%.0f y=%.0f %.0fx%.0f)", state, E.x, E.y, E.w, E.h))
+  end
+end
+
 local STATES = { "TITLE", "COMBOS", "CREDITS", "PICK_START", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN" }
 local function send_ui(state)
   on_message(self, hash("ui"), example_ui(state))
 end
 for _, state in ipairs(STATES) do
   send_ui(state)
+  assert_geometry(state)
 end
 
 -- ===== Text fits its container (fixed-advance math; widest line) =====
@@ -216,13 +314,22 @@ end
 for _, state in ipairs(STATES) do
   local scr = layout.SCREENS[state]
   if scr and scr.texts then
-    local inner = ((scr.panel and scr.panel.w) or layout.DESIGN_W) - 32
+    local panel_inner = ((scr.panel and scr.panel.w) or layout.DESIGN_W) - 32
     for id, spec in pairs(scr.texts) do
       local node = nodes[id]
       if node then
-        local w = layout.text_width(node.text, spec.size or 14)
+        local fs = spec.size or 14
+        local inner = spec.max_w or panel_inner
+        local w = layout.text_width(node.text, fs)
         sf(w <= inner, string.format("%s: text '%s' is %.0fpx wide, exceeds its %.0fpx container (fixed-advance math)",
           state, id, w, inner))
+        if spec.max_h then
+          local line_count = 1
+          for _ in node.text:gmatch("\n") do line_count = line_count + 1 end
+          local h = line_count * fs * layout.LINE_HEIGHT
+          sf(h <= spec.max_h, string.format("%s: text '%s' vertical overflow: %d line(s) x %.1fpx = %.0fpx, exceeds its %dpx container (max_h)",
+            state, id, line_count, fs * layout.LINE_HEIGHT, h, spec.max_h))
+        end
       end
     end
   end
@@ -355,6 +462,34 @@ do
   sf(hint:find("FIRESTORM", 1, true) == nil, "CAULDRON: fire+wind cell belongs to Fire Cyclone, never a reaction")
 end
 
+-- All four element roles fit their tiles (PICK_START): wrapped at render time
+-- to the role node's inner width, with the data strings unchanged.
+do
+  send_ui("PICK_START")
+  for _, el in ipairs({ "fire", "water", "wind", "earth" }) do
+    local i = ({ fire = 1, water = 2, wind = 3, earth = 4 })[el]
+    local id = "e" .. i .. "_role"
+    local spec = layout.SCREENS.PICK_START.texts[id]
+    local node = nodes[id]
+    sf(node ~= nil, id .. ": node missing from the harness")
+    if node then
+      local role = data.ELEMENTS[el] and data.ELEMENTS[el].role or ""
+      sf(#role > 0, "data: ELEMENTS." .. el .. ".role missing")
+      local lines = {}
+      for l in tostring(node.text):gmatch("[^\n]+") do lines[#lines + 1] = l end
+      local fs = spec.size
+      local max_chars = math.floor(spec.max_w / (fs * layout.MONO_ADVANCE))
+      local expect = table.concat(layout.wrap(role, max_chars), "\n")
+      sf(node.text == expect, id .. ": must render data.ELEMENTS.role wrapped to the tile's inner width")
+      for _, l in ipairs(lines) do
+        sf(layout.text_width(l, fs) <= spec.max_w, id .. ": wrapped role line wider than the tile's inner width")
+      end
+      sf(#lines <= 3, id .. ": more than three lines (vertical budget)")
+      sf(#lines * fs * layout.LINE_HEIGHT <= spec.max_h, id .. ": wrapped role lines exceed the tile's vertical budget (max_h)")
+    end
+  end
+end
+
 -- ROOM: HP text renders the actual numbers; relic bar matches owned relics; toast reuses help_text
 do
   set_texts = {}
@@ -382,6 +517,71 @@ do
   sf(nodes["relic4"] and nodes["relic4"].enabled == true, "ROOM: second owned relic icon must be shown")
   sf(nodes["relic2"] and nodes["relic2"].enabled == false, "ROOM: unowned relic slot must stay hidden")
   sf(nodes["relic3"] and nodes["relic3"].enabled == false, "ROOM: unowned relic slot must stay hidden")
+  sf(nodes["relic1"] and nodes["relic1"].flipbook == hash("icon_fire"),
+    "ROOM: relic bar icon must come from relics.DEFS (inferno_heart -> icon_fire)")
+  sf(nodes["relic4"] and nodes["relic4"].flipbook == hash("particle_twirl"),
+    "ROOM: relic bar icon must come from relics.DEFS (orbital_crown -> particle_twirl)")
+  sf(nodes["echo_pip1"] and nodes["echo_pip1"].enabled == false,
+    "ROOM: pips stay hidden without the Echoing Crystal")
+  -- Phase D: hover the relic bar -> name + desc on the control line; move away -> restored
+  set_texts = {}
+  on_message(self, hash("ui"), {
+    state = "ROOM", room = 6,
+    hp = 73, max_hp = 100,
+    s1 = { name = "Inferno Nova", quirk = "splits in two", cd = 0, cd_max = 2.5, ea = "fire", eb = "wind", shape = "burst" },
+    boss = false, boss_hp = 0, boss_max_hp = 0, flash = 0, toast = nil,
+    inventory = { elements = { fire = 3, water = 2, wind = 1, earth = 1 },
+                  shapes = { projectile = 2, puddle = 1, orbit = 1, cone = 0, burst = 1 } },
+    relics = { inferno_heart = true, orbital_crown = true },
+    hover_x = 776 + 17, hover_y = 590 + 17,
+  })
+  do
+    local expect = relics_mod.describe("inferno_heart")
+    local got
+    for _, rec in ipairs(set_texts) do
+      if rec.id == "help_text" then got = rec.text end
+    end
+    sf(got == expect, "ROOM: hovering a relic icon must show name + desc from relics.DEFS, got: " .. tostring(got))
+  end
+  set_texts = {}
+  on_message(self, hash("ui"), {
+    state = "ROOM", room = 6,
+    hp = 73, max_hp = 100,
+    s1 = { name = "Inferno Nova", quirk = "splits in two", cd = 0, cd_max = 2.5, ea = "fire", eb = "wind", shape = "burst" },
+    boss = false, boss_hp = 0, boss_max_hp = 0, flash = 0, toast = nil,
+    inventory = { elements = { fire = 3, water = 2, wind = 1, earth = 1 },
+                  shapes = { projectile = 2, puddle = 1, orbit = 1, cone = 0, burst = 1 } },
+    relics = { inferno_heart = true, orbital_crown = true },
+    hover_x = 480, hover_y = 320,
+  })
+  do
+    local got
+    for _, rec in ipairs(set_texts) do
+      if rec.id == "help_text" then got = rec.text end
+    end
+    sf(got == self.help_default, "ROOM: leaving the relic bar restores the control hint")
+  end
+  -- Phase D: Echoing Crystal pips render and advance on the player's casts
+  for _, casts in ipairs({ 3, 7, 10, 11 }) do
+    set_texts = {}
+    on_message(self, hash("ui"), {
+      state = "ROOM", room = 6,
+      hp = 73, max_hp = 100,
+      s1 = { name = "Tide Pool", quirk = "repeats once", cd = 0, cd_max = 4.0, ea = "water", eb = "water", shape = "puddle" },
+      boss = false, boss_hp = 0, boss_max_hp = 0, flash = 0, toast = nil,
+      inventory = { elements = { fire = 3, water = 2, wind = 1, earth = 1 },
+                    shapes = { projectile = 2, puddle = 1, orbit = 1, cone = 0, burst = 1 } },
+      relics = { echoing_crystal = true },
+      casts = casts,
+    })
+    local done = ({ [3] = 3, [7] = 2, [10] = 5, [11] = 1 })[casts]
+    for i = 1, 5 do
+      local n = nodes["echo_pip" .. i]
+      sf(n and n.enabled == true, "pips: pip" .. i .. " must be visible with the Echoing Crystal")
+      local gold = n and n.color and math.abs(n.color.y - 0.78) < 0.05
+      sf((i <= done) == gold, string.format("pips: cast %d -> pip %d must be %s", casts, i, i <= done and "gold" or "dim"))
+    end
+  end
 end
 
 -- DEAD / WIN: any click continues; room reached + relics owned come from data
@@ -404,6 +604,39 @@ do
   sf(death_room == "Reached Room 7", "DEAD: room reached must render the actual room number")
   local def = relics_mod.DEFS.inferno_heart
   sf(death_relics == "Relics: " .. def.name, "DEAD: relics owned must come from relics.DEFS.name")
+end
+
+-- Every text-spec id must exist in main/hud.gui. The engine's gui.get_node
+-- raises on an unknown id, which used to kill the F1 audit mid-handler
+-- (version_text was runtime-created; the audit crashed on TITLE).
+for _, state in ipairs(STATES) do
+  local scr = layout.SCREENS[state]
+  for id, _ in pairs(scr and scr.texts or {}) do
+    sf(known[id] == true,
+      "F1 audit would raise on missing node: spec '" .. id .. "' (" .. state .. ") is not authored in main/hud.gui")
+  end
+end
+
+-- The F1 audit path, executed headlessly on every state: the handler must not
+-- raise and must print a clean zero-problem summary.
+for _, state in ipairs(STATES) do
+  send_ui(state)
+  local printed = {}
+  local real_print = print
+  print = function(...)
+    local parts = {}
+    for i = 1, select("#", ...) do parts[#parts + 1] = tostring((select(i, ...))) end
+    printed[#printed + 1] = table.concat(parts, " ")
+  end
+  local ok, audit_err = pcall(on_message, self, hash("ui_audit"), {})
+  print = real_print
+  sf(ok, state .. ": ui_audit handler raised: " .. tostring(audit_err))
+  if ok then
+    sf(#printed > 0, state .. ": ui_audit printed nothing")
+    local last = printed[#printed] or ""
+    sf(last:find("UI AUDIT: 0 problems", 1, true) ~= nil,
+      state .. ": expected 'UI AUDIT: 0 problems', got: " .. tostring(last))
+  end
 end
 
 -- ===== HUD survives a hostile message (almost everything absent) =====

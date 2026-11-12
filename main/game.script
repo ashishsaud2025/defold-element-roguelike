@@ -39,6 +39,7 @@ local infusion_mod = require "src.game.infusion"
 local reaction_mod = require "src.game.reaction"
 local status_mod = require "src.core.status"
 local relics_mod = require "src.core.relics"
+local rewards_mod = require "src.game.rewards"
 
 local ARENA_W = data.TUNING.ARENA_W
 local ARENA_H = data.TUNING.ARENA_H
@@ -657,6 +658,7 @@ local function send_ui(self)
                            self.slot1_elem_a, self.slot1_elem_b)
         ui.s2 = skill_view(self.slot2, self.slot2_cooldown, self.slot2_cd_max,
                            self.slot2_elem_a, self.slot2_elem_b)
+        ui.casts = self.cast_count or 0
     end
     if st == "ROOM" or st == "REWARD" or st == "CAULDRON" or st == "DEAD" or st == "WIN" then
         ui.relics = self.relics
@@ -733,6 +735,7 @@ local function clear_world(self)
     self.clouds = {}
     self.spell_areas = {}
     self.interaction_timer = 0
+    self.room_flags = {}   -- per-room one-shot trigger toasts (D4); cleared on every room enter/reset
 end
 
 local function reset_run(self)
@@ -1035,33 +1038,8 @@ local function owned_shapes(self)
 end
 
 local function generate_rewards(self)
-    local pool = {}
-    for _, el in ipairs(ELEMENT_LIST) do table.insert(pool, { kind = "element", id = el }) end
-    for _, sh in ipairs(SHAPE_LIST) do table.insert(pool, { kind = "shape", id = sh }) end
-    -- Phase 4: at most ONE relic is offered per reward screen, never one you already own.
-    local relic_pool = {}
-    for _, id in ipairs(relics_mod.ORDER) do
-        if not relics_mod.has(self.relics, id) then table.insert(relic_pool, { kind = "relic", id = id }) end
-    end
-    if #relic_pool > 0 and math.random() < 0.6 then
-        table.insert(pool, relic_pool[math.random(#relic_pool)])
-    end
-    for i = #pool, 2, -1 do
-        local j = math.random(i)
-        pool[i], pool[j] = pool[j], pool[i]
-    end
-    local opts, used, relic_count = {}, {}, 0
-    for _, p in ipairs(pool) do
-        local key = p.kind .. ":" .. p.id
-        local allow = not used[key] and #opts < 3
-        if p.kind == "relic" and relic_count >= 1 then allow = false end
-        if allow then
-            used[key] = true
-            if p.kind == "relic" then relic_count = relic_count + 1 end
-            table.insert(opts, p)
-        end
-    end
-    return opts
+    -- Relic v2 schedule: relic offer only after rooms 3, 6, 9 (see src/game/rewards.lua).
+    return rewards_mod.offer(self.room_number, self.relics, math.random)
 end
 
 local function craft_skill(self, slot, ea, eb, shape)
@@ -1207,8 +1185,22 @@ local function is_fire_pool(pud)
     return pud ~= nil and (has_element(pud.elements, "fire") or pud.burning_mud == true)
 end
 
+-- Forward declaration (used by paths defined before the implementation, e.g. apply_statuses).
+local announce
+
 -- ONE status path for every shape (Phase 2). duration_mul = Ancient Catalyst relic.
 local function apply_statuses(self, target, names)
+    -- D4: first catalyst-affected status application per room shows the banner,
+    -- then silent; never overwrites another banner; no gameplay RNG consumed.
+    if (self.status_dur_mul or 1) > 1 and names and #names > 0
+        and not (self.room_flags or {}).catalyst and (self.toast_t or 0) == 0 then
+        self.room_flags = self.room_flags or {}
+        self.room_flags.catalyst = true
+        if target and target.x and target.y then
+            announce(self, relics_mod.DEFS.ancient_catalyst.trigger_text, target.x, target.y,
+                { r = 1.0, g = 0.78, b = 0.25 }, 50)
+        end
+    end
     status_mod.apply(target, names, 0, self.status_dur_mul or 1)
 end
 
@@ -1286,7 +1278,7 @@ end
 -- Interaction feedback: a HUD banner (the same node as the control hint) + an expanding
 -- ring and ring of sparks at the spot. Plan 3.2 requires the three interactions to be
 -- readable in combat with existing art; the console lines are not enough.
-local function announce(self, text, x, y, c, radius)
+announce = function(self, text, x, y, c, radius)
     self.toast_text = text
     self.toast_t = 1.4
     radius = radius or 60
@@ -2583,7 +2575,16 @@ do_cast = function(self, slot_num, is_repeat, ctx)
     local qd = data.QUIRK_DATA[qid] or {}
 
     -- Relic: Inferno Heart (+15% power) only for spells containing Fire.
-    local power = skill.power * relics_mod.power_mul(self.relics, skill.elements)
+    -- D4: first fire-affected cast per room shows the banner, then silent;
+    -- banner never overwrites another banner; no gameplay RNG consumed.
+    local heart_mul = relics_mod.power_mul(self.relics, skill.elements)
+    local power = skill.power * heart_mul
+    if heart_mul > 1 and not (self.room_flags or {}).heart and (self.toast_t or 0) == 0 then
+        self.room_flags = self.room_flags or {}
+        self.room_flags.heart = true
+        announce(self, relics_mod.DEFS.inferno_heart.trigger_text, self.player_pos.x, self.player_pos.y,
+            { r = 1.0, g = 0.78, b = 0.25 }, 60)
+    end
     if ctx and ctx.power_mul then power = power * ctx.power_mul end
     local cooldown = skill.cooldown
     local radius = skill.radius
@@ -2959,6 +2960,8 @@ do_cast = function(self, slot_num, is_repeat, ctx)
         end
 
         -- Relic: Echoing Crystal — every 5th successful player cast echoes at 50%.
+        -- D4: "ECHO" banner; at most once per room (further echoes still fire);
+        -- never overwrites another banner; no gameplay RNG consumed.
         self.cast_count = (self.cast_count or 0) + 1
         local echo = relics_mod.echo_strength(self.relics, self.cast_count)
         if echo then
@@ -2967,6 +2970,12 @@ do_cast = function(self, slot_num, is_repeat, ctx)
                 sx = sx, sy = sy, tx = tx, ty = ty, skill = skill, power_mul = echo,
             })
             print("Echoing Crystal echo (cast " .. self.cast_count .. ")")
+            if not (self.room_flags or {}).echo and (self.toast_t or 0) == 0 then
+                self.room_flags = self.room_flags or {}
+                self.room_flags.echo = true
+                announce(self, relics_mod.DEFS.echoing_crystal.trigger_text, sx, sy,
+                    { r = 1.0, g = 0.78, b = 0.25 }, 60)
+            end
         end
 
         -- Cooldown belongs to the player's cast only; a repeat/echo never resets it.
