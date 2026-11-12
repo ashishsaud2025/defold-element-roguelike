@@ -152,6 +152,18 @@ do
     end
   end
 end
+-- ===== sfx recorder: real src/core/sfx.lua module, stubbed backend =====
+-- The game requires the real module (manifest, throttling, bus sums) and its
+-- backend routes into this recorder so the suite can assert what was played.
+local sfx_plays = {}
+package.preload["src.core.sfx"] = function()
+  local real = dofile(ROOT .. "src/core/sfx.lua")
+  real.backend = function(id, props) sfx_plays[#sfx_plays + 1] = { id = id, props = props } end
+  real.stop_backend = function(id) sfx_plays[#sfx_plays + 1] = { id = "stop:" .. id } end
+  real.gain_backend = function(id, gain) end
+  return real
+end
+
 local chunk = assert(loadfile(ROOT.."main/game.script"))
 chunk()
 local skillgen = require "src.core.skillgen"
@@ -3658,6 +3670,50 @@ do
     local opts = rewards_mod.offer(self.room_number, self.relics, math.random)
     sf(find_relic(opts) == nil, "engine: room 4 offers no relic")
   end
+end
+
+-- ===== sfx wiring: real manifest, recorded backend =====
+do
+  local function count_hits_since(from)
+    local n = 0
+    for i = from + 1, #sfx_plays do
+      local id = sfx_plays[i].id
+      if id and id:match("^el_.*_hit$") then n = n + 1 end
+    end
+    return n
+  end
+  -- Pool ticks are silent: cast a puddle onto an enemy, tick it, no hit sfx.
+  begin_room()
+  local aim_x = self.aim.x
+  for _, e in ipairs(self.enemies) do
+    if e.alive then e.telegraph = 0; e.x, e.y = aim_x, self.player_pos.y break end
+  end
+  equip(mk("puddle", "", "water", "water"))
+  local before = #sfx_plays
+  for _ = 1, 4 do cast1(); self.slot1_cooldown = 0; frames(2) end
+  frames(40)   -- let at least one pool tick land on the enemy
+  sf(count_hits_since(before) == 0, "sfx: pool ticks must not play hit sounds")
+  -- Cast sounds DID fire (proves cast -> bus -> sfx path).
+  local heard_cast = false
+  local heard_signature = false
+  for i = before + 1, #sfx_plays do
+    if sfx_plays[i].id == "cast_puddle" then heard_cast = true end
+    if sfx_plays[i].id == "sig_tide" then heard_signature = true end
+  end
+  sf(heard_cast, "sfx: casting a Pool must play the cast sound")
+  sf(heard_signature, "sfx: casting a Tide Pool must play its signature sound")
+  sf(sfx_plays[1] ~= nil, "sfx: recorder captured plays (sanity)")
+  -- Bolt hit path: an enemy on the aim line takes a hit with a hit sound.
+  begin_room()
+  aim_x = self.aim.x
+  for _, e in ipairs(self.enemies) do
+    if e.alive then e.telegraph = 0; e.x, e.y = aim_x, self.player_pos.y break end
+  end
+  equip(mk("projectile", "", "water", "water"))
+  before = #sfx_plays
+  cast1()
+  frames(30)
+  sf(count_hits_since(before) >= 1, "sfx: bolt hit must play a hit sound")
 end
 
 for i=1,300 do frame() end

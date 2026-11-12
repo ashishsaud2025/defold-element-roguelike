@@ -2359,7 +2359,7 @@ function update(self, dt)
             if pud.reaction and self.clock >= pud.reaction.until_time then reaction_restore(self, pud) end
             local hits = combat_mod.update_puddle(pud, dt, self.enemies)
             for _, h in ipairs(hits) do
-                local died = apply_hit(self, h.enemy, h.damage, h.statuses, pud.x, pud.y, nil, nil, pud.skill_ref)
+                local died = apply_hit(self, h.enemy, h.damage, h.statuses, pud.x, pud.y, nil, "puddle", pud.skill_ref)
                 if died then
                     h.enemy.alive = false
                     print("Enemy died")
