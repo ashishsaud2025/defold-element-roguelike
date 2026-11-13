@@ -1,3 +1,17 @@
+# main: v0.1 code restored, v0.2 reverted (2026-11-13)
+
+The v0.2 commit (`98e95b2`, touch controls + the Android name-screen keyboard change) is reverted on `main`.
+v0.2 ships a regression on desktop: the TITLE screen's START button does nothing. `main` carries the
+Windows/Linux/macOS code, so it goes back to the last state the user confirmed working on those platforms.
+
+- Code files are byte-identical to tag `v0.1`; only the docs rename (`README.md` → `docs.md`) and this note differ.
+- The Android touch work is *not* lost: it continues on the `android` branch (`b763005` + the local WIP commit).
+- Nothing was force-pushed; history is preserved and the revert can itself be reverted once the START
+  regression is fixed and verified on the `android` branch.
+- Open issue to fix before v0.3: START on TITLE does nothing (first suspected in the v0.2 HUD keyboard call).
+
+---
+
 # v0.1 release — shipped 2026-11-12 · https://github.com/ashishsaud2025/defold-element-roguelike/releases/tag/v0.1
 
 Force-pushed `settings-pause-training` to `origin/main` (4f8bed2) after green results. Assets: Windows (symbols), Linux x64, macOS universal (unsigned), Android debug APK, HTML5 wasm ZIP. iOS not included (needs macOS + Apple Developer account). Release notes flag the unsigned macOS app (Gatekeeper) and the debug APK being unsuitable for Google Play.
