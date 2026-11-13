@@ -387,10 +387,25 @@ end
 -- ============================================================================
 local relics_mod = require "src.core.relics"
 local status_mod = require "src.core.status"
+local platform_mod = require "src.core.platform"
 local spell_fail, spell_pass = {}, 0
 local function sf(cond, msg)
   if cond then spell_pass = spell_pass + 1 else spell_fail[#spell_fail+1] = msg end
 end
+-- The touch gate must be a real boolean after init(). It used to read a file-scope
+-- `local TOUCH_ENABLED` declared ~1200 lines BELOW init(), which Lua cannot see from an
+-- earlier function body: the name bound to a global that was never assigned, so
+-- self.touch_enabled was nil on Android and the whole touch UI stayed hidden. The touch
+-- block further down monkey-patched `self.touch_enabled = true`, which is exactly why the
+-- suite never noticed (AGENTS.md #24/#76).
+sf(self.touch_enabled == false,
+   "init: self.touch_enabled must be a boolean (false on desktop) - got " .. tostring(self.touch_enabled))
+sf(platform_mod.is_touch_device("Android") == true, "platform: Android must count as a touch device")
+sf(platform_mod.is_touch_device("iOS") == true, "platform: iOS must count as a touch device")
+sf(platform_mod.is_touch_device("Win32") == false, "platform: Win32 must NOT count as a touch device")
+sf(platform_mod.is_touch_device("HTML5") == false, "platform: HTML5 must NOT count as a touch device by default")
+sf(platform_mod.detect({ FORCE_TOUCH = true }) == true, "platform: FORCE_TOUCH must override detection")
+
 local function near(a, b, eps)
   return type(a) == "number" and math.abs(a - b) <= (eps or 0.001)
 end
@@ -4412,8 +4427,9 @@ do
 end
 
 -- ===== Touch machine: stick moves, tap casts, drag-aim redirects (ROOM only) =====
--- The file-scope TOUCH_ENABLED derives from sys.get_sys_info() at load time (absent in the
--- mock), so flip the per-instance flag like a phone would present itself.
+-- The per-instance flag comes from platform_mod.detect() in init(); the check right after
+-- init() pins that wiring (it was nil for every Android build until the gate moved into
+-- src/core/platform.lua). Here we flip it on like a phone would present itself.
 do
   begin_room()
   self.touch_enabled = true

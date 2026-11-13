@@ -137,6 +137,10 @@ M.TUNING = {
     DASH_TIME = 0.16,
     DASH_COOLDOWN = 1.0,
     HEAL_ON_CLEAR = 25,
+    -- Forces the touch UI + multi-touch machine on regardless of platform. Ships false;
+    -- only flip it to build an HTML5 test bundle you can drive from a desktop browser's
+    -- device-emulation mode (real touch events) instead of guessing on a phone.
+    FORCE_TOUCH = false, -- set true only for building touch-test bundles by hand
 }
 
 -- 8.3a Art ids (animation names in shapes.atlas). Tinted at runtime.

@@ -232,6 +232,9 @@ local function example_ui(state)
     ui.capture = nil
   end
   if state == "HOME" then ui.prompt = "E - BEGIN RUN" end
+  -- NAME_INPUT is the first-run screen behind the TITLE screen's START button.
+  -- It has no layout.SCREENS entry (no buttons), but the HUD still renders it.
+  if state == "NAME_INPUT" then ui.name_buffer = "ASH" end
   if state == "HOME_EDIT" then
     ui.editor = { tab = 1, ea_label = "FIRE", eb_label = "WATER", shape_label = "BOLT",
                   quirk_label = "repeats once", quirk_short = "repeats", quirk_desc = "Casts a second time from the same spot.",
@@ -361,7 +364,7 @@ local function assert_geometry(state)
   end
 end
 
-local STATES = { "TITLE", "COMBOS", "CREDITS", "TUTORIAL", "HOME", "HOME_EDIT", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN", "PAUSED", "SETTINGS" }
+local STATES = { "TITLE", "COMBOS", "CREDITS", "TUTORIAL", "NAME_INPUT", "HOME", "HOME_EDIT", "ROOM", "REWARD", "CAULDRON", "DEAD", "WIN", "PAUSED", "SETTINGS" }
 local function send_ui(state)
   on_message(self, hash("ui"), example_ui(state))
 end
